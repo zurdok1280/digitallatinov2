@@ -3,14 +3,19 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import SongChart from './components/SongChart';
 import ArtistDetailsModal from './components/ArtistDetailsModal';
+import PlatformsDetailsModal from './components/PlatformsDetailsModal';
 import SearchModal from './components/SearchModal';
+import TopPlatformsChart from './components/TopPlatformsChart';
 import { getCountries, getFormatsByCountry, getCitiesByCountry, getChartDigital } from './services/api';
 
 function App() {
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [selectedCity, setSelectedCity] = useState('All');
+  const [selectedPlatform, setSelectedPlatform] = useState('spotify');
   const [selectedArtist, setSelectedArtist] = useState(null);
+  const [selectedSongPlatform, setSelectedSongPlatform] = useState(null);
+  const [activeView, setActiveView] = useState('Charts');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [countriesList, setCountriesList] = useState([]);
@@ -36,15 +41,35 @@ function App() {
         ]);
         setGenresList(formatsData);
         setCitiesList(citiesData);
+        // Special rule for platforms: cannot be 0 (General)
+        if (activeView === 'Platforms') {
+          const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
+          setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
+        } else {
+          setSelectedGenre(selectedCountry !== 'All' ? 0 : 'All'); // Always default to General (id=0) for Charts
+        }
       } else {
         setGenresList([]);
         setCitiesList([]);
+        setSelectedGenre('All');
       }
-      setSelectedGenre(selectedCountry !== 'All' ? 0 : 'All'); // Always default to General (id=0) for a selected country
       setSelectedCity('All');  // Reset city on country change
     };
     fetchFormatsAndCities();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry]);
+
+  // Handle activeView switching to Platforms, shift off genre 0 if necessary
+  useEffect(() => {
+    if (activeView === 'Platforms') {
+      if (selectedGenre === 0 || selectedGenre === 'All' || String(selectedGenre) === '0') {
+        if (genresList && genresList.length > 0) {
+          const firstRealGenre = genresList.find(g => g.id !== 0 && String(g.id) !== '0');
+          if (firstRealGenre) setSelectedGenre(firstRealGenre.id);
+        }
+      }
+    }
+  }, [activeView, genresList, selectedGenre]);
 
   useEffect(() => {
     const fetchChart = async () => {
@@ -58,7 +83,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} activeView={activeView} setActiveView={setActiveView} />
       <main className="main-content">
         <Header 
           countries={countriesList}
@@ -70,21 +95,42 @@ function App() {
           setSelectedGenre={setSelectedGenre}
           selectedCity={selectedCity}
           setSelectedCity={setSelectedCity}
+          activeView={activeView}
+          selectedPlatform={selectedPlatform}
+          setSelectedPlatform={setSelectedPlatform}
           onToggleSidebar={() => setIsSidebarOpen(true)}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
-        
-        <SongChart 
-          songs={songs} 
-          isLoading={isLoading}
-          onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === 'All' ? 0 : selectedCountry })}
-        />
+        {activeView === 'Charts' && (
+          <SongChart 
+            songs={songs} 
+            isLoading={isLoading}
+            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === 'All' ? 0 : selectedCountry })}
+          />
+        )}
+
+        {activeView === 'Platforms' && (
+          <TopPlatformsChart
+            selectedCountry={selectedCountry}
+            selectedGenre={selectedGenre}
+            selectedPlatform={selectedPlatform}
+            onSongClick={(song) => setSelectedSongPlatform(song)}
+          />
+        )}
 
         {selectedArtist && (
           <ArtistDetailsModal 
             artist={selectedArtist} 
             countries={countriesList}
             onClose={() => setSelectedArtist(null)} 
+          />
+        )}
+
+        {selectedSongPlatform && (
+          <PlatformsDetailsModal 
+            song={selectedSongPlatform} 
+            countries={countriesList}
+            onClose={() => setSelectedSongPlatform(null)} 
           />
         )}
 

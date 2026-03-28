@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users, Music, Radio, Activity, PlaySquare, Headphones, TrendingUp, Heart, Map, Loader2, ExternalLink, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react';
+import { X, Users, Music, Radio, Activity, PlaySquare, Headphones, TrendingUp, Heart, Map, Loader2, ExternalLink, ChevronLeft, ChevronRight, UserCircle, MapPin, Trophy } from 'lucide-react';
 import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
@@ -61,6 +61,28 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const scrollRef = useRef(null);
+  const tabsRef = useRef(null);
+
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const handleWheel = (e) => {
+      if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
+        el.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  useEffect(() => {
+    // Bloquear el scroll de la página de fondo
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -207,18 +229,27 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
         {/* Tabs */}
         <div 
-          className="no-scrollbar"
+          ref={tabsRef}
+          className="custom-scrollbar"
           style={{ 
             display: 'flex', 
             borderBottom: '1px solid var(--glass-border)', 
             padding: '0 2rem', 
             gap: '2rem',
             overflowX: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            flexShrink: 0,
+            position: 'sticky',
+            top: 0,
+            background: 'var(--bg-dark)',
+            zIndex: 100
           }}
         >
-          <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+          <style>{`
+            .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+          `}</style>
           {[
             { id: 'overview', label: 'Panorama', icon: Activity },
             { id: 'mapa', label: 'Mapa', icon: Map },
@@ -468,7 +499,58 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
                 </div>
               ) : (
-                <ArtistMap data={mapData} />
+                <>
+                  <ArtistMap data={mapData} />
+
+                  {/* Top 10 Cities Cards */}
+                  <div style={{ marginTop: '2.5rem' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>
+                      <Trophy size={18} color="#ffb700" /> Top 10 Ciudades de Consumo
+                    </h4>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
+                      gap: '1rem' 
+                    }}>
+                      {[...mapData]
+                        .sort((a, b) => b.current_listeners - a.current_listeners)
+                        .slice(0, 10)
+                        .map((city, idx) => (
+                          <div 
+                            key={idx} 
+                            className="glass-panel-interactive animate-fade-in"
+                            style={{ 
+                              padding: '1rem', 
+                              position: 'relative',
+                              borderLeft: idx < 3 ? `3px solid ${idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32'}` : '1px solid var(--glass-border)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.4rem',
+                              animationDelay: `${idx * 0.05}s`
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <span style={{ 
+                                fontSize: '0.7rem', 
+                                fontWeight: 900, 
+                                color: idx < 3 ? (idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32') : 'var(--text-dim)' 
+                              }}>
+                                #{idx + 1}
+                              </span>
+                              <MapPin size={12} color="var(--text-dim)" opacity={0.5} />
+                            </div>
+                            <h5 style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {city.city_name}
+                            </h5>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
+                              {formatNumber(city.current_listeners)} <span style={{ fontSize: '0.65rem', fontWeight: 400, color: 'var(--text-muted)' }}>oyentes</span>
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}

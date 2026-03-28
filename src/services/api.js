@@ -11,7 +11,7 @@ export const getCountries = async () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return data;
+    return Array.isArray(data) ? data : (data?.data || []);
   } catch (error) {
     console.error("API Error fetching countries:", error);
     return [];
@@ -29,7 +29,7 @@ export const getFormatsByCountry = async (country) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return data;
+    return Array.isArray(data) ? data : (data?.data || []);
   } catch (error) {
     console.error(`API Error fetching formats for ${country}:`, error);
     return [];
@@ -47,7 +47,7 @@ export const getCitiesByCountry = async (countryId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return data;
+    return Array.isArray(data) ? data : (data?.data || []);
   } catch (error) {
     console.error(`API Error fetching cities for ${countryId}:`, error);
     return [];
@@ -68,7 +68,7 @@ export const getChartDigital = async (genreId, countryId, cityId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return data;
+    return Array.isArray(data) ? data : (data?.data || []);
   } catch (error) {
     console.error("API Error fetching chart:", error);
     return [];
@@ -201,3 +201,72 @@ export const getArtistGraph = async (spotifyId) => {
     return null;
   }
 };
+
+/**
+ * Fetches platform-specific detailed data for a given song across Spotify, TikTok, etc.
+ */
+export const getSongPlatformData = async (csSong, formatId = 0, countryId = 0) => {
+  if (!csSong) return null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongDigital/${csSong}/${formatId}/${countryId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("API Error fetching song platform data:", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches geographical city data for a song to plot on a map
+ */
+export const getCityDataForSong = async (csSong, countryId = 0) => {
+  if (!csSong) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getCityData/${csSong}/${countryId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("API Error fetching song city data:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the list of playlists where the song is included, by playlist type.
+ */
+export const getSongTopPlaylists = async (csSong, typePlaylist = 0) => {
+  if (!csSong) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getTopPlaylists/${csSong}/${typePlaylist}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching song top playlists:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the trending top platforms list
+ */
+export const getTrendingTopPlatforms = async (platform, formatId = 0, countryId = 0) => {
+  const pId = platform || 'spotify';
+  const fId = formatId === 'All' ? 0 : formatId;
+  const cId = countryId === 'All' ? 0 : countryId;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getTopPlatform/${encodeURIComponent(pId)}/${fId}/${cId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    // Many endpoints return { data: [...] }, ensure we return an array
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching top platforms:", error);
+    return [];
+  }
+};
+

@@ -55,6 +55,21 @@ button {
   color: inherit;
 }
 
+select {
+  background-color: #1a1c24;
+  color: var(--text-main);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+select option {
+  background-color: #0a0b10;
+  color: var(--text-main);
+}
+
 /* Glassmorphism Utilities */
 .glass-panel {
   background: var(--bg-panel);

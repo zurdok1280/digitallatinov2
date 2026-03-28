@@ -1,7 +1,7 @@
 import React from 'react';
 import { Home, BarChart2, Headphones, Sparkles, Camera, Wand2, Radio, X } from 'lucide-react';
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, activeView, setActiveView }) => {
   return (
     <>
       {/* Overlay backdrop */}
@@ -42,8 +42,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div style={{ padding: '0 1.5rem', marginTop: '1rem' }}>
           <p style={{ fontSize: '0.75rem', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8, marginBottom: '1rem', fontWeight: 600 }}>Navegación</p>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <SidebarItem icon={Home} label="Charts" active />
-            <SidebarItem icon={BarChart2} label="Platforms" />
+            <SidebarItem icon={Home} label="Charts" active={activeView === 'Charts' || !activeView} onClick={() => { setActiveView('Charts'); onClose(); }} />
+            <SidebarItem icon={BarChart2} label="Platforms" active={activeView === 'Platforms'} onClick={() => { setActiveView('Platforms'); onClose(); }} />
             <SidebarItem icon={Headphones} label="Artists Analytics" />
             <SidebarItem icon={Sparkles} label="Heavy Hitters" />
             <SidebarItem icon={Camera} label="Curator Picks" />
@@ -56,8 +56,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   );
 };
 
-const SidebarItem = ({ icon: Icon, label, active }) => (
+const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   <button
+    onClick={onClick}
     style={{
       display: 'flex',
       alignItems: 'center',
