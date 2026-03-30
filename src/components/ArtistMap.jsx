@@ -3,44 +3,39 @@ import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 're
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+// Extracted outside the component so it's a stable reference (no re-creation on every render)
+const clusterData = (dataset, distanceThreshold = 3.5) => {
+  const sorted = [...dataset].sort((a, b) => b.current_listeners - a.current_listeners);
+  const clusters = [];
+  for (const city of sorted) {
+    let merged = false;
+    for (const cluster of clusters) {
+      const dx = city.city_lng - cluster.city_lng;
+      const dy = city.city_lat - cluster.city_lat;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < distanceThreshold) {
+        cluster.current_listeners += city.current_listeners;
+        cluster.cities.push(city);
+        merged = true;
+        break;
+      }
+    }
+    if (!merged) clusters.push({ ...city, cities: [city] });
+  }
+  return clusters;
+};
+
 const ArtistMap = ({ data }) => {
   const [hoveredNode, setHoveredNode] = useState(null);
 
-  if (!data || data.length === 0) return <p style={{ color: 'var(--text-muted)' }}>No map data available.</p>;
-
-  // 1. Group overlapping coordinates into parent geographic clusters to prevent map bloat.
-  const clusterData = (dataset, distanceThreshold = 3.5) => {
-    // Sort descending by listener count so the largest urban centers anchor their regions
-    const sorted = [...dataset].sort((a, b) => b.current_listeners - a.current_listeners);
-    const clusters = [];
-    
-    for (const city of sorted) {
-      let merged = false;
-      for (const cluster of clusters) {
-        const dx = city.city_lng - cluster.city_lng;
-        const dy = city.city_lat - cluster.city_lat;
-        // Euclidean distance in map coordinate plane
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < distanceThreshold) {
-          cluster.current_listeners += city.current_listeners;
-          cluster.cities.push(city);
-          merged = true;
-          break;
-        }
-      }
-      if (!merged) {
-        clusters.push({ ...city, cities: [city] });
-      }
-    }
-    return clusters;
-  };
-
+  // ✅ All hooks MUST be called before any early return
   const clusteredData = useMemo(() => {
+    if (!data || data.length === 0) return [];
     const clustered = clusterData(data, 3.5);
-    // Sort descending again purely for SVG paint order (Biggest elements drawn first/back, smallest drawn last/top)
     return clustered.sort((a, b) => b.current_listeners - a.current_listeners);
   }, [data]);
+
+  if (!data || data.length === 0) return <p style={{ color: 'var(--text-muted)' }}>No map data available.</p>;
 
   const maxListeners = Math.max(...clusteredData.map(d => d.current_listeners));
   const minListeners = Math.min(...clusteredData.map(d => d.current_listeners));

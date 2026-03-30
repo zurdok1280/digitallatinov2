@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users, Music, Radio, Activity, PlaySquare, Headphones, TrendingUp, Heart, Map, Loader2, ExternalLink, ChevronLeft, ChevronRight, UserCircle, MapPin, Trophy } from 'lucide-react';
+import { X, Users, Music, Radio, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, ExternalLink, ChevronLeft, ChevronRight, CircleUser, MapPin, Trophy } from 'lucide-react';
 import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
@@ -358,7 +358,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             <div style={{ marginTop: '0rem', paddingBottom: '2rem', animation: 'fadeIn 0.5s ease-out' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', margin: 0 }}>
-                  <UserCircle size={24} color="var(--text-main)" /> Similar Artists
+                  <CircleUser size={24} color="var(--text-main)" /> Similar Artists
                 </h3>
                   
                   {/* Custom Navigation Arrows */}

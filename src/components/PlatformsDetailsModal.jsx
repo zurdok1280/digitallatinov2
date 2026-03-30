@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users, Music, Activity, PlaySquare, Headphones, TrendingUp, Heart, Map, Loader2, Share2, MessageCircle, ThumbsUp, Disc, Trophy, ExternalLink, ChevronUp, ChevronDown, MapPin } from 'lucide-react';
+import { X, Users, Music, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, Share2, MessageCircle, ThumbsUp, Disc, Trophy, ExternalLink, ChevronUp, ChevronDown, MapPin } from 'lucide-react';
 import ArtistMap from './ArtistMap';
 import { getSongPlatformData, getCityDataForSong, getSongTopPlaylists, getPlaylistTypes } from '../services/api';
 
@@ -175,7 +175,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
               {platformData && (
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                   <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><Headphones size={14}/> {formatNumber(platformData.spotify_streams_total)} Spotify</span>
-                  <span style={{ color: '#ff0050', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><PlaySquare size={14}/> {formatNumber(platformData.tiktok_views_total)} TikTok</span>
+                  <span style={{ color: '#ff0050', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><SquarePlay size={14}/> {formatNumber(platformData.tiktok_views_total)} TikTok</span>
                 </div>
               )}
             </div>
@@ -266,7 +266,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
 
                   <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 0, 0.05)', borderLeft: '4px solid #FF0000' }}>
                     <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <PlaySquare size={16} color="#FF0000" /> YouTube Vistas
+                      <SquarePlay size={16} color="#FF0000" /> YouTube Vistas
                     </h3>
                     <p style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(platformData.youtube_video_views_total || 0)}</p>
                   </div>

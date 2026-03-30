@@ -270,3 +270,70 @@ export const getTrendingTopPlatforms = async (platform, formatId = 0, countryId 
   }
 };
 
+/**
+ * Fetches the trending top artists list
+ */
+export const getTrendingTopArtists = async (formatId = 0, countryId = 0, cityId = 0) => {
+  const fId = formatId === 'All' ? 0 : formatId;
+  const cId = countryId === 'All' ? 0 : countryId;
+  const ctyId = cityId === 'All' ? 0 : cityId;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getTopArtist/${fId}/${cId}/${ctyId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching top artists:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches formats specifically for artists in a given country
+ */
+export const getFormatsByCountryArtist = async (countryId) => {
+  if (!countryId || countryId === 'All') return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountryArtist/${encodeURIComponent(countryId)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error(`API Error fetching artist formats for ${countryId}:`, error);
+    return [];
+  }
+};
+/**
+ * Fetches the list of top songs for an artist by Spotify ID and country ID
+ */
+export const getSongsArtistBySpotifyId = async (spotifyId, countryId = 1) => {
+  if (!spotifyId) return [];
+  const cId = countryId === 'All' ? 1 : countryId;
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongsArtist/${encodeURIComponent(spotifyId)}/${cId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching artist songs:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches basic song info (name, label, artist) by internal cs_song ID.
+ * Mirrors the legacy getSongById used in expandRowArtist.tsx.
+ */
+export const getSongById = async (csSong) => {
+  if (!csSong) return null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongbyId/${csSong}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`API Error fetching song details for ${csSong}:`, error);
+    return null;
+  }
+};

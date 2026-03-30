@@ -6,7 +6,9 @@ import ArtistDetailsModal from './components/ArtistDetailsModal';
 import PlatformsDetailsModal from './components/PlatformsDetailsModal';
 import SearchModal from './components/SearchModal';
 import TopPlatformsChart from './components/TopPlatformsChart';
-import { getCountries, getFormatsByCountry, getCitiesByCountry, getChartDigital } from './services/api';
+import { getCountries, getFormatsByCountry, getCitiesByCountry, getChartDigital, getFormatsByCountryArtist } from './services/api';
+import TopArtistsChart from './components/TopArtistsChart';
+import TopArtistReportModal from './components/TopArtistReportModal';
 
 function App() {
   const [selectedCountry, setSelectedCountry] = useState('All');
@@ -15,6 +17,7 @@ function App() {
   const [selectedPlatform, setSelectedPlatform] = useState('spotify');
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [selectedSongPlatform, setSelectedSongPlatform] = useState(null);
+  const [selectedArtistReport, setSelectedArtistReport] = useState(null);
   const [activeView, setActiveView] = useState('Charts');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -36,13 +39,13 @@ function App() {
     const fetchFormatsAndCities = async () => {
       if (selectedCountry && selectedCountry !== 'All') {
         const [formatsData, citiesData] = await Promise.all([
-          getFormatsByCountry(selectedCountry),
+          activeView === 'Artists' ? getFormatsByCountryArtist(selectedCountry) : getFormatsByCountry(selectedCountry),
           getCitiesByCountry(selectedCountry)
         ]);
         setGenresList(formatsData);
         setCitiesList(citiesData);
-        // Special rule for platforms: cannot be 0 (General)
-        if (activeView === 'Platforms') {
+        // Special rule for platforms/artists: cannot be 0 (General) if it's the only one
+        if (activeView === 'Platforms' || activeView === 'Artists') {
           const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
           setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
         } else {
@@ -118,6 +121,14 @@ function App() {
           />
         )}
 
+        {activeView === 'Artists' && (
+          <TopArtistsChart
+            selectedCountry={selectedCountry}
+            selectedGenre={selectedGenre}
+            onArtistClick={(artist) => setSelectedArtistReport(artist)}
+          />
+        )}
+
         {selectedArtist && (
           <ArtistDetailsModal 
             artist={selectedArtist} 
@@ -131,6 +142,14 @@ function App() {
             song={selectedSongPlatform} 
             countries={countriesList}
             onClose={() => setSelectedSongPlatform(null)} 
+          />
+        )}
+
+        {selectedArtistReport && (
+          <TopArtistReportModal
+            artist={selectedArtistReport}
+            countries={countriesList}
+            onClose={() => setSelectedArtistReport(null)}
           />
         )}
 
