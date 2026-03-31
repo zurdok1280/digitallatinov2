@@ -1,7 +1,7 @@
 import React from 'react';
-import { Search, Menu, MapPin, Globe, ListMusic, AudioLines } from 'lucide-react';
+import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform } from 'lucide-react';
 
-const Header = ({ countries = [], genres = [], cities = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, onToggleSidebar, onOpenSearch }) => {
+const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, onToggleSidebar, onOpenSearch }) => {
   return (
     <header className="glass-panel header-container">
       <div className="flex-center" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
@@ -35,29 +35,31 @@ const Header = ({ countries = [], genres = [], cities = [], selectedCountry, set
             width: '6px', 
             height: '6px', 
             borderRadius: '50%', 
-            background: activeView === 'Platforms' ? '#1DB954' : '#ffb700',
-            boxShadow: `0 0 8px ${activeView === 'Platforms' ? '#1DB954' : '#ffb700'}`
+            background: activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700',
+            boxShadow: `0 0 8px ${activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700'}`
           }} />
-          {activeView === 'Platforms' ? 'Platforms' : 'Charts'}
+          {activeView === 'Platforms' ? 'Platforms' : activeView === 'HeavyHitters' ? 'Heavy Hitters' : activeView === 'CuratorPicks' ? 'Curator Picks' : activeView === 'TiktokerPicks' ? 'Tiktoker Picks' : activeView === 'DigitalHitsForRadio' ? 'Digital Hits for Radio' : 'Charts'}
         </div>
       </div>
 
       <div className="header-filters">
-        {/* Country Filter */}
-        <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#e62479' }}>
-            <Globe size={16} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>PAÍS/REGIÓN</span>
+        {/* Country Filter - Hidden in Curator Picks and Tiktoker Picks */
+         activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
+          <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#e62479' }}>
+              <Globe size={16} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>PAÍS/REGIÓN</span>
+            </div>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              style={{ width: '100%' }}
+            >
+              <option value="0">Global</option>
+              {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
+            </select>
           </div>
-          <select
-            value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            <option value="All">País...</option>
-            {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
-          </select>
-        </div>
+        )}
 
         {/* Genre Filter */}
         <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
@@ -68,14 +70,14 @@ const Header = ({ countries = [], genres = [], cities = [], selectedCountry, set
           <select
             value={selectedGenre}
             onChange={(e) => setSelectedGenre(e.target.value)}
-            disabled={selectedCountry === 'All'}
+            disabled={false}
             style={{
-              cursor: selectedCountry === 'All' ? 'not-allowed' : 'pointer',
-              opacity: selectedCountry === 'All' ? 0.5 : 1,
+              cursor: 'pointer',
+              opacity: 1,
               width: '100%'
             }}
           >
-            {activeView !== 'Platforms' && <option value="All">{selectedCountry === 'All' ? '-' : 'Formato...'}</option>}
+            {activeView !== 'Platforms' && <option value="0">General</option>}
             {genres.map(g => (
               (activeView === 'Platforms' && (g.id === 0 || String(g.id) === '0')) ? null : <option key={g.id} value={g.id}>{g.format}</option>
             ))}
@@ -100,6 +102,21 @@ const Header = ({ countries = [], genres = [], cities = [], selectedCountry, set
               <option value="shazam">Shazam</option>
             </select>
           </div>
+        ) : activeView === 'HeavyHitters' || activeView === 'TiktokerPicks' ? null : activeView === 'CuratorPicks' ? (
+          <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ff3366' }}>
+              <AudioWaveform size={16} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>TIPO DE PLAYLIST</span>
+            </div>
+            <select
+              value={selectedPlaylistType}
+              onChange={(e) => setSelectedPlaylistType(e.target.value)}
+              style={{ width: '100%' }}
+            >
+              <option value="0">Todos los Tipos</option>
+              {playlistTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
         ) : (
           <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f15b29' }}>
@@ -109,14 +126,14 @@ const Header = ({ countries = [], genres = [], cities = [], selectedCountry, set
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
-              disabled={selectedCountry === 'All'}
+              disabled={cities.length === 0 && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks'}
               style={{
-                cursor: selectedCountry === 'All' ? 'not-allowed' : 'pointer',
-                opacity: selectedCountry === 'All' ? 0.5 : 1,
+                cursor: (cities.length === 0 && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') ? 'not-allowed' : 'pointer',
+                opacity: (cities.length === 0 && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') ? 0.5 : 1,
                 width: '100%'
               }}
             >
-              <option value="All">{selectedCountry === 'All' ? '-' : 'Ciudad...'}</option>
+              <option value="0">{cities.length === 0 ? '-' : 'Todas las ciudades'}</option>
               {cities.filter(c => c.id !== 0).map(c => <option key={c.id} value={c.id}>{c.city_name}</option>)}
             </select>
           </div>

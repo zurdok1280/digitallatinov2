@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users, Music, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, Share2, MessageCircle, ThumbsUp, Disc, Trophy, ExternalLink, ChevronUp, ChevronDown, MapPin } from 'lucide-react';
+import { X, Users, Music, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, Share2, MessageCircle, ThumbsUp, Disc, Trophy, ExternalLink, ChevronUp, ChevronDown, MapPin, Video } from 'lucide-react';
 import ArtistMap from './ArtistMap';
 import { getSongPlatformData, getCityDataForSong, getSongTopPlaylists, getPlaylistTypes } from '../services/api';
 
@@ -143,7 +143,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
 
   if (!song) return null;
 
-  const imageUrl = song.img || song.avatar || 'https://via.placeholder.com/150';
+  const imageUrl = song.image_url || song.img || song.avatar || 'https://via.placeholder.com/150';
 
   return (
     <div 
@@ -250,6 +250,39 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
             <>
               {activeTab === 'overview' && (
                 <div className="grid-base" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  {/* TikTok Specific Metrics - Rendered FIRST if coming from TikTok Picks */}
+                  {(song.no_videos !== undefined || song.likes_total !== undefined) && (
+                    <>
+                      <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 80, 0.05)', borderLeft: '4px solid #ff0050' }}>
+                        <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Video size={16} color="#ff0050" /> Videos Creados
+                        </h3>
+                        <p className="text-gradient-secondary" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(song.no_videos || 0)}</p>
+                      </div>
+
+                      <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 80, 0.05)', borderLeft: '4px solid #ff0050' }}>
+                        <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <ThumbsUp size={16} color="#ff0050" /> Likes Totales
+                        </h3>
+                        <p className="text-gradient-secondary" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(song.likes_total || 0)}</p>
+                      </div>
+
+                      <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 80, 0.05)', borderLeft: '4px solid #ff0050' }}>
+                        <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <MessageCircle size={16} color="#ff0050" /> Comentarios
+                        </h3>
+                        <p className="text-gradient-secondary" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(song.comments_total || 0)}</p>
+                      </div>
+
+                      <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 80, 0.05)', borderLeft: '4px solid #ff0050' }}>
+                        <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Share2 size={16} color="#ff0050" /> Compartidos
+                        </h3>
+                        <p className="text-gradient-secondary" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(song.shares_total || 0)}</p>
+                      </div>
+                    </>
+                  )}
+
                   <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(29, 185, 84, 0.05)', borderLeft: '4px solid #1DB954' }}>
                     <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <Headphones size={16} color="#1DB954" /> Streams Spotify
@@ -285,7 +318,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
                     <p style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(song.data_res || song.score || 0)}</p>
                   </div>
 
-                   <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem' }}>
+                  <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem' }}>
                     <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <Heart size={16} color="#ffb700" /> Popularidad
                     </h3>

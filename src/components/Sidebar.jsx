@@ -50,10 +50,30 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView }) => {
               active={activeView === 'Artists'} 
               onClick={() => { setActiveView('Artists'); onClose(); }} 
             />
-            <SidebarItem icon={Sparkles} label="Heavy Hitters" />
-            <SidebarItem icon={Camera} label="Curator Picks" />
-            <SidebarItem icon={Wand2} label="Tiktoker Picks" />
-            <SidebarItem icon={Radio} label="Digital Hits for Radio" />
+            <SidebarItem 
+              icon={Sparkles} 
+              label="Heavy Hitters" 
+              active={activeView === 'HeavyHitters'} 
+              onClick={() => { setActiveView('HeavyHitters'); onClose(); }} 
+            />
+            <SidebarItem 
+              icon={Camera} 
+              label="Curator Picks" 
+              active={activeView === 'CuratorPicks'} 
+              onClick={() => { setActiveView('CuratorPicks'); onClose(); }} 
+            />
+            <SidebarItem 
+              icon={Wand2} 
+              label="Tiktoker Picks" 
+              active={activeView === 'TiktokerPicks'} 
+              onClick={() => { setActiveView('TiktokerPicks'); onClose(); }} 
+            />
+            <SidebarItem 
+              icon={Radio} 
+              label="Digital Hits for Radio" 
+              active={activeView === 'DigitalHitsForRadio'} 
+              onClick={() => { setActiveView('DigitalHitsForRadio'); onClose(); }} 
+            />
           </nav>
         </div>
       </aside>

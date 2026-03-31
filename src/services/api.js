@@ -76,6 +76,27 @@ export const getChartDigital = async (genreId, countryId, cityId) => {
 };
 
 /**
+ * Fetches the digital chart list specifically for Digital Hits for Radio (radiooff=1).
+ */
+export const getChartDigitalHitsRadio = async (genreId, countryId, cityId) => {
+  const gId = genreId === 'All' ? 0 : genreId;
+  const cId = countryId === 'All' ? 0 : countryId;
+  const ctyId = cityId === 'All' ? 0 : cityId;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/C/${ctyId}?radiooff=1`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching radio chart:", error);
+    return [];
+  }
+};
+
+/**
  * Fetches artists and songs from Spotify
  */
 export const searchSpotify = async (query) => {
@@ -335,5 +356,73 @@ export const getSongById = async (csSong) => {
   } catch (error) {
     console.error(`API Error fetching song details for ${csSong}:`, error);
     return null;
+  }
+};
+
+/**
+ * Fetches the trending debut songs (Heavy Hitters)
+ */
+export const getDebutSongs = async (formatId = 0, countryId = 0) => {
+  const fId = formatId === 'All' ? 0 : formatId;
+  const cId = countryId === 'All' ? 0 : countryId;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching debut songs:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the curator picks
+ */
+export const getCuratorPics = async (formatId = 0, typeId = 0) => {
+  const fId = formatId === 'All' ? 0 : formatId;
+  const tId = typeId === 'All' ? 0 : typeId;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getCuratorPics/${fId}/${tId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching curator pics:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the available playlist types for curator picks
+ */
+export const getPlaylistType = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getPlaylistType`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching playlist types:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the Tiktok picks
+ */
+export const getTiktokPics = async (formatId = 0) => {
+  const fId = formatId === 'All' ? 0 : formatId;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getTiktokPics/${fId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching tiktok pics:", error);
+    return [];
   }
 };

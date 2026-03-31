@@ -6,14 +6,17 @@ import ArtistDetailsModal from './components/ArtistDetailsModal';
 import PlatformsDetailsModal from './components/PlatformsDetailsModal';
 import SearchModal from './components/SearchModal';
 import TopPlatformsChart from './components/TopPlatformsChart';
-import { getCountries, getFormatsByCountry, getCitiesByCountry, getChartDigital, getFormatsByCountryArtist } from './services/api';
+import { getCountries, getFormatsByCountry, getCitiesByCountry, getChartDigital, getFormatsByCountryArtist, getDebutSongs, getCuratorPics, getPlaylistType, getTiktokPics, getChartDigitalHitsRadio } from './services/api';
 import TopArtistsChart from './components/TopArtistsChart';
 import TopArtistReportModal from './components/TopArtistReportModal';
+import HeavyHittersChart from './components/HeavyHittersChart';
+import CuratorPicksChart from './components/CuratorPicksChart';
+import TiktokerPicksChart from './components/TiktokerPicksChart';
 
 function App() {
-  const [selectedCountry, setSelectedCountry] = useState('All');
-  const [selectedGenre, setSelectedGenre] = useState('All');
-  const [selectedCity, setSelectedCity] = useState('All');
+  const [selectedCountry, setSelectedCountry] = useState('0');
+  const [selectedGenre, setSelectedGenre] = useState('0');
+  const [selectedCity, setSelectedCity] = useState('0');
   const [selectedPlatform, setSelectedPlatform] = useState('spotify');
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [selectedSongPlatform, setSelectedSongPlatform] = useState(null);
@@ -21,46 +24,71 @@ function App() {
   const [activeView, setActiveView] = useState('Charts');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState('0');
+  const [selectedPlaylistType, setSelectedPlaylistType] = useState('0');
+  
   const [countriesList, setCountriesList] = useState([]);
   const [genresList, setGenresList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
+  const [playlistTypesList, setPlaylistTypesList] = useState([]);
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getCountries();
-      setCountriesList(data);
+      const [countriesData, playlistTypesData] = await Promise.all([
+        getCountries(),
+        getPlaylistType()
+      ]);
+      setCountriesList(countriesData);
+      setPlaylistTypesList(playlistTypesData);
     };
     fetchData();
   }, []);
 
   useEffect(() => {
     const fetchFormatsAndCities = async () => {
-      if (selectedCountry && selectedCountry !== 'All') {
+      // If we switched to HeavyHitters, reset to its defaults immediately
+      if (activeView === 'HeavyHitters' && selectedCountry === '0') {
+        setSelectedCountry(1);
+        setSelectedGenre(0);
+        setSelectedCity('All');
+        return; // This loop will run again with selectedCountry=1
+      }
+      
+      if (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') {
+        if (selectedCountry !== '0') setSelectedCountry('0');
+        if (selectedGenre === 'All') setSelectedGenre(0);
+      }
+
+      // Use Country 1 (Default USA/Global) for Format fetching if in CuratorPicks or TiktokerPicks
+      const targetCountry = (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') ? 1 : selectedCountry;
+
+      if (targetCountry !== null) {
         const [formatsData, citiesData] = await Promise.all([
-          activeView === 'Artists' ? getFormatsByCountryArtist(selectedCountry) : getFormatsByCountry(selectedCountry),
-          getCitiesByCountry(selectedCountry)
+          activeView === 'Artists' ? getFormatsByCountryArtist(targetCountry) : getFormatsByCountry(targetCountry),
+          getCitiesByCountry(targetCountry)
         ]);
         setGenresList(formatsData);
         setCitiesList(citiesData);
-        // Special rule for platforms/artists: cannot be 0 (General) if it's the only one
+
+        // Auto-select General (id 0) for genre on non-genre-focused views if we just arrived
         if (activeView === 'Platforms' || activeView === 'Artists') {
           const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
           setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
-        } else {
-          setSelectedGenre(selectedCountry !== 'All' ? 0 : 'All'); // Always default to General (id=0) for Charts
+        } else if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') {
+          setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts and DigitalHitsForRadio
         }
       } else {
         setGenresList([]);
         setCitiesList([]);
-        setSelectedGenre('All');
+        if (activeView !== 'HeavyHitters' && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedGenre('0');
       }
-      setSelectedCity('All');  // Reset city on country change
+      if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedCity('0');  // Reset city on country change
     };
     fetchFormatsAndCities();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCountry]);
+  }, [selectedCountry, activeView]);
 
   // Handle activeView switching to Platforms, shift off genre 0 if necessary
   useEffect(() => {
@@ -75,14 +103,46 @@ function App() {
   }, [activeView, genresList, selectedGenre]);
 
   useEffect(() => {
-    const fetchChart = async () => {
-      setIsLoading(true);
-      const data = await getChartDigital(selectedGenre, selectedCountry, selectedCity);
-      setSongs(data);
-      setIsLoading(false);
+    const fetchChartData = async () => {
+      // If we switched to HeavyHitters, reset to its defaults if they aren't already set
+      // This helps avoid the double-load because we can handle it in the same effect or logic
+      if (activeView === 'HeavyHitters') {
+        if (selectedCountry === 'All' || selectedGenre === 'All') {
+          setSelectedCountry(1);
+          setSelectedGenre(0);
+          setSelectedCity('All');
+          return; // Wait for the state update to trigger this effect again
+        }
+        
+        setIsLoading(true);
+        const data = await getDebutSongs(selectedGenre, selectedCountry);
+        setSongs(data);
+        setIsLoading(false);
+      } else if (activeView === 'CuratorPicks') {
+        setIsLoading(true);
+        const data = await getCuratorPics(selectedGenre, selectedPlaylistType);
+        setSongs(data);
+        setIsLoading(false);
+      } else if (activeView === 'TiktokerPicks') {
+        setIsLoading(true);
+        const data = await getTiktokPics(selectedGenre);
+        setSongs(data);
+        setIsLoading(false);
+      } else if (activeView === 'DigitalHitsForRadio') {
+        setIsLoading(true);
+        const data = await getChartDigitalHitsRadio(selectedGenre, selectedCountry, selectedCity);
+        setSongs(data);
+        setIsLoading(false);
+      } else if (activeView === 'Charts') {
+        setIsLoading(true);
+        const data = await getChartDigital(selectedGenre, selectedCountry, selectedCity);
+        setSongs(data);
+        setIsLoading(false);
+      }
     };
-    fetchChart();
-  }, [selectedCountry, selectedGenre, selectedCity]);
+    fetchChartData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, activeView]);
 
   return (
     <div className="app-container">
@@ -92,6 +152,7 @@ function App() {
           countries={countriesList}
           genres={genresList}
           cities={citiesList}
+          playlistTypes={playlistTypesList}
           selectedCountry={selectedCountry}
           setSelectedCountry={setSelectedCountry}
           selectedGenre={selectedGenre}
@@ -101,6 +162,8 @@ function App() {
           activeView={activeView}
           selectedPlatform={selectedPlatform}
           setSelectedPlatform={setSelectedPlatform}
+          selectedPlaylistType={selectedPlaylistType}
+          setSelectedPlaylistType={setSelectedPlaylistType}
           onToggleSidebar={() => setIsSidebarOpen(true)}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
@@ -108,7 +171,15 @@ function App() {
           <SongChart 
             songs={songs} 
             isLoading={isLoading}
-            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === 'All' ? 0 : selectedCountry })}
+            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
+          />
+        )}
+
+        {activeView === 'DigitalHitsForRadio' && (
+          <SongChart 
+            songs={songs} 
+            isLoading={isLoading}
+            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
           />
         )}
 
@@ -126,6 +197,30 @@ function App() {
             selectedCountry={selectedCountry}
             selectedGenre={selectedGenre}
             onArtistClick={(artist) => setSelectedArtistReport(artist)}
+          />
+        )}
+
+        {activeView === 'HeavyHitters' && (
+          <HeavyHittersChart
+            songs={songs}
+            isLoading={isLoading}
+            onSongClick={(song) => setSelectedSongPlatform(song)}
+          />
+        )}
+
+        {activeView === 'CuratorPicks' && (
+          <CuratorPicksChart
+            songs={songs}
+            isLoading={isLoading}
+            onSongClick={(song) => setSelectedSongPlatform(song)}
+          />
+        )}
+
+        {activeView === 'TiktokerPicks' && (
+          <TiktokerPicksChart
+            songs={songs}
+            isLoading={isLoading}
+            onSongClick={(song) => setSelectedSongPlatform(song)}
           />
         )}
 

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Music } from 'lucide-react';
+import { getDebutSongs } from '../services/api';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -24,7 +25,7 @@ const Sparkline = ({ data, color }) => {
 
   const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
   const fillPoints = `${pointsString} ${width},${height} 0,${height}`;
-  const gradientId = `spark-${color.replace('#', '')}`;
+  const gradientId = `spark-debut-${color.replace('#', '')}`;
   const colWidth = width / data.length;
 
   return (
@@ -43,26 +44,20 @@ const Sparkline = ({ data, color }) => {
         </defs>
         <polyline points={fillPoints} fill={`url(#${gradientId})`} />
         
-        {/* Render Hover Indicator Lines Below the Main Stroke */}
         {hoveredIdx !== null && (
-          <>
-            <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
-          </>
+          <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
         )}
 
         <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
         
-        {/* Default end dot if no hover */}
         {hoveredIdx === null && (
           <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
         )}
 
-        {/* Hover Active Dot */}
         {hoveredIdx !== null && (
           <circle cx={points[hoveredIdx].x} cy={points[hoveredIdx].y} r="4.5" fill={color} stroke="#fff" strokeWidth="2" style={{ transition: 'all 0.1s' }} />
         )}
 
-        {/* Invisible Hit Area Columns for Cursor Tracking */}
         {points.map((p, i) => (
           <rect
             key={i}
@@ -77,7 +72,6 @@ const Sparkline = ({ data, color }) => {
         ))}
       </svg>
       
-      {/* Dynamic Popover Overlay */}
       {hoveredIdx !== null && (
         <div style={{
           position: 'absolute',
@@ -96,10 +90,10 @@ const Sparkline = ({ data, color }) => {
           backdropFilter: 'blur(5px)'
         }}>
           <div style={{ color: color, fontWeight: '700', fontSize: '1rem', lineHeight: '1.2' }}>
-            {Number(points[hoveredIdx].val.toFixed(1))}M
+            {Number(points[hoveredIdx].val.toFixed(1))}
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Week {hoveredIdx + 1}
+            Score Hist.
           </div>
         </div>
       )}
@@ -107,16 +101,16 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const SongChart = ({ songs, isLoading, onArtistClick }) => {
-  // Generate deterministic "historical" trend data for demonstration purposes
+const HeavyHittersChart = ({ songs, isLoading, onSongClick }) => {
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
     return songs.map((s, idx) => {
-      let val = 100 - (s.rk * 0.3);
+      // Create a deterministic but nice looking trend
+      let val = 80 + (idx * 0.5);
       const trend = [];
       for (let i = 0; i < 20; i++) {
-        val = val + (Math.sin(s.rk * 1.3 + i * 0.8) * 8) + (Math.cos(idx + i) * 6);
-        trend.push(Math.max(10, val));
+        val = val + (Math.sin(idx * 1.5 + i * 0.7) * 10) + (Math.cos(i * 0.5) * 5);
+        trend.push(Math.max(20, val));
       }
       return { ...s, trend };
     });
@@ -126,7 +120,7 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
     return (
       <div className="glass-panel flex-center" style={{ padding: '5rem', flexDirection: 'column', minHeight: '300px' }}>
         <Loader2 className="loading-spinner" size={48} color="var(--accent-primary)" />
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem' }}>Cargando analítica digital...</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem' }}>Cargando Heavy Hitters...</p>
       </div>
     );
   }
@@ -134,16 +128,17 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones con esos filtros.</p>
+        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones debutantes en este género/país.</p>
       </div>
     );
   }
 
   const renderMovement = (mo) => {
     if (!mo) return null;
-    const mov = String(mo).toLowerCase();
-    if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title="Subió" />;
-    if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title="Bajó" />;
+    const mov = String(mo).toUpperCase();
+    if (mov.includes('UP')) return <ArrowUp size={16} color="#00e676" title="Subió" />;
+    if (mov.includes('DOWN')) return <ArrowDown size={16} color="#ff3366" title="Bajó" />;
+    if (mov.includes('NEW')) return <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-primary)', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px' }}>NEW</span>;
     return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
   };
 
@@ -155,7 +150,6 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
           .sparkline-wrapper { display: block; }
         }
         
-        /* Tooltip classes */
         .score-info-container { position: relative; }
         .score-tooltip {
           position: absolute;
@@ -201,20 +195,17 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
       <div className="grid-base" style={{ gap: '0.5rem' }}>
         {enrichedSongs.map((song, index) => {
           const rowColor = rankColors[index % rankColors.length];
+          // Determine rank: use s.rk_trending or fall back to index + 1
+          const rank = song.rk_trending || song.rk || index + 1;
+          
           return (
             <div
-              key={song.cs_song || index}
+              key={index}
               className="chart-row glass-panel-interactive"
-              onClick={() => onArtistClick({
-                id: song.spotifyartistid || song.cs_song,
-                name: song.artists,
-                imageUrl: song.spotifyid || song.url || song.avatar || '/logo.png',
-                monthlyListeners: song.spotify_streams_total || 0,
-                followers: song.audience_total || 0
-              })}
+              onClick={() => onSongClick && onSongClick(song)}
               style={{
-                background: index === 0 ? 'rgba(0, 240, 255, 0.05)' : undefined,
-                borderColor: index === 0 ? 'rgba(0, 240, 255, 0.3)' : undefined,
+                background: index === 0 ? 'rgba(170, 99, 255, 0.05)' : undefined,
+                borderColor: index === 0 ? 'rgba(170, 99, 255, 0.3)' : undefined,
                 cursor: 'pointer',
                 transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
               }}
@@ -232,40 +223,38 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
               <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
                 <div className="chart-rank">
                   <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
-                    {song.rk}
+                    {rank}
                   </span>
                   <div style={{ marginTop: '0.15rem' }}>
-                    {renderMovement(song.movement)}
+                    {renderMovement(song.movement || song.mo)}
                   </div>
                 </div>
 
-                <div className="chart-img-wrapper">
-                  <img src={song.spotifyid || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                  <img src={song.img || song.avatar || song.url || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div className="flex-center" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.opacity = 1} onMouseLeave={(e) => e.currentTarget.style.opacity = 0}>
                     <Play size={20} color="#fff" />
                   </div>
                 </div>
 
                 <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
-                  <h3 className="chart-title">{song.song}</h3>
-                  <p className="chart-artist">{song.artists}</p>
+                  <h3 className="chart-title" style={{ marginBottom: '0.1rem' }}>{song.song}</h3>
+                  <p className="chart-artist" style={{ fontSize: '0.85rem', opacity: 0.8 }}>{song.artists || song.artist}</p>
                 </div>
               </div>
 
-              {/* Responsive Trend Sparkline */}
               <Sparkline data={song.trend} color={rowColor} />
 
-              <div className="score-info-container" style={{ textAlign: 'right', minWidth: '60px' }}>
-                <div className="text-gradient chart-score">
-                  {song.score != null ? Number(song.score).toFixed(1) : '0.0'}
+              <div className="score-info-container" style={{ textAlign: 'right', minWidth: '80px' }}>
+                <div className="text-gradient chart-score" style={{ fontSize: '1.4rem' }}>
+                  {song.tw_score != null ? Number(song.tw_score).toFixed(1) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
                 </div>
-                <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                  Score <Info size={11} style={{ opacity: 0.7 }} />
+                <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
+                   Score <Info size={10} style={{ opacity: 0.6 }} />
                 </span>
                 
-                {/* Score Disclaimer Tooltip based on User Image */}
                 <div className="score-tooltip">
-                  El <strong style={{ color: '#fff' }}>Score Digital</strong> es una métrica del 1 al 100 que evalúa el nivel de exposición de una canción basado en streams, playlists, engagement social y distribución geográfica.
+                  El <strong style={{ color: '#fff' }}>Score</strong> de Heavy Hitters representa el impacto de debut y la velocidad de crecimiento de la canción.
                 </div>
               </div>
             </div>
@@ -276,4 +265,4 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
   );
 };
 
-export default SongChart;
+export default HeavyHittersChart;

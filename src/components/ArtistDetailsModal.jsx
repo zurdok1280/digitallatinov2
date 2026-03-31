@@ -302,14 +302,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
                   <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 80, 0.05)' }}>
                     <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <PlaySquare size={16} color="#ff0050" /> TikTok Views
+                      <SquarePlay size={16} color="#ff0050" /> TikTok Views
                     </h3>
                     <p className="text-gradient-secondary" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(artistData?.views_total_tiktok || 0)}</p>
                   </div>
 
                   <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(255, 0, 0, 0.05)' }}>
                     <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <PlaySquare size={16} color="#FF0000" /> YouTube Vistas
+                      <SquarePlay size={16} color="#FF0000" /> YouTube Vistas
                     </h3>
                     <p style={{ fontSize: '1.8rem', fontWeight: 800 }}>{formatNumber(artistData?.video_views_total_youtube || 0)}</p>
                   </div>
