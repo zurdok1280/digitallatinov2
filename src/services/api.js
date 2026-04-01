@@ -1,57 +1,67 @@
 const API_BASE_URL = 'https://backend.digital-latino.com/api';
 
+// ─── In-Memory Request Cache ────────────────────────────────────────────────
+// Caches responses for static/rarely-changing endpoints (countries, genres, cities).
+// TTL = 5 minutes — safe for a dashboard session. Does NOT cache report data.
+const _cache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+const withCache = async (key, fetcher) => {
+  const hit = _cache.get(key);
+  if (hit && Date.now() - hit.ts < CACHE_TTL_MS) return hit.data;
+  const data = await fetcher();
+  // Only cache successful (non-empty) responses
+  if (data !== null && data !== undefined && !(Array.isArray(data) && data.length === 0)) {
+    _cache.set(key, { data, ts: Date.now() });
+  }
+  return data;
+};
+// ────────────────────────────────────────────────────────────────────────────
+
 /**
  * Fetches the list of countries from the API.
  * Returns an array of objects: { id: number, description: string }
  */
 export const getCountries = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report/getCountries`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  return withCache('countries', async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getCountries`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.data || []);
+    } catch (error) {
+      console.error("API Error fetching countries:", error);
+      return [];
     }
-    const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
-  } catch (error) {
-    console.error("API Error fetching countries:", error);
-    return [];
-  }
+  });
 };
 
-/**
- * Fetches formats for a specified country.
- * Returns an array of objects: { id: number, description: string }
- */
 export const getFormatsByCountry = async (country) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountry/${encodeURIComponent(country)}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  return withCache(`formats_${country}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountry/${encodeURIComponent(country)}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.data || []);
+    } catch (error) {
+      console.error(`API Error fetching formats for ${country}:`, error);
+      return [];
     }
-    const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
-  } catch (error) {
-    console.error(`API Error fetching formats for ${country}:`, error);
-    return [];
-  }
+  });
 };
 
-/**
- * Fetches cities for a specified country and CRG type 'C'.
- * Returns an array of objects: { id: number, city_name: string }
- */
 export const getCitiesByCountry = async (countryId) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report/getCities/${encodeURIComponent(countryId)}/C`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  return withCache(`cities_${countryId}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getCities/${encodeURIComponent(countryId)}/C`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.data || []);
+    } catch (error) {
+      console.error(`API Error fetching cities for ${countryId}:`, error);
+      return [];
     }
-    const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
-  } catch (error) {
-    console.error(`API Error fetching cities for ${countryId}:`, error);
-    return [];
-  }
+  });
 };
 
 /**
@@ -315,15 +325,17 @@ export const getTrendingTopArtists = async (formatId = 0, countryId = 0, cityId 
  */
 export const getFormatsByCountryArtist = async (countryId) => {
   if (!countryId || countryId === 'All') return [];
-  try {
-    const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountryArtist/${encodeURIComponent(countryId)}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
-  } catch (error) {
-    console.error(`API Error fetching artist formats for ${countryId}:`, error);
-    return [];
-  }
+  return withCache(`formats_artist_${countryId}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountryArtist/${encodeURIComponent(countryId)}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.data || []);
+    } catch (error) {
+      console.error(`API Error fetching artist formats for ${countryId}:`, error);
+      return [];
+    }
+  });
 };
 /**
  * Fetches the list of top songs for an artist by Spotify ID and country ID
@@ -399,15 +411,17 @@ export const getCuratorPics = async (formatId = 0, typeId = 0) => {
  * Fetches the available playlist types for curator picks
  */
 export const getPlaylistType = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report/getPlaylistType`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
-  } catch (error) {
-    console.error("API Error fetching playlist types:", error);
-    return [];
-  }
+  return withCache('playlist_types', async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getPlaylistType`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.data || []);
+    } catch (error) {
+      console.error("API Error fetching playlist types:", error);
+      return [];
+    }
+  });
 };
 
 /**

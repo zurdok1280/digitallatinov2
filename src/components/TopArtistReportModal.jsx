@@ -299,20 +299,27 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
               </div>
               
               {isLoadingSongs ? (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem 0' }}>
-                  <Loader2 className="loading-spinner" style={{ width: 32, height: 32 }} />
+                <div style={{ display: 'grid', gap: '0.85rem' }}>
+                  {[1,2,3,4,5].map(i => <SongSkeleton key={i} />)}
                 </div>
               ) : (
                 <div style={{ display: 'grid', gap: '0.85rem' }}>
                   {songs.map((song, idx) => (
-                    <div key={idx} className="glass-panel-interactive" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between', minWidth: 0 }}>
+                    <div key={idx} className="glass-panel-interactive song-row-container" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between', minWidth: 0, opacity: 0, animation: `slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards`, animationDelay: `${idx * 0.08}s`, position: 'relative', overflow: 'hidden' }}>
+                      <div className="neon-watermark">#{idx + 1}</div>
+                      
                       {/* Left: cover + metadata */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                      <div className="song-row-content" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
                         <div style={{ position: 'relative', flexShrink: 0 }}>
-                          <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden' }}>
+                          <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
                             <img src={song.image_url || '/logo.png'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                            <div className="eq-container">
+                              <div className="eq-bar" style={{ height: '16px' }} />
+                              <div className="eq-bar" style={{ height: '24px' }} />
+                              <div className="eq-bar" style={{ height: '12px' }} />
+                            </div>
                           </div>
-                          <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--accent-primary)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, color: 'white' }}>
+                          <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--accent-primary)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, color: 'white', border: '2px solid var(--bg-dark)' }}>
                             {idx + 1}
                           </div>
                         </div>
@@ -334,7 +341,7 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
                       </div>
 
                       {/* Right: streams + campaign button */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
+                      <div className="song-row-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
                         <div style={{ textAlign: 'right' }}>
                         </div>
                         <button
@@ -432,6 +439,20 @@ const TabButton = ({ active, icon: Icon, label, onClick }) => (
   </button>
 );
 
+const SongSkeleton = () => (
+  <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between', minWidth: 0, position: 'relative', overflow: 'hidden', height: '80px' }}>
+    <div className="shimmer-effect"></div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, position: 'relative', zIndex: 1 }}>
+      <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+        <div style={{ height: '14px', width: '40%', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+        <div style={{ height: '10px', width: '25%', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }} />
+      </div>
+    </div>
+    <div style={{ width: '100px', height: '24px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', position: 'relative', zIndex: 1 }} />
+  </div>
+);
+
 const CityCard = ({ city, idx }) => {
   const isTop3 = idx < 3;
   const colors = ['#FFD700', '#C0C0C0', '#CD7F32'];
@@ -509,3 +530,4 @@ const customScrollbarCSS = `
     background: rgba(138, 136, 255, 0.5);
   }
 `;
+

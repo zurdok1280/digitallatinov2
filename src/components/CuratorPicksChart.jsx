@@ -127,9 +127,10 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick }) => {
 
   if (isLoading) {
     return (
-      <div className="glass-panel flex-center" style={{ padding: '5rem', flexDirection: 'column', minHeight: '300px' }}>
-        <Loader2 className="loading-spinner" size={48} color="#ff3366" />
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem' }}>Cargando Curator Picks...</p>
+      <div className="glass-panel" style={{ padding: '1rem' }}>
+        <div className="grid-base" style={{ gap: '0.5rem' }}>
+          {[...Array(5)].map((_, i) => <ChartRowSkeleton key={i} />)}
+        </div>
       </div>
     );
   }
@@ -206,7 +207,12 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick }) => {
                 background: index === 0 ? 'rgba(255, 51, 102, 0.05)' : undefined,
                 borderColor: index === 0 ? 'rgba(255, 51, 102, 0.3)' : undefined,
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                position: 'relative',
+                overflow: 'hidden',
+                opacity: 0,
+                animation: 'slideUpFade 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                animationDelay: `${index * 0.06}s`,
+                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s, background 0.3s'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateX(8px)';
@@ -219,6 +225,7 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick }) => {
                 if (index !== 0) e.currentTarget.style.background = '';
               }}
             >
+              <div className="neon-watermark">#{index + 1}</div>
               <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
                 <div className="chart-rank" style={{ minWidth: '40px' }}>
                   <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
@@ -233,8 +240,10 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick }) => {
 
                 <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                   <img src={song.image_url || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div className="flex-center" style={{ position: 'absolute', inset: 0, background: 'rgba(255,51,102,0.4)', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.opacity = 1} onMouseLeave={(e) => e.currentTarget.style.opacity = 0}>
-                    <Play size={20} color="#fff" />
+                  <div className="eq-container">
+                    <div className="eq-bar" style={{ height: '16px' }} />
+                    <div className="eq-bar" style={{ height: '24px' }} />
+                    <div className="eq-bar" style={{ height: '12px' }} />
                   </div>
                 </div>
 
@@ -274,3 +283,17 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick }) => {
 };
 
 export default CuratorPicksChart;
+
+const ChartRowSkeleton = () => (
+  <div className="glass-panel" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', height: '72px', position: 'relative', overflow: 'hidden' }}>
+    <div className="shimmer-effect" />
+    <div className="skeleton-block" style={{ width: '32px', height: '32px', borderRadius: '6px', flexShrink: 0 }} />
+    <div className="skeleton-block" style={{ width: '48px', height: '48px', borderRadius: '8px', flexShrink: 0 }} />
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      <div className="skeleton-block" style={{ height: '14px', width: '45%' }} />
+      <div className="skeleton-block" style={{ height: '10px', width: '28%' }} />
+    </div>
+    <div className="skeleton-block" style={{ width: '120px', height: '30px', flexShrink: 0 }} />
+    <div className="skeleton-block" style={{ width: '42px', height: '42px', flexShrink: 0 }} />
+  </div>
+);

@@ -320,3 +320,106 @@ select option {
   }
 }
 
+
+/* ============================================================ */
+/* WOW Global Animations - digital-style                        */
+/* ============================================================ */
+
+/* Shimmer Skeleton Animation */
+@keyframes shimmer {
+  0% { transform: translateX(-150%) skewX(-15deg); }
+  50% { transform: translateX(150%) skewX(-15deg); }
+  100% { transform: translateX(150%) skewX(-15deg); }
+}
+.shimmer-effect {
+  position: absolute;
+  top: 0; left: -20%; right: -20%; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.035), transparent);
+  animation: shimmer 2s infinite ease-in-out;
+  pointer-events: none;
+}
+.skeleton-block {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Cascading List Entry */
+@keyframes slideUpFade {
+  0%   { opacity: 0; transform: translateY(22px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* Neon Watermark Rank Number */
+.neon-watermark {
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 4rem;
+  font-style: italic;
+  font-weight: 900;
+  color: rgba(255,255,255,0.015);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: color 0.4s ease, transform 0.4s ease;
+  line-height: 1;
+}
+.glass-panel-interactive:hover .neon-watermark,
+.song-row-container:hover .neon-watermark,
+.chart-row:hover .neon-watermark {
+  color: rgba(138, 136, 255, 0.06);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Content Z-index Safety */
+.song-row-content,
+.chart-row-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Equalizer Hover Animation on Cover Art */
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1);   }
+}
+.eq-bar {
+  width: 3px;
+  background: var(--accent-primary);
+  border-radius: 2px;
+  animation: eq-bounce 1s infinite ease-in-out;
+  transform-origin: bottom;
+}
+.eq-bar:nth-child(2) { animation-delay: -0.22s; }
+.eq-bar:nth-child(3) { animation-delay: -0.44s; }
+
+.eq-container {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+  z-index: 10;
+}
+.glass-panel-interactive:hover .eq-container,
+.song-row-container:hover .eq-container,
+.chart-row:hover .eq-container {
+  opacity: 1;
+}
+
+/* Zoom-in entry for modals */
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+.animate-zoom-in {
+  animation: zoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

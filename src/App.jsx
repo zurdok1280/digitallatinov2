@@ -12,8 +12,10 @@ import TopArtistReportModal from './components/TopArtistReportModal';
 import HeavyHittersChart from './components/HeavyHittersChart';
 import CuratorPicksChart from './components/CuratorPicksChart';
 import TiktokerPicksChart from './components/TiktokerPicksChart';
+import CampaignPage from './components/CampaignPage';
 
-function App() {
+
+function Dashboard() {
   const [selectedCountry, setSelectedCountry] = useState('0');
   const [selectedGenre, setSelectedGenre] = useState('0');
   const [selectedCity, setSelectedCity] = useState('0');
@@ -103,44 +105,44 @@ function App() {
   }, [activeView, genresList, selectedGenre]);
 
   useEffect(() => {
+    // AbortController cancels any in-flight request when filters change before it resolves.
+    // This prevents stale data from a slow request overwriting a faster newer one.
+    const controller = new AbortController();
+    const { signal } = controller;
+
     const fetchChartData = async () => {
-      // If we switched to HeavyHitters, reset to its defaults if they aren't already set
-      // This helps avoid the double-load because we can handle it in the same effect or logic
       if (activeView === 'HeavyHitters') {
         if (selectedCountry === 'All' || selectedGenre === 'All') {
           setSelectedCountry(1);
           setSelectedGenre(0);
           setSelectedCity('All');
-          return; // Wait for the state update to trigger this effect again
+          return;
         }
-        
         setIsLoading(true);
         const data = await getDebutSongs(selectedGenre, selectedCountry);
-        setSongs(data);
-        setIsLoading(false);
+        if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       } else if (activeView === 'CuratorPicks') {
         setIsLoading(true);
         const data = await getCuratorPics(selectedGenre, selectedPlaylistType);
-        setSongs(data);
-        setIsLoading(false);
+        if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       } else if (activeView === 'TiktokerPicks') {
         setIsLoading(true);
         const data = await getTiktokPics(selectedGenre);
-        setSongs(data);
-        setIsLoading(false);
+        if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       } else if (activeView === 'DigitalHitsForRadio') {
         setIsLoading(true);
         const data = await getChartDigitalHitsRadio(selectedGenre, selectedCountry, selectedCity);
-        setSongs(data);
-        setIsLoading(false);
+        if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       } else if (activeView === 'Charts') {
         setIsLoading(true);
         const data = await getChartDigital(selectedGenre, selectedCountry, selectedCity);
-        setSongs(data);
-        setIsLoading(false);
+        if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       }
     };
+
     fetchChartData();
+    // Cleanup: abort the pending request when the effect re-runs
+    return () => controller.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, activeView]);
 
@@ -258,4 +260,9 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  if (window.location.pathname === '/campaign') {
+    return <CampaignPage />;
+  }
+  return <Dashboard />;
+}
