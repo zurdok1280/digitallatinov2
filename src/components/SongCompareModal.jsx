@@ -9,6 +9,11 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
   const [playlistsData, setPlaylistsData] = useState([]);
   const [tiktoksData, setTiktoksData] = useState([]);
   
+  // Sorting and Filtering states
+  const [playlistSort, setPlaylistSort] = useState({ key: 'followers_count', direction: 'desc' });
+  const [playlistFilter, setPlaylistFilter] = useState('all');
+  const [tiktokSort, setTiktokSort] = useState({ key: 'tiktok_user_followers', direction: 'desc' });
+  
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -69,6 +74,32 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
       diff: s1Total - s2Total
     };
   }, [vsData]);
+  
+  const playlistTypes = useMemo(() => {
+    const types = new Set(playlistsData.map(p => p.playlist_type).filter(Boolean));
+    return ['all', ...Array.from(types)];
+  }, [playlistsData]);
+
+  const filteredSortedPlaylists = useMemo(() => {
+    let result = [...playlistsData];
+    if (playlistFilter !== 'all') {
+      result = result.filter(p => p.playlist_type === playlistFilter);
+    }
+    result.sort((a, b) => {
+      const valA = a[playlistSort.key] || 0;
+      const valB = b[playlistSort.key] || 0;
+      return playlistSort.direction === 'desc' ? valB - valA : valA - valB;
+    });
+    return result;
+  }, [playlistsData, playlistFilter, playlistSort]);
+
+  const sortedTiktoks = useMemo(() => {
+    return [...tiktoksData].sort((a, b) => {
+      const valA = a[tiktokSort.key] || 0;
+      const valB = b[tiktokSort.key] || 0;
+      return tiktokSort.direction === 'desc' ? valB - valA : valA - valB;
+    });
+  }, [tiktoksData, tiktokSort]);
 
   return (
     <div className={`compare-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
@@ -210,6 +241,24 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
 
               {activeTab === 'playlists' && (
                 <div className="tab-pane animate-fade-in">
+                  <div className="tab-controls">
+                    <div className="control-group">
+                      <label>Tipo:</label>
+                      <select value={playlistFilter} onChange={(e) => setPlaylistFilter(e.target.value)}>
+                        {playlistTypes.map(t => (
+                          <option key={t} value={t}>{t === 'all' ? 'Todos' : t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="control-group">
+                      <button 
+                        className={`sort-btn ${playlistSort.direction === 'asc' ? 'asc' : 'desc'}`}
+                        onClick={() => setPlaylistSort(prev => ({ ...prev, direction: prev.direction === 'desc' ? 'asc' : 'desc' }))}
+                      >
+                        Followers {playlistSort.direction === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                      </button>
+                    </div>
+                  </div>
                   <table className="vs-table">
                     <thead>
                       <tr>
@@ -222,8 +271,8 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {playlistsData.map((row, idx) => (
-                         <tr key={idx} style={{ animationDelay: `${idx * 0.03}s` }} className="animate-slide-up">
+                      {filteredSortedPlaylists.map((row, idx) => (
+                         <tr key={idx} style={{ animationDelay: `${idx * 0.02}s` }} className="animate-slide-up">
                             <td>
                               <div className="playlist-cell">
                                 <p className="p-name">{row.playlist_name}</p>
@@ -248,6 +297,16 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
 
               {activeTab === 'tiktok' && (
                 <div className="tab-pane animate-fade-in">
+                  <div className="tab-controls">
+                    <div className="control-group">
+                      <button 
+                        className={`sort-btn ${tiktokSort.direction === 'asc' ? 'asc' : 'desc'}`}
+                        onClick={() => setTiktokSort(prev => ({ ...prev, direction: prev.direction === 'desc' ? 'asc' : 'desc' }))}
+                      >
+                        Followers {tiktokSort.direction === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                      </button>
+                    </div>
+                  </div>
                   <table className="vs-table">
                     <thead>
                       <tr>
@@ -259,8 +318,8 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {tiktoksData.map((row, idx) => (
-                         <tr key={idx} style={{ animationDelay: `${idx * 0.03}s` }} className="animate-slide-up">
+                      {sortedTiktoks.map((row, idx) => (
+                         <tr key={idx} style={{ animationDelay: `${idx * 0.02}s` }} className="animate-slide-up">
                             <td>
                               <div className="user-cell">
                                 <p className="u-name">{row.user_name}</p>
@@ -483,6 +542,52 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
         .metric-item p { font-size: 1.2rem; font-weight: 800; margin: 0.2rem 0 0 0; }
 
 
+
+        .tab-controls {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 0 1rem 0;
+          gap: 1rem;
+        }
+
+        .control-group {
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          font-size: 0.85rem;
+          color: var(--text-muted);
+        }
+
+        .control-group select {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
+          padding: 4px 12px;
+          border-radius: 8px;
+          outline: none;
+          cursor: pointer;
+        }
+
+        .sort-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 6px 14px;
+          border-radius: 10px;
+          color: white;
+          font-weight: 600;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .sort-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
 
         .compare-tabs-nav {
           display: flex;
