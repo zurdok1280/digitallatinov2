@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { BarChart3 } from 'lucide-react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import SongChart from './components/SongChart';
@@ -13,6 +14,8 @@ import HeavyHittersChart from './components/HeavyHittersChart';
 import CuratorPicksChart from './components/CuratorPicksChart';
 import TiktokerPicksChart from './components/TiktokerPicksChart';
 import CampaignPage from './components/CampaignPage';
+import ComparisonBar from './components/ComparisonBar';
+import SongCompareModal from './components/SongCompareModal';
 
 
 function Dashboard() {
@@ -35,6 +38,19 @@ function Dashboard() {
   const [playlistTypesList, setPlaylistTypesList] = useState([]);
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Comparison States
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [selectedSongs, setSelectedSongs] = useState([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [songForComparison, setSongForComparison] = useState({ s1: null, s2: null });
+
+  // Reset comparison on view change
+  useEffect(() => {
+    setComparisonMode(false);
+    setSelectedSongs([]);
+    setShowCompareModal(false);
+  }, [activeView]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,8 +159,42 @@ function Dashboard() {
     fetchChartData();
     // Cleanup: abort the pending request when the effect re-runs
     return () => controller.abort();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, activeView]);
+
+  // Comparison Handlers
+  const handleToggleComparisonMode = () => {
+    setComparisonMode(!comparisonMode);
+    if (comparisonMode) {
+      setSelectedSongs([]);
+    }
+  };
+
+  const handleSongSelect = (song) => {
+    const isSelected = selectedSongs.some(s => s.cs_song === song.cs_song);
+    
+    if (isSelected) {
+      setSelectedSongs(selectedSongs.filter(s => s.cs_song !== song.cs_song));
+    } else {
+      if (selectedSongs.length < 2) {
+        setSelectedSongs([...selectedSongs, song]);
+      }
+    }
+  };
+
+  const handleStartComparison = () => {
+    if (selectedSongs.length === 2) {
+      setSongForComparison({ s1: selectedSongs[0], s2: selectedSongs[1] });
+      setShowCompareModal(true);
+    }
+  };
+
+  const handleClearComparison = () => {
+    setSelectedSongs([]);
+  };
+
+  const handleRemoveSong = (csSong) => {
+    setSelectedSongs(selectedSongs.filter(s => s.cs_song !== csSong));
+  };
 
   return (
     <div className="app-container">
@@ -169,11 +219,31 @@ function Dashboard() {
           onToggleSidebar={() => setIsSidebarOpen(true)}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
+
+        <div className="filter-header" style={{ justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+          <div className="filter-controls">
+            {/* Comparison Toggle Button */}
+            {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
+              <button 
+                className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
+                onClick={handleToggleComparisonMode}
+                title="Modo Comparación"
+              >
+                <BarChart3 size={18} />
+                <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {activeView === 'Charts' && (
           <SongChart 
             songs={songs} 
             isLoading={isLoading}
-            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
+            comparisonMode={comparisonMode}
+            onSongSelect={handleSongSelect}
+            selectedSongs={selectedSongs}
+            onArtistClick={(artist) => setSelectedArtistReport(artist)}
           />
         )}
 
@@ -181,6 +251,9 @@ function Dashboard() {
           <SongChart 
             songs={songs} 
             isLoading={isLoading}
+            comparisonMode={comparisonMode}
+            onSongSelect={handleSongSelect}
+            selectedSongs={selectedSongs}
             onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
           />
         )}
@@ -206,6 +279,9 @@ function Dashboard() {
           <HeavyHittersChart
             songs={songs}
             isLoading={isLoading}
+            comparisonMode={comparisonMode}
+            onSongSelect={handleSongSelect}
+            selectedSongs={selectedSongs}
             onSongClick={(song) => setSelectedSongPlatform(song)}
           />
         )}
@@ -214,6 +290,9 @@ function Dashboard() {
           <CuratorPicksChart
             songs={songs}
             isLoading={isLoading}
+            comparisonMode={comparisonMode}
+            onSongSelect={handleSongSelect}
+            selectedSongs={selectedSongs}
             onSongClick={(song) => setSelectedSongPlatform(song)}
           />
         )}
@@ -222,6 +301,9 @@ function Dashboard() {
           <TiktokerPicksChart
             songs={songs}
             isLoading={isLoading}
+            comparisonMode={comparisonMode}
+            onSongSelect={handleSongSelect}
+            selectedSongs={selectedSongs}
             onSongClick={(song) => setSelectedSongPlatform(song)}
           />
         )}
@@ -249,6 +331,58 @@ function Dashboard() {
             onClose={() => setSelectedArtistReport(null)}
           />
         )}
+
+        {/* Comparison Components */}
+        <ComparisonBar 
+          selectedSongs={selectedSongs}
+          onCompare={handleStartComparison}
+          onClear={handleClearComparison}
+          onRemoveSong={handleRemoveSong}
+          isActive={comparisonMode}
+        />
+
+        {showCompareModal && (
+          <SongCompareModal 
+            isOpen={showCompareModal}
+            onClose={() => setShowCompareModal(false)}
+            song1={songForComparison.s1}
+            song2={songForComparison.s2}
+          />
+        )}
+
+        <style>{`
+          .btn-toggle-compare {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 0.5rem;
+          }
+
+          .btn-toggle-compare:hover {
+            background: rgba(138, 136, 255, 0.1);
+            border-color: var(--accent-primary);
+          }
+
+          .btn-toggle-compare.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(138, 136, 255, 0.3);
+          }
+
+          @media (max-width: 600px) {
+            .btn-toggle-compare span { display: none; }
+            .btn-toggle-compare { padding: 0.5rem; }
+          }
+        `}</style>
 
         <SearchModal 
           isOpen={isSearchOpen} 

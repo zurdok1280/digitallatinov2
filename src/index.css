@@ -177,7 +177,7 @@ select option {
 /* Responsive Layout Framework */
 .header-container {
   padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;

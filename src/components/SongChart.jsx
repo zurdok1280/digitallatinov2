@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
+import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap } from 'lucide-react';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -107,7 +107,7 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const SongChart = ({ songs, isLoading, onArtistClick }) => {
+const SongChart = ({ songs, isLoading, onArtistClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
   // Generate deterministic "historical" trend data for demonstration purposes
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
@@ -198,6 +198,44 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
           visibility: visible;
           transform: translateY(-50%) translateX(0);
         }
+
+        /* Comparison Styles */
+        .chart-row.selected-for-compare {
+          border-color: var(--accent-primary) !important;
+          background: rgba(138, 136, 255, 0.1) !important;
+          box-shadow: 0 0 20px rgba(138, 136, 255, 0.2);
+        }
+
+        .compare-checkbox-wrapper {
+          padding: 0 0.5rem 0 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+        }
+
+        .compare-checkbox {
+          width: 20px;
+          height: 20px;
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s;
+          color: transparent;
+        }
+
+        .compare-checkbox.checked {
+          background: var(--accent-primary);
+          border-color: var(--accent-primary);
+          color: white;
+          box-shadow: 0 0 10px rgba(138, 136, 255, 0.5);
+        }
+
+        .chart-row:hover .compare-checkbox:not(.checked) {
+          border-color: rgba(255, 255, 255, 0.5);
+        }
       `}</style>
       <div className="grid-base" style={{ gap: '0.5rem' }}>
         {enrichedSongs.map((song, index) => {
@@ -205,14 +243,21 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
           return (
             <div
               key={song.cs_song || index}
-              className="chart-row glass-panel-interactive"
-              onClick={() => onArtistClick({
-                id: song.spotifyartistid || song.cs_song,
-                name: song.artists,
-                imageUrl: song.spotifyid || song.url || song.avatar || '/logo.png',
-                monthlyListeners: song.spotify_streams_total || 0,
-                followers: song.audience_total || 0
-              })}
+              className={`chart-row glass-panel-interactive ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'selected-for-compare' : ''}`}
+              onClick={(e) => {
+                if (comparisonMode) {
+                  e.stopPropagation();
+                  onSongSelect(song);
+                } else {
+                  onArtistClick({
+                    id: song.spotifyartistid || song.cs_song,
+                    name: song.artists,
+                    imageUrl: song.spotifyid || song.url || song.avatar || '/logo.png',
+                    monthlyListeners: song.spotify_streams_total || 0,
+                    followers: song.audience_total || 0
+                  });
+                }
+              }}
               style={{
                 background: index === 0 ? 'rgba(0, 240, 255, 0.05)' : undefined,
                 borderColor: index === 0 ? 'rgba(0, 240, 255, 0.3)' : undefined,
@@ -235,6 +280,13 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
                 if (index !== 0) e.currentTarget.style.background = '';
               }}
             >
+              {comparisonMode && (
+                <div className="compare-checkbox-wrapper">
+                  <div className={`compare-checkbox ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'checked' : ''}`}>
+                    {selectedSongs.some(s => s.cs_song === song.cs_song) && <Zap size={14} fill="currentColor" />}
+                  </div>
+                </div>
+              )}
               <div className="neon-watermark">#{index + 1}</div>
               <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
                 <div className="chart-rank">
@@ -247,7 +299,7 @@ const SongChart = ({ songs, isLoading, onArtistClick }) => {
                 </div>
 
                 <div className="chart-img-wrapper">
-                  <img src={song.spotifyid || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div className="eq-container">
                     <div className="eq-bar" style={{ height: '16px' }} />
                     <div className="eq-bar" style={{ height: '24px' }} />

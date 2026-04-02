@@ -440,3 +440,51 @@ export const getTiktokPics = async (formatId = 0) => {
     return [];
   }
 };
+
+/**
+ * Fetches comparative data for two songs (Charts/Cities).
+ */
+export const getVsSongs = async (csSong1, csSong2) => {
+  if (!csSong1 || !csSong2) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getVsSong/${csSong1}/${csSong2}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching vs songs:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches comparative playlist data for two songs.
+ */
+export const getVsSongPlaylists = async (csSong1, csSong2) => {
+  if (!csSong1 || !csSong2) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getVsSongPlaylists/${csSong1}/${csSong2}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching vs song playlists:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches comparative TikTok data for two songs.
+ */
+export const getVsSongTiktoks = async (csSong1, csSong2) => {
+  if (!csSong1 || !csSong2) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getVsSongTiktoks/${csSong1}/${csSong2}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching vs song tiktoks:", error);
+    return [];
+  }
+};

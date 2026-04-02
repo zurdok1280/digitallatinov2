@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Music } from 'lucide-react';
+import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Music, Zap } from 'lucide-react';
 import { getDebutSongs } from '../services/api';
 
 const rankColors = [
@@ -101,7 +101,7 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const HeavyHittersChart = ({ songs, isLoading, onSongClick }) => {
+const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
     return songs.map((s, idx) => {
@@ -192,6 +192,44 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick }) => {
           visibility: visible;
           transform: translateY(-50%) translateX(0);
         }
+
+        /* Comparison Styles */
+        .chart-row.selected-for-compare {
+          border-color: var(--accent-primary) !important;
+          background: rgba(138, 136, 255, 0.1) !important;
+          box-shadow: 0 0 20px rgba(138, 136, 255, 0.2);
+        }
+
+        .compare-checkbox-wrapper {
+          padding: 0 0.5rem 0 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+        }
+
+        .compare-checkbox {
+          width: 20px;
+          height: 20px;
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s;
+          color: transparent;
+        }
+
+        .compare-checkbox.checked {
+          background: var(--accent-primary);
+          border-color: var(--accent-primary);
+          color: white;
+          box-shadow: 0 0 10px rgba(138, 136, 255, 0.5);
+        }
+
+        .chart-row:hover .compare-checkbox:not(.checked) {
+          border-color: rgba(255, 255, 255, 0.5);
+        }
       `}</style>
       <div className="grid-base" style={{ gap: '0.5rem' }}>
         {enrichedSongs.map((song, index) => {
@@ -202,8 +240,15 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick }) => {
           return (
             <div
               key={index}
-              className="chart-row glass-panel-interactive"
-              onClick={() => onSongClick && onSongClick(song)}
+              className={`chart-row glass-panel-interactive ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'selected-for-compare' : ''}`}
+              onClick={(e) => {
+                if (comparisonMode) {
+                  e.stopPropagation();
+                  onSongSelect(song);
+                } else if (onSongClick) {
+                  onSongClick(song);
+                }
+              }}
               style={{
                 background: index === 0 ? 'rgba(170, 99, 255, 0.05)' : undefined,
                 borderColor: index === 0 ? 'rgba(170, 99, 255, 0.3)' : undefined,
@@ -226,6 +271,13 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick }) => {
                 if (index !== 0) e.currentTarget.style.background = '';
               }}
             >
+              {comparisonMode && (
+                <div className="compare-checkbox-wrapper">
+                  <div className={`compare-checkbox ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'checked' : ''}`}>
+                    {selectedSongs.some(s => s.cs_song === song.cs_song) && <Zap size={14} fill="currentColor" />}
+                  </div>
+                </div>
+              )}
               <div className="neon-watermark">#{index + 1}</div>
               <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
                 <div className="chart-rank">
@@ -238,7 +290,7 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick }) => {
                 </div>
 
                 <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                  <img src={song.img || song.avatar || song.url || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={song.spotifyid || song.img || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div className="eq-container">
                     <div className="eq-bar" style={{ height: '16px' }} />
                     <div className="eq-bar" style={{ height: '24px' }} />
