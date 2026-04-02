@@ -48,8 +48,9 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
 
   const formatNum = (n) => {
     if (n === null || n === undefined) return '0';
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    if (n >= 1000000000) return (n / 1000000000).toFixed(0) + 'B';
+    if (n >= 1000000) return (n / 1000000).toFixed(0) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
     return n.toString();
   };
 

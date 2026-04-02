@@ -5,10 +5,11 @@ import { getArtistData, getMapData, getSongsArtistBySpotifyId, getSongById } fro
 
 const formatNumber = (num) => {
   if (!num) return '0';
-  if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-  return num.toLocaleString();
+  const n = typeof num === 'string' ? parseFloat(num) : num;
+  if (n >= 1000000000) return (n / 1000000000).toFixed(0) + 'B';
+  if (n >= 1000000) return (n / 1000000).toFixed(0) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+  return Math.round(n).toLocaleString();
 };
 
 const Instagram = ({ size = 20, color = "currentColor" }) => (
