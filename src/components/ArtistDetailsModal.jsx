@@ -45,7 +45,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [mapData, setMapData] = useState([]);
   const [isMapLoading, setIsMapLoading] = useState(false);
-  const [selectedMapCountry, setSelectedMapCountry] = useState(artist?.countryId || 0);
+  const [selectedMapCountry, setSelectedMapCountry] = useState(artist?.countryId === '0' || !artist?.countryId ? 1 : artist.countryId);
 
   const [playlistTypes, setPlaylistTypes] = useState([{ name: 'Todos', id: 0 }]);
   const [selectedPlaylistType, setSelectedPlaylistType] = useState(0);
@@ -57,7 +57,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [radioData, setRadioData] = useState([]);
   const [isRadioLoading, setIsRadioLoading] = useState(false);
-  const [selectedRadioCountry, setSelectedRadioCountry] = useState(artist?.countryId || 0);
+  const [selectedRadioCountry, setSelectedRadioCountry] = useState(artist?.countryId === '0' || !artist?.countryId ? 1 : artist.countryId);
 
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);

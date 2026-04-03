@@ -251,7 +251,10 @@ const SongChart = ({ songs, isLoading, onArtistClick, comparisonMode, onSongSele
                 } else {
                   onArtistClick({
                     id: song.spotifyartistid || song.cs_song,
+                    spotifyid: song.spotifyartistid || song.cs_song,
+                    artist: song.artists,
                     name: song.artists,
+                    img: song.spotifyid || song.url || song.avatar || '/logo.png',
                     imageUrl: song.spotifyid || song.url || song.avatar || '/logo.png',
                     monthlyListeners: song.spotify_streams_total || 0,
                     followers: song.audience_total || 0

@@ -546,15 +546,14 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
         .tab-controls {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           padding: 0 0 1rem 0;
-          gap: 1rem;
+          gap: 0.5rem;
         }
 
         .control-group {
           display: flex;
           align-items: center;
-          gap: 0.8rem;
+          gap: 0.5rem;
           font-size: 0.85rem;
           color: var(--text-muted);
         }

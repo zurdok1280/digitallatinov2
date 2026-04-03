@@ -243,7 +243,7 @@ function Dashboard() {
             comparisonMode={comparisonMode}
             onSongSelect={handleSongSelect}
             selectedSongs={selectedSongs}
-            onArtistClick={(artist) => setSelectedArtistReport(artist)}
+            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
           />
         )}
 

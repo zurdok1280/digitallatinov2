@@ -83,7 +83,7 @@ const ComparisonBar = ({ selectedSongs, onCompare, onClear, onRemoveSong, isActi
         .comparison-info {
           display: flex;
           align-items: center;
-          gap: 1rem;
+          gap: 0.5rem;
           flex: 1;
         }
 
