@@ -201,3 +201,51 @@ export const getArtistGraph = async (spotifyId) => {
     return null;
   }
 };
+
+export const getSongsArtistBySpotifyId = async (spotifyId, type = 0) => {
+  if (!spotifyId) return { data: [] };
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongsArtistBySpotifyId/${encodeURIComponent(spotifyId)}/${type}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    // Wrap to match expected { data: [] } response format in user code
+    return Array.isArray(data) ? { data } : (data.data ? data : { data: [] });
+  } catch (error) {
+    console.error("API Error fetching songs by artist:", error);
+    return { data: [] };
+  }
+};
+
+export const getSongById = async (id) => {
+  if (!id) return { data: {} };
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongById/${id}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    console.error("API Error fetching song by id:", error);
+    return { data: {} };
+  }
+};
+
+export const getSongBySpotifyId = async (id) => {
+  if (!id) return { data: {} };
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongBySpotifyId/${id}`);
+    if (response.status === 404) return { data: {} };
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    // Only log actual unexpected errors, not 404
+    return { data: {} };
+  }
+};
+
+export const digitalLatinoApi = {
+  getSongsArtistBySpotifyId,
+  getSongById,
+  getSongBySpotifyId,
+  getArtistData
+};
