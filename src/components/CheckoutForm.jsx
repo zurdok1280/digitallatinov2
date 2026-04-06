@@ -28,8 +28,8 @@ export const CheckoutForm = ({ priceId }) => {
     }
 
     try {
-      //      const createSubResponse = await fetch('https://security.digital-latino.com/api/subscriptions/create-subscription-trial', {
-      const createSubResponse = await fetch('http://localhost:8085/api/subscriptions/create-subscription-trial', {
+           const createSubResponse = await fetch('https://security.digital-latino.com/api/subscriptions/create-subscription-trial', {
+      // const createSubResponse = await fetch('http://localhost:8085/api/subscriptions/create-subscription-trial', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,8 +82,8 @@ export const CheckoutForm = ({ priceId }) => {
 
         //Get new token with updated user info
         try {
-          //          const refreshResponse = await fetch('https://security.digital-latino.com/api/auth/refresh-token', {
-          const refreshResponse = await fetch('http://localhost:8085/api/auth/refresh-token', {
+           const refreshResponse = await fetch('https://security.digital-latino.com/api/auth/refresh-token', {
+         // const refreshResponse = await fetch('http://localhost:8085/api/auth/refresh-token', {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
