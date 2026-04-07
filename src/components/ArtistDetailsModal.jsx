@@ -4,7 +4,7 @@ import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph } from '../services/api';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId } from '../services/api';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -58,6 +58,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const [radioData, setRadioData] = useState([]);
   const [isRadioLoading, setIsRadioLoading] = useState(false);
   const [selectedRadioCountry, setSelectedRadioCountry] = useState(artist?.countryId === '0' || !artist?.countryId ? 1 : artist.countryId);
+
+  const [topSongsData, setTopSongsData] = useState([]);
+  const [isTopSongsLoading, setIsTopSongsLoading] = useState(false);
 
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
@@ -164,6 +167,23 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   useEffect(() => {
     let isMounted = true;
+    const fetchTopSongs = async () => {
+      setIsTopSongsLoading(true);
+      const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1); // fallback to 1 (Global) since countryId from modal might not be strictly country for this endpoint
+      if (isMounted) {
+        setTopSongsData(data || []);
+        setIsTopSongsLoading(false);
+      }
+    };
+    // Fetch only if the tab is selected and we don't have the data yet
+    if (activeTab === 'detalles_cancion' && topSongsData.length === 0) {
+      fetchTopSongs();
+    }
+    return () => { isMounted = false; };
+  }, [artist, activeTab, topSongsData.length]);
+
+  useEffect(() => {
+    let isMounted = true;
     const fetchTiktokers = async () => {
       setIsTiktokersLoading(true);
       const data = await getArtistTiktokers(artist.id);
@@ -253,6 +273,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
           `}</style>
           {[
             { id: 'overview', label: 'Panorama', icon: Activity },
+            ...(artist?.songName ? [{ id: 'detalles_cancion', label: `Detalles de ${artist.songName}`, icon: Music }] : []),
             { id: 'mapa', label: 'Mapa', icon: Map },
             { id: 'playlists', label: 'Playlists Recomendadas', icon: Music },
             { id: 'tiktok', label: 'TikTokers', icon: Users },
@@ -351,6 +372,153 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {activeTab === 'detalles_cancion' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {/* Estadísticas Sociales Rápidas - Horizontal Scroll/Flexbox for Mobile */}
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <TrendingUp size={20} color="var(--accent-primary)" /> Estadísticas Sociales Rápidas
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  overflowX: 'auto',
+                  paddingBottom: '0.5rem',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none'
+                }}>
+                  <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+                  
+                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #E1306C' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                      <InstagramIcon size={16} color="#E1306C" /> Instagram
+                    </div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.followers_total_instagram || 0)}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Seguidores</div>
+                  </div>
+
+                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #ff0050' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                      <Users size={16} color="#ff0050" /> TikTok
+                    </div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.followers_total_tiktok || 0)}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Seguidores</div>
+                  </div>
+
+                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #FF0000' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                      <SquarePlay size={16} color="#FF0000" /> YouTube
+                    </div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.subscribers_total_youtube || 0)}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Suscriptores</div>
+                  </div>
+
+                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #1877F2' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                      <FacebookIcon size={16} color="#1877F2" /> Facebook
+                    </div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.followers_total_facebook || 0)}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Seguidores</div>
+                  </div>
+                  
+                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #1DB954' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                      <Music size={16} color="#1DB954" /> Spotify
+                    </div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.monthly_listeners || artist.monthlyListeners)}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Mensuales</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de Recomendación Top 5 */}
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  <Trophy size={20} color="#ffb700" /> Top 5 Recomendación de Canciones
+                </h3>
+                
+                {isTopSongsLoading ? (
+                  <div className="flex-center" style={{ height: '200px' }}>
+                    <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
+                  </div>
+                ) : topSongsData.length === 0 ? (
+                  <div className="flex-center" style={{ height: '100px', color: 'var(--text-muted)' }}>
+                    No hay canciones top disponibles
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {topSongsData.slice(0, 5).map((song, i) => (
+                      <div key={i} className="glass-panel" style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '1.5rem', 
+                        padding: '1rem',
+                        flexWrap: 'wrap' 
+                      }}>
+                        <div style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          borderRadius: '50%', 
+                          background: 'rgba(255,255,255,0.05)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          color: 'var(--text-muted)'
+                        }}>
+                          {i + 1}
+                        </div>
+                        
+                        <img 
+                          src={song.avatar || artist.imageUrl || '/logo.png'} 
+                          alt={song.song} 
+                          style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} 
+                        />
+                        
+                        <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                          <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {song.song}
+                          </h4>
+                          <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            {song.label || 'Independiente'}
+                          </p>
+                          {song.release_date && (
+                             <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+                               Fecha: {song.release_date}
+                             </p>
+                          )}
+                        </div>
+                        
+                        <div style={{ marginLeft: 'auto' }}>
+                          <button 
+                            className="btn-primary" 
+                            style={{ 
+                              padding: '0.5rem 1.5rem', 
+                              borderRadius: '20px', 
+                              background: 'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))',
+                              border: 'none',
+                              color: 'white',
+                              fontWeight: 600,
+                              cursor: song.spotifyid ? 'pointer' : 'not-allowed',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              opacity: song.spotifyid ? 1 : 0.5
+                            }}
+                            onClick={() => { if (song.spotifyid) window.open(`/campaign?spotifyId=${song.spotifyid}`, '_blank'); }}
+                            disabled={!song.spotifyid}
+                          >
+                            <Activity size={16} /> Ver Campaña
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
             

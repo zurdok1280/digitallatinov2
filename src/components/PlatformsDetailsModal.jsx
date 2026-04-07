@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users, Music, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, Share2, MessageCircle, ThumbsUp, Disc, Trophy, ExternalLink, ChevronUp, ChevronDown, MapPin, Video } from 'lucide-react';
+import { X, Users, Music, Activity, SquarePlay, Headphones, TrendingUp, Heart, Globe, Map, Loader2, Share2, MessageCircle, ThumbsUp, Disc, Trophy, ExternalLink, ChevronUp, ChevronDown, MapPin, Video } from 'lucide-react';
 import ArtistMap from './ArtistMap';
+import BoxDisplayInfoPlatform from './buttonSongInfo/BoxDisplayInfoPlatform';
 import { getSongPlatformData, getCityDataForSong, getSongTopPlaylists, getPlaylistTypes } from '../services/api';
 
 const formatNumber = (num) => {
@@ -207,8 +208,9 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
           `}</style>
           {[
             { id: 'overview', label: 'Panorama', icon: Activity },
-            { id: 'playlists', label: 'Top Playlists', icon: Trophy },
-            { id: 'mapa', label: 'Mapa', icon: Map }
+            { id: 'mapa', label: 'Mapa', icon: Map },
+            { id: 'info_plataformas', label: 'Info de Plataformas', icon: Globe },
+            { id: 'playlists', label: 'Top Playlists', icon: Trophy }
           ].map(tab => (
             <button 
               key={tab.id}
@@ -458,6 +460,10 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
                     </div>
                   )}
                 </div>
+              )}
+
+              {activeTab === 'info_plataformas' && (
+                <BoxDisplayInfoPlatform data={platformData} />
               )}
             </>
           )}

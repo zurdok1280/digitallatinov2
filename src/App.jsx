@@ -16,6 +16,7 @@ import TiktokerPicksChart from './components/TiktokerPicksChart';
 import CampaignPage from './components/CampaignPage';
 import ComparisonBar from './components/ComparisonBar';
 import SongCompareModal from './components/SongCompareModal';
+import FloatingScrollButtons from './components/FloatingScrollButtons';
 
 
 function Dashboard() {
@@ -389,6 +390,7 @@ function Dashboard() {
           onClose={() => setIsSearchOpen(false)} 
           onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: 0 })} 
         />
+        <FloatingScrollButtons />
       </main>
     </div>
   );

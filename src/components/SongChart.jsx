@@ -257,7 +257,9 @@ const SongChart = ({ songs, isLoading, onArtistClick, comparisonMode, onSongSele
                     img: song.spotifyid || song.url || song.avatar || '/logo.png',
                     imageUrl: song.spotifyid || song.url || song.avatar || '/logo.png',
                     monthlyListeners: song.spotify_streams_total || 0,
-                    followers: song.audience_total || 0
+                    followers: song.audience_total || 0,
+                    songName: song.song,
+                    cs_song: song.cs_song
                   });
                 }
               }}

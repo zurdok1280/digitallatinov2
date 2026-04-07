@@ -35,10 +35,10 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             width: '6px', 
             height: '6px', 
             borderRadius: '50%', 
-            background: activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700',
-            boxShadow: `0 0 8px ${activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700'}`
+            background: activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700',
+            boxShadow: `0 0 8px ${activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700'}`
           }} />
-          {activeView === 'Platforms' ? 'Platforms' : activeView === 'HeavyHitters' ? 'Heavy Hitters' : activeView === 'CuratorPicks' ? 'Curator Picks' : activeView === 'TiktokerPicks' ? 'Tiktoker Picks' : activeView === 'DigitalHitsForRadio' ? 'Digital Hits for Radio' : 'Charts'}
+          {activeView === 'Artists' ? 'Artist Analytics' : activeView === 'Platforms' ? 'Platforms' : activeView === 'HeavyHitters' ? 'Heavy Hitters' : activeView === 'CuratorPicks' ? 'Curator Picks' : activeView === 'TiktokerPicks' ? 'Tiktoker Picks' : activeView === 'DigitalHitsForRadio' ? 'Digital Hits for Radio' : 'Charts'}
         </div>
       </div>
 
