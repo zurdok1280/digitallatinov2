@@ -226,7 +226,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div style={{ position: 'relative', height: '200px', width: '100%' }}>
+        <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%' }}>
           <img src={artist.imageUrl} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg-dark), transparent)' }} />
           <button 
@@ -236,11 +236,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             <X size={24} />
           </button>
           
-          <div style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem' }}>
-            <img src={artist.imageUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
+          <div className="modal-hero-info" style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem' }}>
+            <img className="modal-hero-avatar" src={artist.imageUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
             <div>
-              <h1 style={{ fontSize: '3rem', fontWeight: 800, margin: 0, lineHeight: 1 }}>{artist.name}</h1>
-              <p style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
+              <h1 className="modal-hero-title" style={{ fontSize: '3rem', fontWeight: 800, margin: 0, lineHeight: 1 }}>{artist.name}</h1>
+              <p className="modal-hero-monthly" style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
                 <Users size={16} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'text-bottom' }}/> 
                 {(artist.monthlyListeners / 1000000).toFixed(1)}M Monthly Listeners
               </p>

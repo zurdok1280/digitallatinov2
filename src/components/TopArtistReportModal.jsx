@@ -133,7 +133,7 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
     .slice(0, 10);
 
   return (
-    <div className="modal-overlay animate-fade-in" style={{ 
+    <div className="modal-overlay modal-overlay-padding animate-fade-in" style={{ 
       position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', 
       zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' 
     }}>
@@ -142,8 +142,8 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
         display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid var(--glass-border)' 
       }}>
         
-        {/* Header — cover image style (same as PlatformsDetailsModal) */}
-        <div style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
+        {/* Header — cover image style */}
+        <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
           <img
             src={artist.img || artist.avatar || artist.url || '/logo.png'}
             alt={artist.artist}
@@ -156,14 +156,15 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
           >
             <X size={20} />
           </button>
-          <div style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem', zIndex: 10 }}>
+          <div className="modal-hero-info" style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem', zIndex: 10 }}>
             <img
+              className="modal-hero-avatar"
               src={artist.img || artist.avatar || artist.url || '/logo.png'}
               alt={artist.artist}
               style={{ width: '90px', height: '90px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}
             />
             <div style={{ paddingBottom: '0.25rem' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>{artist.artist}</h2>
+              <h2 className="modal-hero-title" style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>{artist.artist}</h2>
               <div style={{ display: 'flex', gap: '1.2rem', marginTop: '0.4rem' }}>
                 <span style={{ color: 'var(--accent-primary)', fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
                   <Users size={13} /> {formatNumber(artist.followers_total)} Seguidores

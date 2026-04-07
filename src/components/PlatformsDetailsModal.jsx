@@ -148,7 +148,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
 
   return (
     <div 
-      className="flex-center" 
+      className="flex-center modal-overlay-padding" 
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
     >
       <div 
@@ -156,7 +156,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
         style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
+        <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
           <img src={imageUrl} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg-dark), rgba(0,0,0,0.2))' }} />
           <button 
@@ -166,15 +166,15 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
             <X size={24} />
           </button>
           
-          <div style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem', zIndex: 10 }}>
-            <img src={imageUrl} style={{ width: '100px', height: '100px', borderRadius: '12px', border: '3px solid var(--accent-primary)', objectFit: 'cover', boxShadow: '0 8px 16px rgba(0,0,0,0.3)' }} />
+          <div className="modal-hero-info" style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem', zIndex: 10 }}>
+            <img className="modal-hero-avatar" src={imageUrl} style={{ width: '100px', height: '100px', borderRadius: '12px', border: '3px solid var(--accent-primary)', objectFit: 'cover', boxShadow: '0 8px 16px rgba(0,0,0,0.3)' }} />
             <div>
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{song.song}</h1>
+              <h1 className="modal-hero-title" style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{song.song}</h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', fontWeight: 500, margin: '0.4rem 0 0 0', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
                 {song.artists || song.artist}
               </p>
               {platformData && (
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
                   <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><Headphones size={14}/> {formatNumber(platformData.spotify_streams_total)} Spotify</span>
                   <span style={{ color: '#ff0050', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><SquarePlay size={14}/> {formatNumber(platformData.tiktok_views_total)} TikTok</span>
                 </div>

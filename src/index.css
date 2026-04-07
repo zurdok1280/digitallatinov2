@@ -423,3 +423,259 @@ select option {
 .animate-zoom-in {
   animation: zoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Modal overlay compact on mobile */
+@media (max-width: 768px) {
+  .modal-overlay-padding {
+    padding: 0.75rem !important;
+  }
+}
+@media (max-width: 480px) {
+  .modal-overlay-padding {
+    padding: 0.25rem !important;
+    align-items: flex-end !important;
+  }
+  /* Modal takes full height from bottom on very small screens */
+  .modal-overlay-padding > div {
+    max-height: 96vh !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+}
+
+/* ============================================================ */
+/* RESPONSIVE — Tablet & Mobile (max-width: 768px)              */
+/* ============================================================ */
+@media (max-width: 768px) {
+  /* Main layout */
+  .main-content {
+    padding: 0.75rem;
+  }
+
+  /* Header */
+  .header-container {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  .header-filters {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .filter-group {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 120px;
+  }
+  .filter-group select {
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+
+  /* Chart rows */
+  .chart-row {
+    padding: 0.55rem 0.75rem;
+    gap: 0.4rem;
+  }
+  .chart-left {
+    gap: 0.5rem;
+  }
+  .chart-rank {
+    min-width: 26px;
+  }
+  .chart-rank span {
+    font-size: 1.35rem !important;
+  }
+  .chart-img-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+  .chart-title {
+    font-size: 0.9rem;
+  }
+  .chart-artist {
+    font-size: 0.75rem;
+  }
+  .chart-score {
+    font-size: 1.1rem;
+  }
+  .chart-score-label {
+    display: none;
+  }
+  .neon-watermark {
+    font-size: 2.5rem;
+    right: 12px;
+  }
+
+  /* Artist metrics — hide second metric column, keep only first */
+  .artist-metrics-container {
+    gap: 0.5rem !important;
+  }
+  .artist-metrics-container .metric-item:last-child {
+    display: none;
+  }
+  .metric-item {
+    min-width: 55px !important;
+  }
+
+  /* Score tooltip — flip to appear above and on the left so it doesn't overflow */
+  .score-tooltip {
+    right: auto !important;
+    left: 0 !important;
+    width: 220px !important;
+  }
+  .score-tooltip::after {
+    right: auto !important;
+    left: 12px !important;
+  }
+
+  /* Comparison bar */
+  .comparison-bar-container {
+    width: 95% !important;
+    bottom: 1rem !important;
+  }
+  .comparison-bar-glass {
+    border-radius: 16px !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .btn-primary-glass span,
+  .btn-secondary-glass {
+    font-size: 0.75rem !important;
+  }
+
+  /* Floating scroll buttons — move left of comparison bar reach */
+  .floating-scroll-btn {
+    width: 38px !important;
+    height: 38px !important;
+    right: 0.75rem !important;
+  }
+  .floating-scroll-btn-up { bottom: 5rem !important; }
+  .floating-scroll-btn-down { bottom: 1.5rem !important; }
+}
+
+/* ============================================================ */
+/* RESPONSIVE — Small phones (max-width: 480px)                 */
+/* ============================================================ */
+@media (max-width: 480px) {
+  /* Main padding */
+  .main-content {
+    padding: 0.5rem;
+  }
+
+  /* Header: stack logo/search on top, filters below */
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
+  }
+  .header-filters {
+    gap: 0.4rem;
+  }
+  .filter-group {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+
+  /* Chart rows — tighter on very small screens */
+  .chart-row {
+    padding: 0.45rem 0.5rem;
+    gap: 0.35rem;
+  }
+  .chart-rank span {
+    font-size: 1.15rem !important;
+  }
+  .chart-img-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+  .chart-title {
+    font-size: 0.82rem;
+  }
+  .chart-artist {
+    font-size: 0.7rem;
+  }
+  .chart-score {
+    font-size: 1rem;
+  }
+  .neon-watermark {
+    display: none;
+  }
+
+  /* Modals — full screen almost */
+  .modal-overlay-padding {
+    padding: 0.5rem !important;
+  }
+
+  /* Artist analytics — hide playlists metric label too */
+  .artist-metrics-container .metric-item {
+    min-width: 48px !important;
+  }
+
+  /* Comparison bar */
+  .selected-songs-mini {
+    gap: 0.3rem;
+  }
+  .mini-song-card {
+    max-width: 100px !important;
+  }
+}
+
+/* ============================================================ */
+/* MODAL RESPONSIVE HELPERS (used via inline style overrides)   */
+/* ============================================================ */
+@media (max-width: 768px) {
+  /* ArtistDetailsModal & PlatformsDetailsModal hero header scaling */
+  .modal-hero-title {
+    font-size: 1.8rem !important;
+  }
+  .modal-hero-avatar {
+    width: 70px !important;
+    height: 70px !important;
+  }
+  .modal-hero-header {
+    height: 140px !important;
+  }
+  .modal-hero-info {
+    left: 1rem !important;
+    gap: 0.75rem !important;
+    bottom: 1rem !important;
+  }
+  .modal-hero-monthly {
+    font-size: 0.8rem !important;
+  }
+  .modal-content-padding {
+    padding: 1rem !important;
+  }
+  
+  /* Tab bar on modals */
+  .modal-tab-bar {
+    gap: 1rem !important;
+    padding: 0 1rem !important;
+  }
+  .modal-tab-btn {
+    padding: 1rem 0 !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* TopArtistReportModal — panorama stats grid */
+  .panorama-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-hero-title {
+    font-size: 1.4rem !important;
+  }
+  .modal-hero-avatar {
+    width: 55px !important;
+    height: 55px !important;
+  }
+  .modal-hero-header {
+    height: 120px !important;
+  }
+  .panorama-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+}
