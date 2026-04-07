@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Users, Music, Activity, TrendingUp, Heart, Map, Loader2, Share2, MessageCircle, Play, Info, Disc, Video, Film, Headphones, Globe, MapPin, Calendar } from 'lucide-react';
 import ArtistMap from './ArtistMap';
 import { getArtistData, getMapData, getSongsArtistBySpotifyId, getSongById } from '../services/api';
+import SearchableSelect from './SearchableSelect';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -382,14 +383,17 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
                   <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Globe size={20} color="var(--accent-primary)" /> Mapa de Oyentes
                   </h3>
-                  <select 
-                    value={selectedMapCountry}
-                    onChange={(e) => setSelectedMapCountry(Number(e.target.value))}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '8px', outline: 'none' }}
-                  >
-                    <option value={0}>Global</option>
-                    {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
-                  </select>
+                  <div style={{ minWidth: '180px' }}>
+                    <SearchableSelect
+                      options={[
+                        { value: '0', label: 'Global' },
+                        ...countries.map(c => ({ value: String(c.id), label: c.country_name }))
+                      ]}
+                      value={String(selectedMapCountry)}
+                      onChange={(val) => setSelectedMapCountry(Number(val))}
+                      placeholder="Seleccionar País"
+                    />
+                  </div>
                 </div>
                 <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
                   <ArtistMap data={audienceData.map(c => ({ ...c, city_name: c.city_name || c.cityname, current_listeners: c.current_listeners || c.listeners, city_lat: c.city_lat || c.citylat, city_lng: c.city_lng || c.citylng }))} />

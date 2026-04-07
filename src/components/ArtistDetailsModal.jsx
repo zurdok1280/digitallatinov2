@@ -5,6 +5,7 @@ import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
 import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId } from '../services/api';
+import SearchableSelect from './SearchableSelect';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -641,25 +642,17 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Ciudades core ordenadas por concentración y volumen métrico de escuchas activos.</p>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filtrar por país:</span>
-                  <select
-                    value={selectedMapCountry}
-                    onChange={(e) => setSelectedMapCountry(e.target.value)}
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      color: 'var(--text-main)',
-                      border: '1px solid var(--glass-border)',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: 'var(--radius-sm)',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    <option value={0}>Global (Todos)</option>
-                    {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
-                  </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filtrar por país:</span>
+                  <SearchableSelect
+                    options={[
+                      { value: '0', label: 'Global (Todos)' },
+                      ...countries.map(c => ({ value: String(c.id), label: c.country_name }))
+                    ]}
+                    value={String(selectedMapCountry)}
+                    onChange={(val) => setSelectedMapCountry(val)}
+                    placeholder="Global (Todos)"
+                  />
                 </div>
               </div>
               
@@ -748,24 +741,15 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   )}
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo de Playlist:</span>
-                  <select
-                    value={selectedPlaylistType}
-                    onChange={(e) => setSelectedPlaylistType(e.target.value)}
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      color: 'var(--text-main)',
-                      border: '1px solid var(--glass-border)',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: 'var(--radius-sm)',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    {playlistTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '180px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo:</span>
+                  <SearchableSelect
+                    options={playlistTypes.map(t => ({ value: String(t.id), label: t.name }))}
+                    value={String(selectedPlaylistType)}
+                    onChange={(val) => setSelectedPlaylistType(val)}
+                    searchable={false}
+                    placeholder="Tipo de Playlist"
+                  />
                 </div>
               </div>
 

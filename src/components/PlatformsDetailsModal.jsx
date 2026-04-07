@@ -3,6 +3,7 @@ import { X, Users, Music, Activity, SquarePlay, Headphones, TrendingUp, Heart, G
 import ArtistMap from './ArtistMap';
 import BoxDisplayInfoPlatform from './buttonSongInfo/BoxDisplayInfoPlatform';
 import { getSongPlatformData, getCityDataForSong, getSongTopPlaylists, getPlaylistTypes } from '../services/api';
+import SearchableSelect from './SearchableSelect';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -346,14 +347,15 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
                       </div>
                     </div>
 
-                    <select
-                      value={selectedPlaylistType}
-                      onChange={(e) => setSelectedPlaylistType(e.target.value)}
-                    >
-                      {playlistTypes.map(type => (
-                        <option key={type.id} value={type.id}>{type.name}</option>
-                      ))}
-                    </select>
+                    <div style={{ minWidth: '180px' }}>
+                      <SearchableSelect
+                        options={playlistTypes.map(type => ({ value: String(type.id), label: type.name }))}
+                        value={String(selectedPlaylistType)}
+                        onChange={(val) => setSelectedPlaylistType(val)}
+                        searchable={false}
+                        placeholder="Seleccionar Tipo"
+                      />
+                    </div>
                   </div>
 
                   {isLoadingPlaylists ? (
@@ -478,15 +480,17 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Visualiza la presencia de la canción en los mercados y ciudades a nivel global.</p>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filtrar por país:</span>
-                  <select
-                    value={selectedMapCountry}
-                    onChange={(e) => setSelectedMapCountry(e.target.value)}
-                  >
-                    <option value={0}>Global (Todos)</option>
-                    {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
-                  </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '180px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filtrar por país:</span>
+                  <SearchableSelect
+                    options={[
+                      { value: '0', label: 'Global (Todos)' },
+                      ...countries.map(c => ({ value: String(c.id), label: c.country_name }))
+                    ]}
+                    value={String(selectedMapCountry)}
+                    onChange={(val) => setSelectedMapCountry(Number(val) || val)}
+                    placeholder="Global (Todos)"
+                  />
                 </div>
               </div>
               
