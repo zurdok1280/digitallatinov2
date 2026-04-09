@@ -624,6 +624,17 @@ select option {
 /* MODAL RESPONSIVE HELPERS (used via inline style overrides)   */
 /* ============================================================ */
 @media (max-width: 768px) {
+  /* Overlay - reduce outer margin */
+  .modal-overlay-padding {
+    padding: 1rem !important;
+  }
+  
+  /* Container - take more height/width */
+  .modal-container {
+    max-height: 98vh !important;
+    max-width: 98% !important;
+  }
+
   /* ArtistDetailsModal & PlatformsDetailsModal hero header scaling */
   .modal-hero-title {
     font-size: 1.8rem !important;
@@ -631,6 +642,7 @@ select option {
   .modal-hero-avatar {
     width: 70px !important;
     height: 70px !important;
+    border-width: 2px !important;
   }
   .modal-hero-header {
     height: 140px !important;
@@ -643,39 +655,66 @@ select option {
   .modal-hero-monthly {
     font-size: 0.8rem !important;
   }
-  .modal-content-padding {
+  
+  /* Internal Content Padding */
+  .modal-content-area {
     padding: 1rem !important;
   }
   
   /* Tab bar on modals */
   .modal-tab-bar {
-    gap: 1rem !important;
+    gap: 1.25rem !important;
     padding: 0 1rem !important;
   }
-  .modal-tab-btn {
+  .modal-tab-bar button {
     padding: 1rem 0 !important;
     font-size: 0.8rem !important;
   }
 
-  /* TopArtistReportModal — panorama stats grid */
-  .panorama-stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+  /* Grid Adjustments */
+  .stats-grid-responsive {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  
+  .song-list-responsive {
+    gap: 0.5rem !important;
+  }
+  
+  .song-item-responsive {
+    padding: 0.6rem !important;
   }
 }
 
 @media (max-width: 480px) {
+  .modal-overlay-padding {
+    padding: 0.5rem !important;
+  }
+  
   .modal-hero-title {
     font-size: 1.4rem !important;
   }
   .modal-hero-avatar {
-    width: 55px !important;
-    height: 55px !important;
+    width: 60px !important;
+    height: 60px !important;
   }
   .modal-hero-header {
     height: 120px !important;
   }
+  
+  .modal-container {
+    max-height: 100vh !important;
+    border-radius: 12px 12px 0 0 !important; /* Bottom-sheet-like feel if needed */
+  }
+
+  .stats-grid-responsive {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Panorama stats specific grid */
   .panorama-stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 0.5rem !important;
   }
 }

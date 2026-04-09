@@ -219,11 +219,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   return (
     <div 
-      className="flex-center" 
+      className="flex-center modal-overlay-padding" 
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
     >
       <div 
-        className="glass-panel animate-fade-in" 
+        className="glass-panel animate-fade-in modal-container" 
         style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
@@ -252,7 +252,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         {/* Tabs */}
         <div 
           ref={tabsRef}
-          className="custom-scrollbar"
+          className="custom-scrollbar modal-tab-bar"
           style={{ 
             display: 'flex', 
             borderBottom: '1px solid var(--glass-border)', 
@@ -306,9 +306,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '2rem', flex: 1 }}>
+        <div className="modal-content-area" style={{ padding: '2rem', flex: 1 }}>
           {activeTab === 'overview' && (
-            <div className="grid-base" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+            <div className="grid-base stats-grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {isLoading ? (
                 <div className="flex-center" style={{ width: '100%', padding: '3rem', flexDirection: 'column' }}>
                   <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />

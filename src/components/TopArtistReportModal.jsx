@@ -138,7 +138,7 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
       position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', 
       zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' 
     }}>
-      <div className="modal-content glass-panel animate-zoom-in" style={{ 
+      <div className="modal-content glass-panel animate-zoom-in modal-container" style={{ 
         width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'hidden', 
         display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid var(--glass-border)' 
       }}>
@@ -181,6 +181,7 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
         {/* Tabs — underline style (same as PlatformsDetailsModal) */}
         <div
           ref={tabsRef}
+          className="modal-tab-bar"
           style={{
             display: 'flex', borderBottom: '1px solid var(--glass-border)',
             padding: '0 2rem', gap: '2rem',
@@ -214,12 +215,12 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
         </div>
 
         {/* Content Area */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1.5rem' }} className="custom-scrollbar">
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1.5rem' }} className="custom-scrollbar modal-content-area">
           
           {activeTab === 'panorama' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {/* Platform Overview Cards (TOP) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              <div className="panorama-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <PlatformOverviewCard 
                   title="TikTok Presence" 
                   icon={TiktokIcon} 

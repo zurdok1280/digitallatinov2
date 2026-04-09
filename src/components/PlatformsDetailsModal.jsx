@@ -153,7 +153,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
     >
       <div 
-        className="glass-panel animate-fade-in" 
+        className="glass-panel animate-fade-in modal-container" 
         style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
@@ -187,7 +187,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
         {/* Tabs */}
         <div 
           ref={tabsRef}
-          className="custom-scrollbar"
+          className="custom-scrollbar modal-tab-bar"
           style={{ 
             display: 'flex', 
             borderBottom: '1px solid var(--glass-border)', 
@@ -239,7 +239,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '2rem', flex: 1, minHeight: '300px' }}>
+        <div className="modal-content-area" style={{ padding: '2rem', flex: 1, minHeight: '300px' }}>
           {isLoading && activeTab !== 'mapa' ? (
             <div className="flex-center" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
               <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
