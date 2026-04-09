@@ -389,6 +389,7 @@ function Dashboard() {
           isOpen={isSearchOpen} 
           onClose={() => setIsSearchOpen(false)} 
           onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: 0 })} 
+          onSongClick={(song) => setSelectedSongPlatform(song)}
         />
         <FloatingScrollButtons />
       </main>

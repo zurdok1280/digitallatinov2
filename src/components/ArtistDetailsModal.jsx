@@ -46,7 +46,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [mapData, setMapData] = useState([]);
   const [isMapLoading, setIsMapLoading] = useState(false);
-  const [selectedMapCountry, setSelectedMapCountry] = useState(artist?.countryId === '0' || !artist?.countryId ? 1 : artist.countryId);
+  const [selectedMapCountry, setSelectedMapCountry] = useState(artist?.countryId ?? 1);
 
   const [playlistTypes, setPlaylistTypes] = useState([{ name: 'Todos', id: 0 }]);
   const [selectedPlaylistType, setSelectedPlaylistType] = useState(0);
@@ -58,7 +58,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [radioData, setRadioData] = useState([]);
   const [isRadioLoading, setIsRadioLoading] = useState(false);
-  const [selectedRadioCountry, setSelectedRadioCountry] = useState(artist?.countryId === '0' || !artist?.countryId ? 1 : artist.countryId);
+  const [selectedRadioCountry, setSelectedRadioCountry] = useState(artist?.countryId ?? 1);
 
   const [topSongsData, setTopSongsData] = useState([]);
   const [isTopSongsLoading, setIsTopSongsLoading] = useState(false);
@@ -95,7 +95,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
       setIsLoading(true);
       const data = await getArtistData(artist.id);
       if (isMounted) {
-        setArtistData(data);
+        // Enforce object extraction if array is returned
+        const artistObject = Array.isArray(data) ? data[0] : (data?.data?.[0] || data);
+        setArtistData(artistObject || {});
         setIsLoading(false);
       }
     };
@@ -310,11 +312,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
           {activeTab === 'overview' && (
             <div className="grid-base stats-grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {isLoading ? (
-                <div className="flex-center" style={{ width: '100%', padding: '3rem', flexDirection: 'column' }}>
+                <div className="flex-center" style={{ width: '100%', padding: '3rem', flexDirection: 'column', gridColumn: '1 / -1' }}>
                   <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
                   <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>Cargando inteligencia y estadísticas...</p>
                 </div>
-              ) : (
+              ) : artistData?.monthly_listeners && artistData?.monthly_listeners > 0 ? (
                 <>
                   <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(29, 185, 84, 0.05)' }}>
                     <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -372,6 +374,16 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     <p className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{artistData?.popularity || 0}/100</p>
                   </div>
                 </>
+              ) : (
+                <div className="flex-center" style={{ gridColumn: '1 / -1', height: '300px', flexDirection: 'column', textAlign: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
+                  <Activity size={48} style={{ opacity: 0.2 }} />
+                  <div>
+                    <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>Información no disponible</h3>
+                    <p style={{ maxWidth: '400px', margin: '0 auto', fontSize: '0.9rem' }}>
+                      La información de métricas completas para este artista no está disponible en este momento. La estamos recopilando, por favor regresa más tarde.
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           )}
