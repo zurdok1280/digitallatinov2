@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { searchSpotify } from "../services/api";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/useAuth";
 import "./ArtistSelectionModal.css";
 
 export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
   const { toast } = useToast();
+  const { token, login } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [artists, setArtists] = useState([]);
@@ -58,6 +60,27 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
 
     setIsSaving(true);
     try {
+      const response = await fetch("http://localhost:8085/api/auth/select-artist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          artistId: selectedArtist.id,
+          artistName: selectedArtist.name
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Error en la conexión con el servidor");
+      }
+
+      const data = await response.json();
+      if (data && data.token) {
+        login(data.token); // Actualizamos el token renovado del backend
+      }
+
       await onArtistSelected(selectedArtist.id, selectedArtist.name);
       toast({
         title: "Artista vinculado",
@@ -68,7 +91,7 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
     } catch (error) {
       toast({
         title: "Error de vinculación",
-        description: "Hubo un error al seleccionar el artista. Inténtalo de nuevo.",
+        description: "Hubo un error al guardar el artista en la base de datos. Inténtalo de nuevo.",
       });
       setIsSaving(false);
     }

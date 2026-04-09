@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -14,6 +14,24 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import { ArtistSelectionModal } from './components/ArtistSelectionModal';
 import MyArtist from './pages/MyArtist';
 import SongDetailsModal from './components/SongDetailsModal';
+
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+
+const RequireAdmin = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== 'ADMIN') {
+    return <div className="min-h-[80vh] flex items-center justify-center text-gray-400 font-bold p-8">Acceso Denegado. Se requiere rol de Administrador.</div>;
+  }
+  return children;
+};
+
+const withLazy = (Component) => (props) => (
+  <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center text-[#c193ff] animate-pulse font-bold">Cargando módulo...</div>}>
+    <Component {...props} />
+  </Suspense>
+);
+
+const AdminPanelLazy = withLazy(AdminPanel);
 
 function App() {
   const [selectedCountry, setSelectedCountry] = useState('All');
@@ -31,6 +49,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const { user, logout, updateUser } = useAuth();
   const [showArtistSelection, setShowArtistSelection] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.role === 'ARTIST') {
@@ -52,6 +71,7 @@ function App() {
       }
       updateUser({ allowedArtistId: artistId, allowedArtistName: artistName });
       setShowArtistSelection(false);
+      navigate('/');
     } catch (error) {
        console.error("Error setting artist:", error);
     }
@@ -127,6 +147,7 @@ function App() {
               />
             } />
             <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
+            <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
           </Routes>
