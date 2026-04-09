@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, useEffect, useRef, useCallb
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 
+import { toast } from './use-toast';
+
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
@@ -23,6 +25,7 @@ export const AuthProvider = ({ children }) => {
       clearTimeout(logoutTimer.current);
       logoutTimer.current = null;
     }
+    toast({ title: 'Cerrando sesión', description: 'Has salido exitosamente' });
     navigate('/', { replace: true });
   }, [navigate]);
 
@@ -98,6 +101,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('authToken', newToken);
     try {
       const decoded = jwtDecode(newToken);
+      
+      if (decoded.role === 'ARTIST') {
+        const stId = localStorage.getItem(`artistId_${decoded.email}`);
+        const stName = localStorage.getItem(`artistName_${decoded.email}`);
+        if (stId) {
+          decoded.allowedArtistId = stId;
+          decoded.allowedArtistName = stName;
+        }
+      }
+      
       setUser(decoded);
       setToken(newToken);
       startLogoutTimer(decoded.exp);

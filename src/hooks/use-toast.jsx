@@ -22,6 +22,10 @@ export function toast({ title, description, variant = "default" }) {
   }, TOAST_TIMEOUT);
 }
 
+export function dismissToast(toastId) {
+  dispatch({ type: "DISMISS_TOAST", toastId });
+}
+
 export function useToast() {
   const [state, setState] = useState(memoryState);
   useEffect(() => {
@@ -30,5 +34,5 @@ export function useToast() {
       listeners = listeners.filter(l => l !== setState);
     };
   }, []);
-  return { toasts: state, toast };
+  return { toasts: state, toast, dismissToast };
 }

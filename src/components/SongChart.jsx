@@ -115,6 +115,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick 
   // Generate deterministic "historical" trend data for demonstration purposes
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
+    
     return songs.map((s, idx) => {
       let val = 100 - (s.rk * 0.3);
       const trend = [];
@@ -240,7 +241,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick 
                     const { toast } = await import('../hooks/use-toast');
                     toast({
                       title: "🔒 Acceso Restringido",
-                      description: "Este artista no pertenece a tu catálogo. Haz upgrade a Premium para interactuar con paneles de terceros.",
+                      description: "Acceso restringido, este artista no pertenece a tu selección actual.",
                       className: "bg-red-500/10 border-red-500/50 text-white backdrop-blur-md rounded-xl",
                     });
                     return;

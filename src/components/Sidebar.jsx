@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BarChart2, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2 } from 'lucide-react';
+import { Home, BarChart2, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -53,6 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div style={{ padding: '0 1.5rem', marginTop: '1rem', flex: 1, overflowY: 'auto' }}>
           <p style={{ fontSize: '0.75rem', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8, marginBottom: '1rem', fontWeight: 600 }}>Navegación</p>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+
             {user?.role === 'ARTIST' && user?.allowedArtistId && (
               <SidebarItem 
                 icon={Mic2} 
@@ -69,6 +70,14 @@ const Sidebar = ({ isOpen, onClose }) => {
             <SidebarItem icon={Camera} label="Curator Picks" />
             <SidebarItem icon={Wand2} label="Tiktoker Picks" />
             <SidebarItem icon={Radio} label="Digital Hits for Radio" />
+            {user?.role === 'ADMIN' && (
+              <SidebarItem 
+                icon={Settings} 
+                label="Panel Admin" 
+                active={location.pathname === '/admin'}
+                onClick={() => handleNavigate('/admin')}
+              />
+            )}
           </nav>
         </div>
       </aside>
