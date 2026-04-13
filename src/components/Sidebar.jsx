@@ -1,7 +1,17 @@
-import React from 'react';
-import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X } from 'lucide-react';
+import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const Sidebar = ({ isOpen, onClose, activeView, setActiveView }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const handleNavigate = (path) => {
+    navigate(path);
+    onClose();
+  };
+
   return (
     <>
       {/* Overlay backdrop */}
@@ -39,41 +49,58 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView }) => {
           </button>
         </div>
 
-        <div style={{ padding: '0 1.5rem', marginTop: '1rem' }}>
+        <div style={{ padding: '0 1.5rem', marginTop: '1rem', flex: 1, overflowY: 'auto' }}>
           <p style={{ fontSize: '0.75rem', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8, marginBottom: '1rem', fontWeight: 600 }}>Navegación</p>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <SidebarItem icon={Home} label="Charts" active={activeView === 'Charts' || !activeView} onClick={() => { setActiveView('Charts'); onClose(); }} />
-            <SidebarItem icon={ChartBarBig} label="Platforms" active={activeView === 'Platforms'} onClick={() => { setActiveView('Platforms'); onClose(); }} />
+            {user?.role === 'ARTIST' && user?.allowedArtistId && (
+              <SidebarItem 
+                icon={Mic2} 
+                label={(user.allowedArtistName || '').toUpperCase()} 
+                active={location.pathname === '/my-artist'}
+                onClick={() => handleNavigate('/my-artist')}
+                isVIP={true}
+              />
+            )}
+            <SidebarItem icon={Home} label="Charts" active={(location.pathname === '/' && (activeView === 'Charts' || !activeView))} onClick={() => { setActiveView('Charts'); handleNavigate('/'); }} />
+            <SidebarItem icon={ChartBarBig} label="Platforms" active={activeView === 'Platforms'} onClick={() => { setActiveView('Platforms'); handleNavigate('/'); }} />
             <SidebarItem 
               icon={Headphones} 
               label="Artists Analytics" 
               active={activeView === 'Artists'} 
-              onClick={() => { setActiveView('Artists'); onClose(); }} 
+              onClick={() => { setActiveView('Artists'); handleNavigate('/'); }} 
             />
             <SidebarItem 
               icon={Sparkles} 
               label="Heavy Hitters" 
               active={activeView === 'HeavyHitters'} 
-              onClick={() => { setActiveView('HeavyHitters'); onClose(); }} 
+              onClick={() => { setActiveView('HeavyHitters'); handleNavigate('/'); }} 
             />
             <SidebarItem 
               icon={Camera} 
               label="Curator Picks" 
               active={activeView === 'CuratorPicks'} 
-              onClick={() => { setActiveView('CuratorPicks'); onClose(); }} 
+              onClick={() => { setActiveView('CuratorPicks'); handleNavigate('/'); }} 
             />
             <SidebarItem 
               icon={Wand2} 
               label="Tiktoker Picks" 
               active={activeView === 'TiktokerPicks'} 
-              onClick={() => { setActiveView('TiktokerPicks'); onClose(); }} 
+              onClick={() => { setActiveView('TiktokerPicks'); handleNavigate('/'); }} 
             />
             <SidebarItem 
               icon={Radio} 
               label="Digital Hits for Radio" 
               active={activeView === 'DigitalHitsForRadio'} 
-              onClick={() => { setActiveView('DigitalHitsForRadio'); onClose(); }} 
+              onClick={() => { setActiveView('DigitalHitsForRadio'); handleNavigate('/'); }} 
             />
+            {user?.role === 'ADMIN' && (
+              <SidebarItem 
+                icon={Settings} 
+                label="Panel Admin" 
+                active={location.pathname === '/admin'}
+                onClick={() => handleNavigate('/admin')}
+              />
+            )}
           </nav>
         </div>
       </aside>
@@ -81,7 +108,7 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView }) => {
   );
 };
 
-const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
+const SidebarItem = ({ icon: Icon, label, active, onClick, isVIP }) => (
   <button
     onClick={onClick}
     style={{
@@ -90,18 +117,19 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
       gap: '1rem',
       padding: '0.8rem 1rem',
       borderRadius: '8px',
-      background: active ? 'rgba(255,255,255,0.2)' : 'transparent',
-      color: active ? 'white' : 'rgba(255,255,255,0.85)',
+      background: active ? (isVIP ? 'rgba(255,234,167,0.2)' : 'rgba(255,255,255,0.2)') : 'transparent',
+      color: active ? (isVIP ? '#ffeaa7' : 'white') : 'rgba(255,255,255,0.85)',
       transition: 'all 0.2s',
       width: '100%',
       textAlign: 'left',
       fontSize: '1.05rem',
-      fontWeight: active ? 600 : 400
+      fontWeight: active ? 600 : 400,
+      border: isVIP && active ? '1px solid rgba(255,234,167,0.3)' : '1px solid transparent'
     }}
     onMouseEnter={(e) => {
       if (!active) {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-        e.currentTarget.style.color = 'white';
+        e.currentTarget.style.background = isVIP ? 'rgba(255,234,167,0.1)' : 'rgba(255,255,255,0.1)';
+        e.currentTarget.style.color = isVIP ? '#fff3ce' : 'white';
       }
     }}
     onMouseLeave={(e) => {
@@ -111,7 +139,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
       }
     }}
   >
-    <Icon size={20} />
+    <Icon size={20} color={active && isVIP ? '#ffeaa7' : (isVIP && !active ? 'rgba(255,234,167,0.8)' : undefined)} />
     {label}
   </button>
 );

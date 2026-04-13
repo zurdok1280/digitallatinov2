@@ -488,3 +488,25 @@ export const getVsSongTiktoks = async (csSong1, csSong2) => {
     return [];
   }
 };
+
+export const getSongBySpotifyId = async (id) => {
+  if (!id) return { data: {} };
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongBySpotifyId/${id}`);
+    if (response.status === 404) return { data: {} };
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { data: {} };
+  }
+};
+
+export const digitalLatinoApi = {
+  getSongsArtistBySpotifyId,
+  getSongById,
+  getSongBySpotifyId,
+  getArtistData
+};
+
+

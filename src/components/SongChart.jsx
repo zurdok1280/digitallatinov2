@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap } from 'lucide-react';
+import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
   '#00e676', '#ff3366', '#74b9ff', '#a29bfe', '#fdcb6e',
   '#1db954', '#e056fd', '#00cec9', '#fd79a8', '#ffeaa7'
 ];
+
 
 const Sparkline = ({ data, color }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -107,10 +109,14 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const SongChart = ({ songs, isLoading, onArtistClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
+
   // Generate deterministic "historical" trend data for demonstration purposes
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
+    
     return songs.map((s, idx) => {
       let val = 100 - (s.rk * 0.3);
       const trend = [];
@@ -146,6 +152,164 @@ const SongChart = ({ songs, isLoading, onArtistClick, comparisonMode, onSongSele
     if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title="Subió" />;
     if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title="Bajó" />;
     return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+  };
+
+  const renderRow = (song, index, isTeaser = false) => {
+    const rowColor = rankColors[index % rankColors.length];
+    const isSelected = selectedSongs.some(s => s.cs_song === song.cs_song);
+
+    if (isTeaser) {
+      return (
+        <div
+          key={song.cs_song || index}
+          className="chart-row glass-panel-interactive"
+          style={{ opacity: 0.5, pointerEvents: 'none', position: 'relative' }}
+        >
+          <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
+            <div className="chart-rank">
+              <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
+                {song.rk}
+              </span>
+              <div style={{ marginTop: '0.15rem' }}>
+                {renderMovement(song.movement)}
+              </div>
+            </div>
+
+            <div className="chart-img-wrapper" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+            </div>
+
+            <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
+              <h3 className="chart-title">{song.song}</h3>
+              <p className="chart-artist">{song.artists}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={song.cs_song || index}
+        className={`chart-row glass-panel-interactive ${isSelected ? 'selected-for-compare' : ''}`}
+        onClick={(e) => {
+          if (comparisonMode) {
+            e.stopPropagation();
+            onSongSelect(song);
+          } else {
+            onSongClick(song);
+          }
+        }}
+        style={{
+          background: index === 0 ? 'rgba(0, 240, 255, 0.05)' : undefined,
+          borderColor: index === 0 ? 'rgba(0, 240, 255, 0.3)' : undefined,
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s, background 0.3s'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateX(8px)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
+          if (index !== 0) e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateX(0)';
+          e.currentTarget.style.boxShadow = 'none';
+          if (index !== 0) e.currentTarget.style.background = '';
+        }}
+      >
+        {comparisonMode && (
+          <div className="compare-checkbox-wrapper">
+            <div className={`compare-checkbox ${isSelected ? 'checked' : ''}`}>
+              {isSelected && <Zap size={14} fill="currentColor" />}
+            </div>
+          </div>
+        )}
+
+        <div className="neon-watermark">#{index + 1}</div>
+
+        <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
+          <div className="chart-rank">
+            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
+              {song.rk}
+            </span>
+            <div style={{ marginTop: '0.15rem' }}>
+              {renderMovement(song.movement)}
+            </div>
+          </div>
+
+          <div className="chart-img-wrapper">
+            <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div className="eq-container">
+              <div className="eq-bar" style={{ height: '16px' }} />
+              <div className="eq-bar" style={{ height: '24px' }} />
+              <div className="eq-bar" style={{ height: '12px' }} />
+            </div>
+            <div className="flex-center" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.opacity = 1} onMouseLeave={(e) => e.currentTarget.style.opacity = 0}>
+              <Play size={20} color="#fff" />
+            </div>
+          </div>
+
+          <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
+            <h3 className="chart-title" style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: 700 }}>{song.song}</h3>
+            <p 
+              className="chart-artist" 
+              style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'inline-block' }}
+              onMouseEnter={(e) => e.target.style.color = '#8c52ff'}
+              onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.6)'}
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (user?.role === 'ARTIST') {
+                  const allowedId = String(user.allowedArtistId);
+                  const normalizeStr = (str) => String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                  const allowedName = normalizeStr(user.allowedArtistName || '');
+                  const songArtistsStr = normalizeStr(song.artists || '');
+
+                  if (String(song.spotifyartistid || song.cs_song) !== allowedId && (!allowedName || !songArtistsStr.includes(allowedName))) {
+                    const { toast } = await import('../hooks/use-toast');
+                    toast({
+                      title: "🔒 Acceso Restringido",
+                      description: "Acceso restringido, este artista no pertenece a tu selección actual.",
+                      className: "bg-red-500/10 border-red-500/50 text-white backdrop-blur-md rounded-xl",
+                    });
+                    return;
+                  }
+                }
+                onArtistClick({
+                  id: song.spotifyartistid || song.cs_song,
+                  spotifyid: song.spotifyartistid || song.cs_song,
+                  name: song.artists,
+                  imageUrl: song.avatar || song.url || song.spotifyid,
+                  monthlyListeners: song.spotify_streams_total || 0,
+                  followers: song.audience_total || 0,
+                  artist: song.artists,
+                  img: song.spotifyid || song.url || song.avatar || '/logo.png',
+                  songName: song.song,
+                  cs_song: song.cs_song
+                });
+              }}
+            >
+              {song.artists}
+            </p>
+          </div>
+        </div>
+
+        <Sparkline data={song.trend} color={rowColor} />
+
+        <div className="score-info-container" style={{ textAlign: 'right', minWidth: '60px' }}>
+          <div className="text-gradient chart-score">
+            {song.score != null ? Number(song.score).toFixed(1) : '0.0'}
+          </div>
+          <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
+            Score <Info size={11} style={{ opacity: 0.7 }} />
+          </span>
+          
+          <div className="score-tooltip">
+            El <strong style={{ color: '#fff' }}>Score Digital</strong> es una métrica del 1 al 100 que evalúa el nivel de exposición de una canción basado en streams, playlists, engagement social y distribución geográfica.
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -238,105 +402,76 @@ const SongChart = ({ songs, isLoading, onArtistClick, comparisonMode, onSongSele
         }
       `}</style>
       <div className="grid-base" style={{ gap: '0.5rem' }}>
-        {enrichedSongs.map((song, index) => {
-          const rowColor = rankColors[index % rankColors.length];
-          return (
-            <div
-              key={song.cs_song || index}
-              className={`chart-row glass-panel-interactive ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'selected-for-compare' : ''}`}
-              onClick={(e) => {
-                if (comparisonMode) {
-                  e.stopPropagation();
-                  onSongSelect(song);
-                } else {
-                  onArtistClick({
-                    id: song.spotifyartistid || song.cs_song,
-                    spotifyid: song.spotifyartistid || song.cs_song,
-                    artist: song.artists,
-                    name: song.artists,
-                    img: song.spotifyid || song.url || song.avatar || '/logo.png',
-                    imageUrl: song.spotifyid || song.url || song.avatar || '/logo.png',
-                    monthlyListeners: song.spotify_streams_total || 0,
-                    followers: song.audience_total || 0,
-                    songName: song.song,
-                    cs_song: song.cs_song
-                  });
-                }
-              }}
-              style={{
-                background: index === 0 ? 'rgba(0, 240, 255, 0.05)' : undefined,
-                borderColor: index === 0 ? 'rgba(0, 240, 255, 0.3)' : undefined,
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden',
-                opacity: 0,
-                animation: 'slideUpFade 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                animationDelay: `${index * 0.06}s`,
-                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s, background 0.3s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateX(8px)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
-                if (index !== 0) e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateX(0)';
-                e.currentTarget.style.boxShadow = 'none';
-                if (index !== 0) e.currentTarget.style.background = '';
-              }}
-            >
-              {comparisonMode && (
-                <div className="compare-checkbox-wrapper">
-                  <div className={`compare-checkbox ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'checked' : ''}`}>
-                    {selectedSongs.some(s => s.cs_song === song.cs_song) && <Zap size={14} fill="currentColor" />}
-                  </div>
+        {token ? (
+          enrichedSongs.map((song, index) => renderRow(song, index, false))
+        ) : (
+          <>
+            {enrichedSongs.slice(0, 20).map((song, index) => renderRow(song, index, false))}
+            
+            {enrichedSongs.length > 20 && (
+              <div style={{ position: 'relative', marginTop: '1rem' }} className="glass-panel">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem' }}>
+                  {enrichedSongs.slice(20, 23).map((song, index) => renderRow(song, 20 + index, true))}
                 </div>
-              )}
-              <div className="neon-watermark">#{index + 1}</div>
-              <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
-                <div className="chart-rank">
-                  <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
-                    {song.rk}
-                  </span>
-                  <div style={{ marginTop: '0.15rem' }}>
-                    {renderMovement(song.movement)}
-                  </div>
-                </div>
-
-                <div className="chart-img-wrapper">
-                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div className="eq-container">
-                    <div className="eq-bar" style={{ height: '16px' }} />
-                    <div className="eq-bar" style={{ height: '24px' }} />
-                    <div className="eq-bar" style={{ height: '12px' }} />
-                  </div>
-                </div>
-
-                <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
-                  <h3 className="chart-title">{song.song}</h3>
-                  <p className="chart-artist">{song.artists}</p>
-                </div>
-              </div>
-
-              {/* Responsive Trend Sparkline */}
-              <Sparkline data={song.trend} color={rowColor} />
-
-              <div className="score-info-container" style={{ textAlign: 'right', minWidth: '60px' }}>
-                <div className="text-gradient chart-score">
-                  {song.score != null ? Number(song.score).toFixed(1) : '0.0'}
-                </div>
-                <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                  Score <Info size={11} style={{ opacity: 0.7 }} />
-                </span>
                 
-                {/* Score Disclaimer Tooltip based on User Image */}
-                <div className="score-tooltip">
-                  El <strong style={{ color: '#fff' }}>Score Digital</strong> es una métrica del 1 al 100 que evalúa el nivel de exposición de una canción basado en streams, playlists, engagement social y distribución geográfica.
+                {/* Overlay CTA */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to bottom, rgba(15,17,26,0) 0%, rgba(15,17,26,0.6) 60%, rgba(15,17,26,0.9) 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10,
+                  borderRadius: 'inherit',
+                  padding: '1.5rem'
+                }}>
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #ff3366, #c193ff)', 
+                    padding: '0.8rem', 
+                    borderRadius: '50%', 
+                    marginBottom: '0.8rem', 
+                    boxShadow: '0 0 15px rgba(255, 51, 102, 0.4)' 
+                  }}>
+                    <Lock size={22} color="white" />
+                  </div>
+                  <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.3rem', textAlign: 'center', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                    ¿Quieres ver más allá del Top 20?
+                  </h2>
+                  <p style={{ color: '#d1d5db', fontSize: '0.9rem', marginBottom: '1.2rem', textAlign: 'center', maxWidth: '350px' }}>
+                    Accede a rankings completos y métricas avanzadas
+                  </p>
+                  <button 
+                    onClick={onLoginClick}
+                    style={{
+                      background: 'linear-gradient(135deg, #ff3366, #c193ff)',
+                      border: 'none',
+                      padding: '0.6rem 1.8rem',
+                      borderRadius: '30px',
+                      color: 'white',
+                      fontWeight: '700',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 15px rgba(255, 51, 102, 0.3)',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 51, 102, 0.5)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.3)';
+                    }}
+                  >
+                    Ver ranking completo
+                  </button>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            )}
+          </>
+        )}
       </div>
     </div>
   );

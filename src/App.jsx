@@ -1,7 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
 import { BarChart3 } from 'lucide-react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
+import { LoginForm } from './components/LoginForm';
 import SongChart from './components/SongChart';
 import ArtistDetailsModal from './components/ArtistDetailsModal';
 import PlatformsDetailsModal from './components/PlatformsDetailsModal';
@@ -17,6 +21,31 @@ import CampaignPage from './components/CampaignPage';
 import ComparisonBar from './components/ComparisonBar';
 import SongCompareModal from './components/SongCompareModal';
 import FloatingScrollButtons from './components/FloatingScrollButtons';
+import { Toaster } from './components/Toaster';
+import PaymentPage from './components/PaymentPage';
+
+import AuthCallbackPage from './pages/AuthCallbackPage';
+import { ArtistSelectionModal } from './components/ArtistSelectionModal';
+import MyArtist from './pages/MyArtist';
+import SongDetailsModal from './components/SongDetailsModal';
+
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+
+const RequireAdmin = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== 'ADMIN') {
+    return <div className="min-h-[80vh] flex items-center justify-center text-gray-400 font-bold p-8">Acceso Denegado. Se requiere rol de Administrador.</div>;
+  }
+  return children;
+};
+
+const withLazy = (Component) => (props) => (
+  <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center text-[#c193ff] animate-pulse font-bold">Cargando módulo...</div>}>
+    <Component {...props} />
+  </Suspense>
+);
+
+const AdminPanelLazy = withLazy(AdminPanel);
 
 
 function Dashboard() {
@@ -33,6 +62,8 @@ function Dashboard() {
   const [selectedFormat, setSelectedFormat] = useState('0');
   const [selectedPlaylistType, setSelectedPlaylistType] = useState('0');
   
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [countriesList, setCountriesList] = useState([]);
   const [genresList, setGenresList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
@@ -52,6 +83,35 @@ function Dashboard() {
     setSelectedSongs([]);
     setShowCompareModal(false);
   }, [activeView]);
+  const { user, logout, updateUser } = useAuth();
+  const [showArtistSelection, setShowArtistSelection] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.role === 'ARTIST') {
+      if (!user.allowedArtistId) {
+        setShowArtistSelection(true);
+      } else {
+        setShowArtistSelection(false);
+      }
+    } else {
+      setShowArtistSelection(false);
+    }
+  }, [user]);
+
+  const handleArtistSelected = async (artistId, artistName) => {
+    try {
+      if (user?.email) {
+        localStorage.setItem(`artistId_${user.email}`, artistId);
+        localStorage.setItem(`artistName_${user.email}`, artistName);
+      }
+      updateUser({ allowedArtistId: artistId, allowedArtistName: artistName });
+      setShowArtistSelection(false);
+      navigate('/');
+    } catch (error) {
+       console.error("Error setting artist:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -198,7 +258,8 @@ function Dashboard() {
   };
 
   return (
-    <div className="app-container">
+    <>
+      <div className="app-container">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} activeView={activeView} setActiveView={setActiveView} />
       <main className="main-content">
         <Header 
@@ -221,180 +282,202 @@ function Dashboard() {
           onOpenSearch={() => setIsSearchOpen(true)}
         />
 
-        <div className="filter-header" style={{ justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-          <div className="filter-controls">
-            {/* Comparison Toggle Button */}
-            {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
-              <button 
-                className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
-                onClick={handleToggleComparisonMode}
-                title="Modo Comparación"
-              >
-                <BarChart3 size={18} />
-                <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
-              </button>
-            )}
-          </div>
-        </div>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <div className="filter-header" style={{ justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                <div className="filter-controls">
+                  {/* Comparison Toggle Button */}
+                  {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
+                    <button 
+                      className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
+                      onClick={handleToggleComparisonMode}
+                      title="Modo Comparación"
+                    >
+                      <BarChart3 size={18} />
+                      <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
 
-        {activeView === 'Charts' && (
-          <SongChart 
-            songs={songs} 
-            isLoading={isLoading}
-            comparisonMode={comparisonMode}
-            onSongSelect={handleSongSelect}
-            selectedSongs={selectedSongs}
-            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
-          />
-        )}
+              {activeView === 'Charts' && (
+                <SongChart 
+                  songs={songs} 
+                  isLoading={isLoading}
+                  comparisonMode={comparisonMode}
+                  onSongSelect={handleSongSelect}
+                  selectedSongs={selectedSongs}
+                  onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
+                  onSongClick={setSelectedSong}
+                  onLoginClick={() => setIsLoginModalOpen(true)}
+                />
+              )}
 
-        {activeView === 'DigitalHitsForRadio' && (
-          <SongChart 
-            songs={songs} 
-            isLoading={isLoading}
-            comparisonMode={comparisonMode}
-            onSongSelect={handleSongSelect}
-            selectedSongs={selectedSongs}
-            onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
-          />
-        )}
+              {activeView === 'DigitalHitsForRadio' && (
+                <SongChart 
+                  songs={songs} 
+                  isLoading={isLoading}
+                  comparisonMode={comparisonMode}
+                  onSongSelect={handleSongSelect}
+                  selectedSongs={selectedSongs}
+                  onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
+                  onSongClick={setSelectedSong}
+                  onLoginClick={() => setIsLoginModalOpen(true)}
+                />
+              )}
 
-        {activeView === 'Platforms' && (
-          <TopPlatformsChart
-            selectedCountry={selectedCountry}
-            selectedGenre={selectedGenre}
-            selectedPlatform={selectedPlatform}
-            onSongClick={(song) => setSelectedSongPlatform(song)}
-          />
-        )}
+              {activeView === 'Platforms' && (
+                <TopPlatformsChart
+                  selectedCountry={selectedCountry}
+                  selectedGenre={selectedGenre}
+                  selectedPlatform={selectedPlatform}
+                  onSongClick={(song) => setSelectedSongPlatform(song)}
+                />
+              )}
 
-        {activeView === 'Artists' && (
-          <TopArtistsChart
-            selectedCountry={selectedCountry}
-            selectedGenre={selectedGenre}
-            onArtistClick={(artist) => setSelectedArtistReport(artist)}
-          />
-        )}
+              {activeView === 'Artists' && (
+                <TopArtistsChart
+                  selectedCountry={selectedCountry}
+                  selectedGenre={selectedGenre}
+                  onArtistClick={(artist) => setSelectedArtistReport(artist)}
+                />
+              )}
 
-        {activeView === 'HeavyHitters' && (
-          <HeavyHittersChart
-            songs={songs}
-            isLoading={isLoading}
-            comparisonMode={comparisonMode}
-            onSongSelect={handleSongSelect}
-            selectedSongs={selectedSongs}
-            onSongClick={(song) => setSelectedSongPlatform(song)}
-          />
-        )}
+              {activeView === 'HeavyHitters' && (
+                <HeavyHittersChart
+                  songs={songs}
+                  isLoading={isLoading}
+                  comparisonMode={comparisonMode}
+                  onSongSelect={handleSongSelect}
+                  selectedSongs={selectedSongs}
+                  onSongClick={(song) => setSelectedSongPlatform(song)}
+                />
+              )}
 
-        {activeView === 'CuratorPicks' && (
-          <CuratorPicksChart
-            songs={songs}
-            isLoading={isLoading}
-            comparisonMode={comparisonMode}
-            onSongSelect={handleSongSelect}
-            selectedSongs={selectedSongs}
-            onSongClick={(song) => setSelectedSongPlatform(song)}
-          />
-        )}
+              {activeView === 'CuratorPicks' && (
+                <CuratorPicksChart
+                  songs={songs}
+                  isLoading={isLoading}
+                  comparisonMode={comparisonMode}
+                  onSongSelect={handleSongSelect}
+                  selectedSongs={selectedSongs}
+                  onSongClick={(song) => setSelectedSongPlatform(song)}
+                />
+              )}
 
-        {activeView === 'TiktokerPicks' && (
-          <TiktokerPicksChart
-            songs={songs}
-            isLoading={isLoading}
-            comparisonMode={comparisonMode}
-            onSongSelect={handleSongSelect}
-            selectedSongs={selectedSongs}
-            onSongClick={(song) => setSelectedSongPlatform(song)}
-          />
-        )}
+              {activeView === 'TiktokerPicks' && (
+                <TiktokerPicksChart
+                  songs={songs}
+                  isLoading={isLoading}
+                  comparisonMode={comparisonMode}
+                  onSongSelect={handleSongSelect}
+                  selectedSongs={selectedSongs}
+                  onSongClick={(song) => setSelectedSongPlatform(song)}
+                />
+              )}
 
-        {selectedArtist && (
-          <ArtistDetailsModal 
-            artist={selectedArtist} 
-            countries={countriesList}
-            onClose={() => setSelectedArtist(null)} 
-          />
-        )}
-
-        {selectedSongPlatform && (
-          <PlatformsDetailsModal 
-            song={selectedSongPlatform} 
-            countries={countriesList}
-            onClose={() => setSelectedSongPlatform(null)} 
-          />
-        )}
-
-        {selectedArtistReport && (
-          <TopArtistReportModal
-            artist={selectedArtistReport}
-            countries={countriesList}
-            onClose={() => setSelectedArtistReport(null)}
-          />
-        )}
-
-        {/* Comparison Components */}
-        <ComparisonBar 
-          selectedSongs={selectedSongs}
-          onCompare={handleStartComparison}
-          onClear={handleClearComparison}
-          onRemoveSong={handleRemoveSong}
-          isActive={comparisonMode}
-        />
-
-        {showCompareModal && (
-          <SongCompareModal 
-            isOpen={showCompareModal}
-            onClose={() => setShowCompareModal(false)}
-            song1={songForComparison.s1}
-            song2={songForComparison.s2}
-          />
-        )}
-
-        <style>{`
-          .btn-toggle-compare {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-right: 0.5rem;
-          }
-
-          .btn-toggle-compare:hover {
-            background: rgba(138, 136, 255, 0.1);
-            border-color: var(--accent-primary);
-          }
-
-          .btn-toggle-compare.active {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 15px rgba(138, 136, 255, 0.3);
-          }
-
-          @media (max-width: 600px) {
-            .btn-toggle-compare span { display: none; }
-            .btn-toggle-compare { padding: 0.5rem; }
-          }
-        `}</style>
-
-        <SearchModal 
-          isOpen={isSearchOpen} 
-          onClose={() => setIsSearchOpen(false)} 
-          onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: 0 })} 
-          onSongClick={(song) => setSelectedSongPlatform(song)}
-        />
-        <FloatingScrollButtons />
+              <FloatingScrollButtons />
+            </>
+          } />
+          
+          <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
+          <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        </Routes>
       </main>
     </div>
-  );
+
+    {/* MODALES GLOBALES */}
+    <SearchModal 
+      isOpen={isSearchOpen} 
+      onClose={() => setIsSearchOpen(false)} 
+      onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: 0 })} 
+      onSongClick={(song) => setSelectedSongPlatform(song)}
+    />
+
+    {selectedArtist && user && (
+      <ArtistDetailsModal 
+        artist={selectedArtist} 
+        countries={countriesList}
+        genres={genresList}
+        cities={citiesList}
+        selectedCountry={selectedCountry}
+        setSelectedCountry={setSelectedCountry}
+        selectedGenre={selectedGenre}
+        setSelectedGenre={setSelectedGenre}
+        selectedCity={selectedCity}
+        setSelectedCity={setSelectedCity}
+        onToggleSidebar={() => setIsSidebarOpen(true)}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        user={user}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        onLogoutClick={logout}
+        onClose={() => setSelectedArtist(null)}
+      />
+    )}
+
+    {selectedSongPlatform && (
+      <PlatformsDetailsModal 
+        song={selectedSongPlatform} 
+        countries={countriesList}
+        onClose={() => setSelectedSongPlatform(null)} 
+      />
+    )}
+
+    {selectedArtistReport && (
+      <TopArtistReportModal
+        artist={selectedArtistReport}
+        countries={countriesList}
+        onClose={() => setSelectedArtistReport(null)}
+      />
+    )}
+
+    <ComparisonBar 
+      selectedSongs={selectedSongs}
+      onCompare={handleStartComparison}
+      onClear={handleClearComparison}
+      onRemoveSong={handleRemoveSong}
+      isActive={comparisonMode}
+    />
+
+    {showCompareModal && (
+      <SongCompareModal 
+        isOpen={showCompareModal}
+        onClose={() => setShowCompareModal(false)}
+        song1={songForComparison.s1}
+        song2={songForComparison.s2}
+      />
+    )}
+
+    {selectedSong && (
+      <SongDetailsModal
+        song={selectedSong}
+        onClose={() => setSelectedSong(null)}
+      />
+    )}
+
+    {isLoginModalOpen && (
+      <div 
+        className="flex-center"
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, padding: '1rem' }}
+        onClick={(e) => e.target === e.currentTarget && setIsLoginModalOpen(false)}
+      >
+        <div style={{ width: '100%', maxWidth: '450px' }}>
+          <LoginForm onClose={() => setIsLoginModalOpen(false)} />
+        </div>
+      </div>
+    )}
+
+    <ArtistSelectionModal
+      isOpen={showArtistSelection}
+      onArtistSelected={handleArtistSelected}
+    />
+    
+    <Toaster />
+  </>
+);
 }
 
 export default function App() {

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform } from 'lucide-react';
+import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User, LogOut } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
+import { useLocation } from 'react-router-dom';
 
-const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, onToggleSidebar, onOpenSearch }) => {
+const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick }) => {
 
   // Build option arrays for SearchableSelect
   const countryOptions = [
@@ -15,6 +16,9 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
     ...cities.filter(c => c.id !== 0).map(c => ({ value: String(c.id), label: c.city_name }))
   ];
 
+  const location = useLocation();
+  const showFilters = location.pathname === '/';
+
   return (
     <header className="glass-panel header-container">
       <div className="flex-center" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
@@ -23,9 +27,67 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             <Menu size={28} />
           </button>
           <img src="/logo.png" alt="DigitalLatino Logo" style={{ height: '35px', objectFit: 'contain' }} />
-          <button onClick={onOpenSearch} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', marginLeft: '0.5rem', padding: '0.2rem' }}>
-            <Search size={24} />
-          </button>
+          {location.pathname !== '/my-artist' && (
+            <button onClick={onOpenSearch} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', marginLeft: '0.5rem', padding: '0.2rem' }}>
+              <Search size={24} />
+            </button>
+          )}
+        </div>
+
+        {/* Auth Section */}
+        <div className="flex-center" style={{ gap: '1rem' }}>
+          {user ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                  <span style={{ opacity: 0.7 }}>Hola,</span> {user.name}
+                </span>
+              </div>
+              <button
+                onClick={onLogoutClick}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--glass-border)',
+                  color: '#8c52ff',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              >
+                <LogOut size={16} />
+                <span className="hidden md:inline">Cerrar sesión</span>
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onLoginClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: '#8c52ff',
+                border: '1px solid var(--glass-border)',
+                color: '#fff',
+                padding: '0.4rem 0.8rem',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#7c42df'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#8c52ff'}
+            >
+              <User size={16} />
+              <span>Log in / Sign in</span>
+            </button>
+          )}
         </div>
         <div 
           className="animate-fade-in"
@@ -55,42 +117,66 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
         </div>
       </div>
 
-      <div className="header-filters">
-        {/* Country Filter - Hidden in Curator Picks and Tiktoker Picks */}
-        {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
+      {showFilters && (
+        <div className="header-filters">
+          {/* Country Filter */}
+          {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
           <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#e62479' }}>
               <Globe size={16} />
               <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>PAÍS/REGIÓN</span>
             </div>
-            <SearchableSelect
-              options={countryOptions}
-              value={String(selectedCountry)}
-              onChange={(val) => setSelectedCountry(val)}
-              placeholder="Global"
-            />
+       
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                color: 'var(--text-main)',
+                border: '1px solid var(--glass-border)',
+                padding: '0.5rem 0.8rem',
+                borderRadius: 'var(--radius-sm)',
+                outline: 'none',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                width: '100%'
+              }}
+            >
+              <option value="All">País...</option>
+              {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
+            </select>
           </div>
-        )}
+           )}
 
-        {/* Genre Filter */}
-        <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#5b6c8d' }}>
-            <ListMusic size={16} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>GÉNERO</span>
+          {/* Genre Filter */}
+          <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#5b6c8d' }}>
+              <ListMusic size={16} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>GÉNERO</span>
+            </div>
+            <select
+              value={selectedGenre}
+              onChange={(e) => setSelectedGenre(e.target.value)}
+              disabled={selectedCountry === 'All'}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                color: 'var(--text-main)',
+                border: '1px solid var(--glass-border)',
+                padding: '0.5rem 0.8rem',
+                borderRadius: 'var(--radius-sm)',
+                outline: 'none',
+                cursor: selectedCountry === 'All' ? 'not-allowed' : 'pointer',
+                opacity: selectedCountry === 'All' ? 0.5 : 1,
+                fontSize: '0.9rem',
+                width: '100%'
+              }}
+            >
+              <option value="All">{selectedCountry === 'All' ? '-' : 'Formato...'}</option>
+              {genres.map(g => <option key={g.id} value={g.id}>{g.format}</option>)}
+
+              
+            </select>
           </div>
-          <SearchableSelect
-            options={[
-              ...(activeView !== 'Platforms' ? [{ value: '0', label: 'General' }] : []),
-              ...genres
-                .filter(g => !(activeView === 'Platforms' && (g.id === 0 || String(g.id) === '0')))
-                .map(g => ({ value: String(g.id), label: g.format }))
-            ]}
-            value={String(selectedGenre)}
-            onChange={(val) => setSelectedGenre(val)}
-            searchable={false}
-            placeholder="General"
-          />
-        </div>
 
         {/* Dynamic Third Filter */}
         {activeView === 'Platforms' ? (
@@ -144,9 +230,11 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             />
           </div>
         )}
-      </div>
+        </div>
+      )}
     </header>
   );
 };
+
 
 export default Header;
