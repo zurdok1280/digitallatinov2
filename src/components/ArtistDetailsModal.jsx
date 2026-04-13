@@ -66,7 +66,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const scrollRef = useRef(null);
-<<<<<<< HEAD
   const tabsRef = useRef(null);
 
   useEffect(() => {
@@ -89,9 +88,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
       document.body.style.overflow = 'unset';
     };
   }, []);
-=======
-  const tabsScrollRef = useRef(null);
->>>>>>> main
 
   useEffect(() => {
     let isMounted = true;
@@ -224,7 +220,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   if (!artist) return null;
 
   return (
-<<<<<<< HEAD
     <div 
       className="flex-center modal-overlay-padding" 
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
@@ -235,18 +230,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
       >
         {/* Header */}
         <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%' }}>
-=======
-    <div
-      className="flex-center"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
-    >
-      <div
-        className="glass-panel animate-fade-in"
-        style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'hidden', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
-      >
-        {/* Header */}
-        <div style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
->>>>>>> main
           <img src={artist.imageUrl} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg-dark), transparent)' }} />
           <button
@@ -255,7 +238,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
           >
             <X size={24} />
           </button>
-<<<<<<< HEAD
           
           <div className="modal-hero-info" style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem' }}>
             <img className="modal-hero-avatar" src={artist.imageUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
@@ -263,15 +245,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
               <h1 className="modal-hero-title" style={{ fontSize: '3rem', fontWeight: 800, margin: 0, lineHeight: 1 }}>{artist.name}</h1>
               <p className="modal-hero-monthly" style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
                 <Users size={16} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'text-bottom' }}/> 
-=======
-
-          <div style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem' }}>
-            <img src={artist.imageUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
-            <div>
-              <h1 style={{ fontSize: '3rem', fontWeight: 800, margin: 0, lineHeight: 1 }}>{artist.name}</h1>
-              <p style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
-                <Users size={16} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'text-bottom' }} />
->>>>>>> main
                 {(artist.monthlyListeners / 1000000).toFixed(1)}M Monthly Listeners
               </p>
             </div>
@@ -279,7 +252,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         </div>
 
         {/* Tabs */}
-<<<<<<< HEAD
         <div 
           ref={tabsRef}
           className="custom-scrollbar modal-tab-bar"
@@ -294,23 +266,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             top: 0,
             background: 'var(--bg-dark)',
             zIndex: 100
-=======
-        <div
-          ref={tabsScrollRef}
-          className="no-scrollbar"
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--glass-border)',
-            padding: '0 2rem',
-            gap: '2rem',
-            overflowX: 'auto',
-            overflowY: 'visible', // Ensure tab borders/indicators don't get clipped
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            flexWrap: 'nowrap',
-            flexShrink: 0,
-            WebkitOverflowScrolling: 'touch'
->>>>>>> main
           }}
         >
           <style>{`
@@ -353,11 +308,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         </div>
 
         {/* Content */}
-<<<<<<< HEAD
         <div className="modal-content-area" style={{ padding: '2rem', flex: 1 }}>
-=======
-        <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }} className="modal-content-scroll">
->>>>>>> main
           {activeTab === 'overview' && (
             <div className="grid-base stats-grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {isLoading ? (
@@ -437,7 +388,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             </div>
           )}
 
-<<<<<<< HEAD
           {activeTab === 'detalles_cancion' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {/* Estadísticas Sociales Rápidas - Horizontal Scroll/Flexbox for Mobile */}
@@ -585,8 +535,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             </div>
           )}
             
-=======
->>>>>>> main
           {/* Similar Artists Carousel Section */}
           {activeTab === 'overview' && !isLoading && (
             <div style={{ marginTop: '0rem', paddingBottom: '2rem', animation: 'fadeIn 0.5s ease-out' }}>
@@ -705,7 +653,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   </h3>
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Ciudades core ordenadas por concentración y volumen métrico de escuchas activos.</p>
                 </div>
-<<<<<<< HEAD
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filtrar por país:</span>
@@ -718,28 +665,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     onChange={(val) => setSelectedMapCountry(val)}
                     placeholder="Global (Todos)"
                   />
-=======
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filtrar por país:</span>
-                  <select
-                    value={selectedMapCountry}
-                    onChange={(e) => setSelectedMapCountry(e.target.value)}
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      color: 'var(--text-main)',
-                      border: '1px solid var(--glass-border)',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: 'var(--radius-sm)',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    <option value={0}>Global (Todos)</option>
-                    {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
-                  </select>
->>>>>>> main
                 </div>
               </div>
 
@@ -827,7 +752,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Apariciones en listas de curación Editorial, Personalized o Chart.</p>
                   )}
                 </div>
-<<<<<<< HEAD
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '180px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo:</span>
@@ -838,27 +762,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     searchable={false}
                     placeholder="Tipo de Playlist"
                   />
-=======
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo de Playlist:</span>
-                  <select
-                    value={selectedPlaylistType}
-                    onChange={(e) => setSelectedPlaylistType(e.target.value)}
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      color: 'var(--text-main)',
-                      border: '1px solid var(--glass-border)',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: 'var(--radius-sm)',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    {playlistTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
->>>>>>> main
                 </div>
               </div>
 
