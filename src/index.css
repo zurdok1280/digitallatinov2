@@ -719,3 +719,53 @@ select option {
     gap: 0.5rem !important;
   }
 }
+
+/* ============================================================ */
+/* NEW: Comparison Controls                                     */
+/* ============================================================ */
+.filter-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-toggle-compare {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: rgba(138, 136, 255, 0.05);
+  border: 1px solid rgba(138, 136, 255, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--accent-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.btn-toggle-compare:hover {
+  background: rgba(138, 136, 255, 0.1);
+  border-color: rgba(138, 136, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(138, 136, 255, 0.1);
+}
+
+.btn-toggle-compare.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+  box-shadow: 0 0 15px rgba(138, 136, 255, 0.4);
+}
+
+.btn-toggle-compare.active:hover {
+  background: #7c7aff;
+  transform: translateY(-1px);
+}
+

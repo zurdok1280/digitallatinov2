@@ -34,90 +34,95 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
           )}
         </div>
 
-        {/* Auth Section */}
-        <div className="flex-center" style={{ gap: '1rem' }}>
-          {user ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                  <span style={{ opacity: 0.7 }}>Hola,</span> {user.name}
-                </span>
-              </div>
+        {/* Right Section: View Indicator + Auth */}
+        <div className="flex-center" style={{ gap: '1.2rem' }}>
+          {/* View Indicator */}
+          <div 
+            className="animate-fade-in hidden sm:flex"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.6rem',
+              color: 'var(--text-muted)', 
+              fontSize: '0.75rem', 
+              fontWeight: 700, 
+              textTransform: 'uppercase', 
+              letterSpacing: '1.5px',
+              background: 'rgba(255,255,255,0.03)',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '20px',
+              border: '1px solid var(--glass-border)'
+            }}
+          >
+            <div style={{ 
+              width: '6px', 
+              height: '6px', 
+              borderRadius: '50%', 
+              background: activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700',
+              boxShadow: `0 0 8px ${activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700'}`
+            }} />
+            {activeView === 'Artists' ? 'Artist Analytics' : activeView === 'Platforms' ? 'Platforms' : activeView === 'HeavyHitters' ? 'Heavy Hitters' : activeView === 'CuratorPicks' ? 'Curator Picks' : activeView === 'TiktokerPicks' ? 'Tiktoker Picks' : activeView === 'DigitalHitsForRadio' ? 'Digital Hits for Radio' : 'Charts'}
+          </div>
+
+          {/* Auth Section */}
+          <div className="flex-center" style={{ gap: '1rem' }}>
+            {user ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                    <span style={{ opacity: 0.7 }}>Hola,</span> {user.name}
+                  </span>
+                </div>
+                <button
+                  onClick={onLogoutClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid var(--glass-border)',
+                    color: '#8c52ff',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                >
+                  <LogOut size={16} />
+                  <span className="hidden md:inline">Cerrar sesión</span>
+                </button>
+              </>
+            ) : (
               <button
-                onClick={onLogoutClick}
+                onClick={onLoginClick}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  background: 'rgba(255,255,255,0.05)',
+                  background: '#8c52ff',
                   border: '1px solid var(--glass-border)',
-                  color: '#8c52ff',
+                  color: '#fff',
                   padding: '0.4rem 0.8rem',
                   borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: '0.85rem',
                   transition: 'all 0.2s ease',
                 }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseOver={(e) => e.currentTarget.style.background = '#7c42df'}
+                onMouseOut={(e) => e.currentTarget.style.background = '#8c52ff'}
               >
-                <LogOut size={16} />
-                <span className="hidden md:inline">Cerrar sesión</span>
+                <User size={16} />
+                <span>Log in / Sign in</span>
               </button>
-            </>
-          ) : (
-            <button
-              onClick={onLoginClick}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: '#8c52ff',
-                border: '1px solid var(--glass-border)',
-                color: '#fff',
-                padding: '0.4rem 0.8rem',
-                borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#7c42df'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#8c52ff'}
-            >
-              <User size={16} />
-              <span>Log in / Sign in</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
-        <div 
-          className="animate-fade-in"
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.6rem',
-            color: 'var(--text-muted)', 
-            fontSize: '0.75rem', 
-            fontWeight: 700, 
-            textTransform: 'uppercase', 
-            letterSpacing: '1.5px',
-            background: 'rgba(255,255,255,0.03)',
-            padding: '0.4rem 0.8rem',
-            borderRadius: '20px',
-            border: '1px solid var(--glass-border)'
-          }}
-        >
-          <div style={{ 
-            width: '6px', 
-            height: '6px', 
-            borderRadius: '50%', 
-            background: activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700',
-            boxShadow: `0 0 8px ${activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700'}`
-          }} />
-          {activeView === 'Artists' ? 'Artist Analytics' : activeView === 'Platforms' ? 'Platforms' : activeView === 'HeavyHitters' ? 'Heavy Hitters' : activeView === 'CuratorPicks' ? 'Curator Picks' : activeView === 'TiktokerPicks' ? 'Tiktoker Picks' : activeView === 'DigitalHitsForRadio' ? 'Digital Hits for Radio' : 'Charts'}
-        </div>
-      </div>
 
-      {showFilters && (
+      </div>
+      {showFilters && (
         <div className="header-filters">
           {/* Country Filter */}
           {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
@@ -129,7 +134,10 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
        
             <select
               value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
+              onChange={(e) => {
+                if (!user) { onLoginClick(); return; }
+                setSelectedCountry(e.target.value);
+              }}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-main)',
@@ -156,7 +164,10 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             </div>
             <select
               value={selectedGenre}
-              onChange={(e) => setSelectedGenre(e.target.value)}
+              onChange={(e) => {
+                if (!user) { onLoginClick(); return; }
+                setSelectedGenre(e.target.value);
+              }}
               disabled={selectedCountry === 'All'}
               style={{
                 background: 'rgba(255,255,255,0.05)',
@@ -173,8 +184,6 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             >
               <option value="All">{selectedCountry === 'All' ? '-' : 'Formato...'}</option>
               {genres.map(g => <option key={g.id} value={g.id}>{g.format}</option>)}
-
-              
             </select>
           </div>
 
@@ -193,7 +202,10 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 { value: 'shazam', label: 'Shazam' }
               ]}
               value={selectedPlatform}
-              onChange={(val) => setSelectedPlatform(val)}
+              onChange={(val) => {
+                if (!user) { onLoginClick(); return; }
+                setSelectedPlatform(val);
+              }}
               searchable={false}
             />
           </div>
@@ -209,7 +221,10 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 ...playlistTypes.map(t => ({ value: String(t.id), label: t.name }))
               ]}
               value={String(selectedPlaylistType)}
-              onChange={(val) => setSelectedPlaylistType(val)}
+              onChange={(val) => {
+                if (!user) { onLoginClick(); return; }
+                setSelectedPlaylistType(val);
+              }}
               searchable={false}
               placeholder="Todos los Tipos"
             />
@@ -224,7 +239,10 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             <SearchableSelect
               options={cityOptions}
               value={String(selectedCity)}
-              onChange={(val) => setSelectedCity(val)}
+              onChange={(val) => {
+                if (!user) { onLoginClick(); return; }
+                setSelectedCity(val);
+              }}
               placeholder="Todas las ciudades"
               disabled={cities.length === 0}
             />

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music } from 'lucide-react';
 import { searchSpotify } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
+import { useEffect, useState } from 'react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const formatFollowers = (n) => {
@@ -163,10 +164,11 @@ const ArtistCard = ({ artist, onMetricsClick }) => {
 };
 
 // ─── Main SearchModal ─────────────────────────────────────────────────────────
-const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick }) => {
+const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick }) => {
   const [query, setQuery]         = useState('');
   const [results, setResults]     = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   // Debounced search
   useEffect(() => {
@@ -192,6 +194,10 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick }) => {
 
   // ---- handlers ----
   const handleArtistMetrics = (artist) => {
+    if (!user) {
+      onLoginClick();
+      return;
+    }
     if (onArtistClick) {
       onClose(); // Dismiss search so ArtistDetailsModal isn't behind the overlay
       // Use setTimeout to ensure the modal unmounts visually before triggering the heavy render
@@ -211,6 +217,10 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick }) => {
   };
 
   const handleSongMetrics = (track) => {
+    if (!user) {
+      onLoginClick();
+      return;
+    }
     onClose();
     if (onSongClick) {
       setTimeout(() => {

@@ -1,6 +1,9 @@
+﻿import sys
 
-import { BarChart3 } from 'lucide-react';
-import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+file_path = 'src/App.jsx'
+
+new_content = '''import { BarChart3 } from 'lucide-react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
@@ -23,13 +26,12 @@ import SongCompareModal from './components/SongCompareModal';
 import FloatingScrollButtons from './components/FloatingScrollButtons';
 import { Toaster } from './components/Toaster';
 import PaymentPage from './components/PaymentPage';
-
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { ArtistSelectionModal } from './components/ArtistSelectionModal';
 import MyArtist from './pages/MyArtist';
 import SongDetailsModal from './components/SongDetailsModal';
 
-const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 
 const RequireAdmin = ({ children }) => {
   const { user } = useAuth();
@@ -47,7 +49,6 @@ const withLazy = (Component) => (props) => (
 
 const AdminPanelLazy = withLazy(AdminPanel);
 
-
 function Dashboard() {
   const [selectedCountry, setSelectedCountry] = useState('0');
   const [selectedGenre, setSelectedGenre] = useState('0');
@@ -57,12 +58,12 @@ function Dashboard() {
   const [selectedSongPlatform, setSelectedSongPlatform] = useState(null);
   const [selectedArtistReport, setSelectedArtistReport] = useState(null);
   const [activeView, setActiveView] = useState('Charts');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('0');
   const [selectedPlaylistType, setSelectedPlaylistType] = useState('0');
   
   const [selectedSong, setSelectedSong] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [countriesList, setCountriesList] = useState([]);
   const [genresList, setGenresList] = useState([]);
@@ -83,6 +84,7 @@ function Dashboard() {
     setSelectedSongs([]);
     setShowCompareModal(false);
   }, [activeView]);
+
   const { user, logout, updateUser } = useAuth();
   const [showArtistSelection, setShowArtistSelection] = useState(false);
   const navigate = useNavigate();
@@ -102,8 +104,8 @@ function Dashboard() {
   const handleArtistSelected = async (artistId, artistName) => {
     try {
       if (user?.email) {
-        localStorage.setItem(`artistId_${user.email}`, artistId);
-        localStorage.setItem(`artistName_${user.email}`, artistName);
+        localStorage.setItem(\rtistId_\\, artistId);
+        localStorage.setItem(\rtistName_\\, artistName);
       }
       updateUser({ allowedArtistId: artistId, allowedArtistName: artistName });
       setShowArtistSelection(false);
@@ -127,12 +129,11 @@ function Dashboard() {
 
   useEffect(() => {
     const fetchFormatsAndCities = async () => {
-      // If we switched to HeavyHitters, reset to its defaults immediately
       if (activeView === 'HeavyHitters' && selectedCountry === '0') {
         setSelectedCountry(1);
         setSelectedGenre(0);
         setSelectedCity('All');
-        return; // This loop will run again with selectedCountry=1
+        return;
       }
       
       if (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') {
@@ -140,7 +141,6 @@ function Dashboard() {
         if (selectedGenre === 'All') setSelectedGenre(0);
       }
 
-      // Use Country 1 (Default USA/Global) for Format fetching if in CuratorPicks or TiktokerPicks
       const targetCountry = (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') ? 1 : selectedCountry;
 
       if (targetCountry !== null) {
@@ -151,25 +151,23 @@ function Dashboard() {
         setGenresList(formatsData);
         setCitiesList(citiesData);
 
-        // Auto-select General (id 0) for genre on non-genre-focused views if we just arrived
         if (activeView === 'Platforms' || activeView === 'Artists') {
           const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
           setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
         } else if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') {
-          setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts and DigitalHitsForRadio
+          setSelectedGenre(targetCountry !== '0' ? 0 : 'All');
         }
       } else {
         setGenresList([]);
         setCitiesList([]);
         if (activeView !== 'HeavyHitters' && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedGenre('0');
       }
-      if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedCity('0');  // Reset city on country change
+      if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedCity('0');
     };
     fetchFormatsAndCities();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry, activeView]);
 
-  // Handle activeView switching to Platforms, shift off genre 0 if necessary
   useEffect(() => {
     if (activeView === 'Platforms') {
       if (selectedGenre === 0 || selectedGenre === 'All' || String(selectedGenre) === '0') {
@@ -182,8 +180,6 @@ function Dashboard() {
   }, [activeView, genresList, selectedGenre]);
 
   useEffect(() => {
-    // AbortController cancels any in-flight request when filters change before it resolves.
-    // This prevents stale data from a slow request overwriting a faster newer one.
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -218,16 +214,10 @@ function Dashboard() {
     };
 
     fetchChartData();
-    // Cleanup: abort the pending request when the effect re-runs
     return () => controller.abort();
   }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, activeView]);
 
-  // Comparison Handlers
   const handleToggleComparisonMode = () => {
-    if (!user) {
-      setIsLoginModalOpen(true);
-      return;
-    }
     setComparisonMode(!comparisonMode);
     if (comparisonMode) {
       setSelectedSongs([]);
@@ -264,267 +254,258 @@ function Dashboard() {
   return (
     <>
       <div className="app-container">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
-        activeView={activeView} 
-        setActiveView={setActiveView} 
-        onLoginClick={() => setIsLoginModalOpen(true)}
-      />
-      <main className="main-content">
-        <Header 
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} activeView={activeView} setActiveView={setActiveView} />
+        <main className="main-content">
+          <Header 
+            countries={countriesList}
+            genres={genresList}
+            cities={citiesList}
+            playlistTypes={playlistTypesList}
+            selectedCountry={selectedCountry}
+            setSelectedCountry={setSelectedCountry}
+            selectedGenre={selectedGenre}
+            setSelectedGenre={setSelectedGenre}
+            selectedCity={selectedCity}
+            setSelectedCity={setSelectedCity}
+            activeView={activeView}
+            selectedPlatform={selectedPlatform}
+            setSelectedPlatform={setSelectedPlatform}
+            selectedPlaylistType={selectedPlaylistType}
+            setSelectedPlaylistType={setSelectedPlaylistType}
+            onToggleSidebar={() => setIsSidebarOpen(true)}
+            onOpenSearch={() => setIsSearchOpen(true)}
+          />
+
+          <Routes>
+            <Route path="/" element={
+              <>
+                <div className="filter-header" style={{ justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                  <div className="filter-controls">
+                    {/* Comparison Toggle Button */}
+                    {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
+                      <button 
+                        className={\tn-toggle-compare \\}
+                        onClick={handleToggleComparisonMode}
+                        title="Modo Comparación"
+                      >
+                        <BarChart3 size={18} />
+                        <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {activeView === 'Charts' && (
+                  <SongChart 
+                    songs={songs} 
+                    isLoading={isLoading}
+                    comparisonMode={comparisonMode}
+                    onSongSelect={handleSongSelect}
+                    selectedSongs={selectedSongs}
+                    onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
+                    onSongClick={setSelectedSong}
+                    onLoginClick={() => setIsLoginModalOpen(true)}
+                  />
+                )}
+
+                {activeView === 'DigitalHitsForRadio' && (
+                  <SongChart 
+                    songs={songs} 
+                    isLoading={isLoading}
+                    comparisonMode={comparisonMode}
+                    onSongSelect={handleSongSelect}
+                    selectedSongs={selectedSongs}
+                    onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry })}
+                    onSongClick={setSelectedSong}
+                    onLoginClick={() => setIsLoginModalOpen(true)}
+                  />
+                )}
+
+                {activeView === 'Platforms' && (
+                  <TopPlatformsChart
+                    selectedCountry={selectedCountry}
+                    selectedGenre={selectedGenre}
+                    selectedPlatform={selectedPlatform}
+                    onSongClick={(song) => setSelectedSongPlatform(song)}
+                  />
+                )}
+
+                {activeView === 'Artists' && (
+                  <TopArtistsChart
+                    selectedCountry={selectedCountry}
+                    selectedGenre={selectedGenre}
+                    onArtistClick={(artist) => setSelectedArtistReport(artist)}
+                  />
+                )}
+
+                {activeView === 'HeavyHitters' && (
+                  <HeavyHittersChart
+                    songs={songs}
+                    isLoading={isLoading}
+                    comparisonMode={comparisonMode}
+                    onSongSelect={handleSongSelect}
+                    selectedSongs={selectedSongs}
+                    onSongClick={(song) => setSelectedSongPlatform(song)}
+                  />
+                )}
+
+                {activeView === 'CuratorPicks' && (
+                  <CuratorPicksChart
+                    songs={songs}
+                    isLoading={isLoading}
+                    comparisonMode={comparisonMode}
+                    onSongSelect={handleSongSelect}
+                    selectedSongs={selectedSongs}
+                    onSongClick={(song) => setSelectedSongPlatform(song)}
+                  />
+                )}
+
+                {activeView === 'TiktokerPicks' && (
+                  <TiktokerPicksChart
+                    songs={songs}
+                    isLoading={isLoading}
+                    comparisonMode={comparisonMode}
+                    onSongSelect={handleSongSelect}
+                    selectedSongs={selectedSongs}
+                    onSongClick={(song) => setSelectedSongPlatform(song)}
+                  />
+                )}
+
+                <FloatingScrollButtons />
+              </>
+            } />
+            
+            <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
+            <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
+            <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          </Routes>
+        </main>
+      </div>
+
+      {/* Global Modals */}
+      {selectedArtist && user && (
+        <ArtistDetailsModal 
+          artist={selectedArtist} 
           countries={countriesList}
           genres={genresList}
           cities={citiesList}
-          playlistTypes={playlistTypesList}
           selectedCountry={selectedCountry}
           setSelectedCountry={setSelectedCountry}
           selectedGenre={selectedGenre}
           setSelectedGenre={setSelectedGenre}
           selectedCity={selectedCity}
           setSelectedCity={setSelectedCity}
-          activeView={activeView}
-          selectedPlatform={selectedPlatform}
-          setSelectedPlatform={setSelectedPlatform}
-          selectedPlaylistType={selectedPlaylistType}
-          setSelectedPlaylistType={setSelectedPlaylistType}
           onToggleSidebar={() => setIsSidebarOpen(true)}
           onOpenSearch={() => setIsSearchOpen(true)}
           user={user}
           onLoginClick={() => setIsLoginModalOpen(true)}
           onLogoutClick={logout}
+          onClose={() => setSelectedArtist(null)}
         />
+      )}
 
-        <Routes>
-          <Route path="/" element={
-            <>
-              <div className="filter-header" style={{ justifyContent: 'flex-start', marginBottom: '0.5rem' }}>
-                <div className="filter-controls">
-                  {/* Comparison Toggle Button */}
-                  {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
-                    <button 
-                      className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
-                      onClick={handleToggleComparisonMode}
-                      title="Modo Comparación"
-                    >
-                      <BarChart3 size={18} />
-                      <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
+      {selectedSongPlatform && (
+        <PlatformsDetailsModal 
+          song={selectedSongPlatform} 
+          countries={countriesList}
+          onClose={() => setSelectedSongPlatform(null)} 
+        />
+      )}
 
-              {activeView === 'Charts' && (
-                <SongChart 
-                  songs={songs} 
-                  isLoading={isLoading}
-                  comparisonMode={comparisonMode}
-                  onSongSelect={handleSongSelect}
-                  selectedSongs={selectedSongs}
-                  onArtistClick={(artist) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
-                  }}
-                  onSongClick={(song) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedSong(song);
-                  }}
-                  onLoginClick={() => setIsLoginModalOpen(true)}
-                />
-              )}
+      {selectedArtistReport && (
+        <TopArtistReportModal
+          artist={selectedArtistReport}
+          countries={countriesList}
+          onClose={() => setSelectedArtistReport(null)}
+        />
+      )}
 
-              {activeView === 'DigitalHitsForRadio' && (
-                <SongChart 
-                  songs={songs} 
-                  isLoading={isLoading}
-                  comparisonMode={comparisonMode}
-                  onSongSelect={handleSongSelect}
-                  selectedSongs={selectedSongs}
-                  onArtistClick={(artist) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
-                  }}
-                  onSongClick={(song) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedSong(song);
-                  }}
-                  onLoginClick={() => setIsLoginModalOpen(true)}
-                />
-              )}
-
-              {activeView === 'Platforms' && (
-                <TopPlatformsChart
-                  selectedCountry={selectedCountry}
-                  selectedGenre={selectedGenre}
-                  selectedPlatform={selectedPlatform}
-                  onSongClick={(song) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedSongPlatform(song);
-                  }}
-                />
-              )}
-
-              {activeView === 'Artists' && (
-                <TopArtistsChart
-                  selectedCountry={selectedCountry}
-                  selectedGenre={selectedGenre}
-                  onArtistClick={(artist) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedArtistReport(artist);
-                  }}
-                />
-              )}
-
-              {activeView === 'HeavyHitters' && (
-                <HeavyHittersChart
-                  songs={songs}
-                  isLoading={isLoading}
-                  comparisonMode={comparisonMode}
-                  onSongSelect={handleSongSelect}
-                  selectedSongs={selectedSongs}
-                  onSongClick={(song) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedSongPlatform(song);
-                  }}
-                />
-              )}
-
-              {activeView === 'CuratorPicks' && (
-                <CuratorPicksChart
-                  songs={songs}
-                  isLoading={isLoading}
-                  comparisonMode={comparisonMode}
-                  onSongSelect={handleSongSelect}
-                  selectedSongs={selectedSongs}
-                  onSongClick={(song) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedSongPlatform(song);
-                  }}
-                />
-              )}
-
-              {activeView === 'TiktokerPicks' && (
-                <TiktokerPicksChart
-                  songs={songs}
-                  isLoading={isLoading}
-                  comparisonMode={comparisonMode}
-                  onSongSelect={handleSongSelect}
-                  selectedSongs={selectedSongs}
-                  onSongClick={(song) => {
-                    if (!user) { setIsLoginModalOpen(true); return; }
-                    setSelectedSongPlatform(song);
-                  }}
-                />
-              )}
-
-              <FloatingScrollButtons />
-            </>
-          } />
-          
-          <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
-          <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
-          <Route path="/payment" element={<PaymentPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        </Routes>
-      </main>
-    </div>
-
-    {/* MODALES GLOBALES */}
-    <SearchModal 
-      isOpen={isSearchOpen} 
-      onClose={() => setIsSearchOpen(false)} 
-      onArtistClick={(artist) => {
-        if (!user) { setIsLoginModalOpen(true); return; }
-        setSelectedArtist({ ...artist, countryId: 0 });
-      }} 
-      onSongClick={(song) => {
-        if (!user) { setIsLoginModalOpen(true); return; }
-        setSelectedSongPlatform(song);
-      }}
-      onLoginClick={() => setIsLoginModalOpen(true)}
-    />
-
-    {selectedArtist && user && (
-      <ArtistDetailsModal 
-        artist={selectedArtist} 
-        countries={countriesList}
-        genres={genresList}
-        cities={citiesList}
-        selectedCountry={selectedCountry}
-        setSelectedCountry={setSelectedCountry}
-        selectedGenre={selectedGenre}
-        setSelectedGenre={setSelectedGenre}
-        selectedCity={selectedCity}
-        setSelectedCity={setSelectedCity}
-        onToggleSidebar={() => setIsSidebarOpen(true)}
-        onOpenSearch={() => setIsSearchOpen(true)}
-        user={user}
-        onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={logout}
-        onClose={() => setSelectedArtist(null)}
+      <ComparisonBar 
+        selectedSongs={selectedSongs}
+        onCompare={handleStartComparison}
+        onClear={handleClearComparison}
+        onRemoveSong={handleRemoveSong}
+        isActive={comparisonMode}
       />
-    )}
 
-    {selectedSongPlatform && (
-      <PlatformsDetailsModal 
-        song={selectedSongPlatform} 
-        countries={countriesList}
-        onClose={() => setSelectedSongPlatform(null)} 
+      {showCompareModal && (
+        <SongCompareModal 
+          isOpen={showCompareModal}
+          onClose={() => setShowCompareModal(false)}
+          song1={songForComparison.s1}
+          song2={songForComparison.s2}
+        />
+      )}
+
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+        onArtistClick={(artist) => setSelectedArtist({ ...artist, countryId: 0 })} 
+        onSongClick={(song) => setSelectedSongPlatform(song)}
       />
-    )}
 
-    {selectedArtistReport && (
-      <TopArtistReportModal
-        artist={selectedArtistReport}
-        countries={countriesList}
-        onClose={() => setSelectedArtistReport(null)}
-      />
-    )}
+      {selectedSong && (
+        <SongDetailsModal
+          song={selectedSong}
+          onClose={() => setSelectedSong(null)}
+        />
+      )}
 
-    <ComparisonBar 
-      selectedSongs={selectedSongs}
-      onCompare={handleStartComparison}
-      onClear={handleClearComparison}
-      onRemoveSong={handleRemoveSong}
-      isActive={comparisonMode}
-    />
-
-    {showCompareModal && (
-      <SongCompareModal 
-        isOpen={showCompareModal}
-        onClose={() => setShowCompareModal(false)}
-        song1={songForComparison.s1}
-        song2={songForComparison.s2}
-      />
-    )}
-
-    {selectedSong && (
-      <SongDetailsModal
-        song={selectedSong}
-        onClose={() => setSelectedSong(null)}
-      />
-    )}
-
-    {isLoginModalOpen && (
-      <div 
-        className="flex-center"
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, padding: '1rem' }}
-        onClick={(e) => e.target === e.currentTarget && setIsLoginModalOpen(false)}
-      >
-        <div style={{ width: '100%', maxWidth: '450px' }}>
-          <LoginForm onClose={() => setIsLoginModalOpen(false)} />
+      {isLoginModalOpen && (
+        <div 
+          className="flex-center"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, padding: '1rem' }}
+          onClick={(e) => e.target === e.currentTarget && setIsLoginModalOpen(false)}
+        >
+          <div style={{ width: '100%', maxWidth: '450px' }}>
+            <LoginForm onClose={() => setIsLoginModalOpen(false)} />
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
-    <ArtistSelectionModal
-      isOpen={showArtistSelection}
-      onArtistSelected={handleArtistSelected}
-    />
-    
-    <Toaster />
-  </>
-);
+      <ArtistSelectionModal
+        isOpen={showArtistSelection}
+        onArtistSelected={handleArtistSelected}
+      />
+      
+      <Toaster />
+
+      <style>{\
+        .btn-toggle-compare {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s;
+          margin-right: 0.5rem;
+        }
+
+        .btn-toggle-compare:hover {
+          background: rgba(138, 136, 255, 0.1);
+          border-color: var(--accent-primary);
+        }
+
+        .btn-toggle-compare.active {
+          background: var(--accent-primary);
+          border-color: var(--accent-primary);
+          box-shadow: 0 0 15px rgba(138, 136, 255, 0.3);
+        }
+
+        @media (max-width: 600px) {
+          .btn-toggle-compare span { display: none; }
+          .btn-toggle-compare { padding: 0.5rem; }
+        }
+      \}</style>
+    </>
+  );
 }
 
 export default function App() {
@@ -533,3 +514,9 @@ export default function App() {
   }
   return <Dashboard />;
 }
+'''
+
+with open(file_path, 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+print(\"App.jsx fixed.\")

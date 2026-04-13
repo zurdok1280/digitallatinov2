@@ -9,6 +9,12 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    port: 8080,
+    port: 5173,
+    strictPort: true,
+  },
+  optimizeDeps: {
+    include: ['jwt-decode'],
   },
 })
+
+

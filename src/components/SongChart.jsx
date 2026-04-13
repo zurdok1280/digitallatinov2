@@ -1,6 +1,7 @@
 import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -192,6 +193,10 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
         key={song.cs_song || index}
         className={`chart-row glass-panel-interactive ${isSelected ? 'selected-for-compare' : ''}`}
         onClick={(e) => {
+          if (!user) {
+            onLoginClick();
+            return;
+          }
           if (comparisonMode) {
             e.stopPropagation();
             onSongSelect(song);
@@ -259,6 +264,10 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
               onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.6)'}
               onClick={async (e) => {
                 e.stopPropagation();
+                if (!user) {
+                  onLoginClick();
+                  return;
+                }
                 if (user?.role === 'ARTIST') {
                   const allowedId = String(user.allowedArtistId);
                   const normalizeStr = (str) => String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
