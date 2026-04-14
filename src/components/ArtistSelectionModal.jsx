@@ -60,7 +60,7 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
 
     setIsSaving(true);
     try {
-      const response = await fetch("https://v2.digital-latino.com/api/auth/select-artist", {
+      const response = await fetch("https://security.digital-latino.com/api/auth/select-artist", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
