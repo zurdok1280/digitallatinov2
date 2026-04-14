@@ -60,7 +60,7 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
 
     setIsSaving(true);
     try {
-      const response = await fetch("http://localhost:8085/api/auth/select-artist", {
+      const response = await fetch("https://security.digital-latino.com/api/auth/select-artist", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
       toast({
         title: "Artista vinculado",
         description: `Estamos recopilando la información de ${selectedArtist.name} y de todas sus canciones.`,
-        duration: 5000, 
+        duration: 5000,
       });
       setShowConfirm(false);
     } catch (error) {
@@ -102,9 +102,9 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
   return (
     <>
       <div className="artist-modal-overlay">
-        <div 
-           className="artist-modal-content"
-           onClick={(e) => e.stopPropagation()}
+        <div
+          className="artist-modal-content"
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="artist-modal-header">
             <h2 className="artist-modal-title">
@@ -145,11 +145,11 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
                 <div key={artist.id} className="artist-list-item">
                   <div className="artist-item-info">
                     {artist.image_url ? (
-                       <img src={artist.image_url} alt={artist.name} className="artist-item-avatar" />
+                      <img src={artist.image_url} alt={artist.name} className="artist-item-avatar" />
                     ) : (
-                       <div className="artist-item-avatar-fallback">
-                         {artist.name.charAt(0)}
-                       </div>
+                      <div className="artist-item-avatar-fallback">
+                        {artist.name.charAt(0)}
+                      </div>
                     )}
                     <div className="artist-item-details">
                       <h4 className="artist-item-name">{artist.name}</h4>
@@ -182,7 +182,7 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
             <div className="confirm-modal-desc">
               Te recordamos que al seleccionar a {selectedArtist?.name} como tu artista objetivo,
               esta acción será inalterable durante tu periodo de facturación mensual activo.
-              
+
               <div className="confirm-modal-card">
                 {selectedArtist?.image_url ? (
                   <img src={selectedArtist.image_url} alt={selectedArtist.name} className="confirm-modal-avatar" />
@@ -198,7 +198,7 @@ export function ArtistSelectionModal({ isOpen, onArtistSelected }) {
               </div>
             </div>
             <div className="confirm-modal-footer">
-              <button 
+              <button
                 disabled={isSaving}
                 onClick={() => setShowConfirm(false)}
                 className="btn-cancel"
