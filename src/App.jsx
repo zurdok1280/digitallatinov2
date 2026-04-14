@@ -1,7 +1,7 @@
 
 import { BarChart3 } from 'lucide-react';
 import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -70,6 +70,8 @@ function Dashboard() {
   const [playlistTypesList, setPlaylistTypesList] = useState([]);
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // Comparison States
   const [comparisonMode, setComparisonMode] = useState(false);
@@ -93,11 +95,21 @@ function Dashboard() {
         setShowArtistSelection(true);
       } else {
         setShowArtistSelection(false);
+        // If they are on home page, move them to their artist page
+        if (window.location.pathname === '/') {
+          navigate('/my-artist');
+        }
       }
     } else {
       setShowArtistSelection(false);
     }
-  }, [user]);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'true') {
+      setIsPaymentModalOpen(true);
+    }
+  }, [searchParams]);
 
   const handleArtistSelected = async (artistId, artistName) => {
     try {
@@ -107,7 +119,7 @@ function Dashboard() {
       }
       updateUser({ allowedArtistId: artistId, allowedArtistName: artistName });
       setShowArtistSelection(false);
-      navigate('/');
+      navigate('/my-artist');
     } catch (error) {
        console.error("Error setting artist:", error);
     }
@@ -261,6 +273,31 @@ function Dashboard() {
     setSelectedSongs(selectedSongs.filter(s => s.cs_song !== csSong));
   };
 
+  const isAllowedForArtist = (item) => {
+    if (user?.role !== 'ARTIST') return true;
+    const allowedId = String(user.allowedArtistId);
+    const normalizeStr = (str) => String(str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const allowedName = normalizeStr(user.allowedArtistName);
+    
+    // Check if it's a song or an artist item
+    const itemId = String(item.spotifyartistid || item.spotifyid || item.cs_song || item.id);
+    const itemArtists = normalizeStr(item.artists || item.name || '');
+    
+    if (itemId === allowedId || (allowedName && itemArtists.includes(allowedName))) {
+      return true;
+    }
+    return false;
+  };
+
+  const showRestrictedToast = async () => {
+    const { toast } = await import('./hooks/use-toast');
+    toast({
+      title: "🔒 Acceso Restringido",
+      description: "Acceso restringido, este artista no pertenece a tu selección actual.",
+      className: "bg-red-500/10 border-red-500/50 text-white backdrop-blur-md rounded-xl",
+    });
+  };
+
   return (
     <>
       <div className="app-container">
@@ -323,10 +360,12 @@ function Dashboard() {
                   selectedSongs={selectedSongs}
                   onArtistClick={(artist) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
                     setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
                   }}
                   onSongClick={(song) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
                     setSelectedSong(song);
                   }}
                   onLoginClick={() => setIsLoginModalOpen(true)}
@@ -342,10 +381,12 @@ function Dashboard() {
                   selectedSongs={selectedSongs}
                   onArtistClick={(artist) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
                     setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
                   }}
                   onSongClick={(song) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
                     setSelectedSong(song);
                   }}
                   onLoginClick={() => setIsLoginModalOpen(true)}
@@ -359,6 +400,7 @@ function Dashboard() {
                   selectedPlatform={selectedPlatform}
                   onSongClick={(song) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
                     setSelectedSongPlatform(song);
                   }}
                 />
@@ -370,6 +412,7 @@ function Dashboard() {
                   selectedGenre={selectedGenre}
                   onArtistClick={(artist) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
                     setSelectedArtistReport(artist);
                   }}
                 />
@@ -384,6 +427,7 @@ function Dashboard() {
                   selectedSongs={selectedSongs}
                   onSongClick={(song) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
                     setSelectedSongPlatform(song);
                   }}
                 />
@@ -398,6 +442,7 @@ function Dashboard() {
                   selectedSongs={selectedSongs}
                   onSongClick={(song) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
                     setSelectedSongPlatform(song);
                   }}
                 />
@@ -412,6 +457,7 @@ function Dashboard() {
                   selectedSongs={selectedSongs}
                   onSongClick={(song) => {
                     if (!user) { setIsLoginModalOpen(true); return; }
+                    if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
                     setSelectedSongPlatform(song);
                   }}
                 />
@@ -423,7 +469,6 @@ function Dashboard() {
           
           <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
           <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
-          <Route path="/payment" element={<PaymentPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
         </Routes>
       </main>
@@ -435,10 +480,12 @@ function Dashboard() {
       onClose={() => setIsSearchOpen(false)} 
       onArtistClick={(artist) => {
         if (!user) { setIsLoginModalOpen(true); return; }
+        if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
         setSelectedArtist({ ...artist, countryId: 0 });
       }} 
       onSongClick={(song) => {
         if (!user) { setIsLoginModalOpen(true); return; }
+        if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
         setSelectedSongPlatform(song);
       }}
       onLoginClick={() => setIsLoginModalOpen(true)}
@@ -513,6 +560,24 @@ function Dashboard() {
       >
         <div style={{ width: '100%', maxWidth: '450px' }}>
           <LoginForm onClose={() => setIsLoginModalOpen(false)} />
+        </div>
+      </div>
+    )}
+
+    {isPaymentModalOpen && (
+      <div 
+        className="flex-center"
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, padding: '1rem', overflowY: 'auto' }}
+        onClick={(e) => e.target === e.currentTarget && setIsPaymentModalOpen(false)}
+      >
+        <div style={{ width: '100%', maxWidth: '1200px', margin: 'auto' }}>
+          <PaymentPage onClose={() => {
+            setIsPaymentModalOpen(false);
+            // Remove the query param from URL
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('payment');
+            setSearchParams(newParams);
+          }} />
         </div>
       </div>
     )}

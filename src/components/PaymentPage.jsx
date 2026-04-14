@@ -2,7 +2,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { CheckoutForm } from "./CheckoutForm";
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import "./PaymentPage.css";
 
 const stripePromise = loadStripe(
@@ -96,7 +96,7 @@ const PlanCard = ({
   </div>
 );
 
-const PaymentPage = () => {
+const PaymentPage = ({ onClose }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   const formatPrice = (amount) => {
@@ -111,6 +111,11 @@ const PaymentPage = () => {
     return (
       <div className="payment-page-container">
         <div className="payment-page-inner">
+          {onClose && (
+            <button onClick={onClose} className="payment-modal-close-btn">
+              <X size={24} />
+            </button>
+          )}
           <div className="payment-header">
             {/* Imagen corregida usando el logo local que sí existe */}
             <img
@@ -151,6 +156,11 @@ const PaymentPage = () => {
   return (
     <div className="payment-page-container">
       <div className="checkout-view-container">
+        {onClose && (
+          <button onClick={onClose} className="payment-modal-close-btn">
+            <X size={24} />
+          </button>
+        )}
         <div className="payment-header">
           <img
             src="/logo.png"
