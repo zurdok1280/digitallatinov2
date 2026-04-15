@@ -1,7 +1,7 @@
 import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -10,8 +10,54 @@ const rankColors = [
 ];
 
 
-const Sparkline = ({ data, color }) => {
+const Sparkline = ({ song, color }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [data, setData] = useState(song?.trend || []);
+  const [labels, setLabels] = useState(song?.trend ? song.trend.map((_, i) => `Week ${i + 1}`) : []);
+
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        if (containerRef.current) observer.unobserve(containerRef.current);
+      }
+    }, { rootMargin: '100px' });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (song?.cs_song && isVisible && !hasFetched) {
+      setIsLoading(true);
+      fetch(`https://backend.digital-latino.com/api/report/getSongHistoricalStreams/${song.cs_song}`)
+        .then(res => res.json())
+        .then(json => {
+          if (isMounted) {
+            setHasFetched(true);
+            if (Array.isArray(json) && json.length > 0) {
+              const sorted = [...json].sort((a, b) => a.date.localeCompare(b.date));
+              setData(sorted.map(item => item.streams_total / 1000000));
+              setLabels(sorted.map(item => item.date));
+            }
+          }
+        })
+        .catch(e => console.error("Error fetching historical streams:", e))
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    }
+    return () => { isMounted = false; };
+  }, [song?.cs_song, isVisible, hasFetched]);
 
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -19,92 +65,109 @@ const Sparkline = ({ data, color }) => {
   const width = 140;
   const height = 36;
 
-  const points = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * width;
+  // Handle single data point naturally
+  const displayData = data.length === 1 ? [data[0], data[0]] : data;
+  const displayLabels = labels.length === 1 ? [labels[0], labels[0]] : labels;
+
+  const points = displayData.map((d, i) => {
+    const x = (i / (displayData.length - 1)) * width;
     const y = height - ((d - min) / range) * height;
     return { x, y, val: d };
   });
 
   const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
   const fillPoints = `${pointsString} ${width},${height} 0,${height}`;
-  const gradientId = `spark-${color.replace('#', '')}`;
-  const colWidth = width / data.length;
+  const gradientId = `spark-${color.replace('#', '')}-${song?.cs_song || Math.random().toString(36).substr(2, 5)}`;
+  const colWidth = width / displayData.length;
 
   return (
     <div 
       className="sparkline-wrapper" 
       onClick={(e) => e.stopPropagation()}
-      style={{ width: `${width}px`, height: `${height}px`, opacity: 0.8, position: 'relative' }}
+      ref={containerRef}
+      style={{ 
+        width: `${width}px`, 
+        height: `${height}px`, 
+        opacity: 0.8, 
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
       onMouseLeave={() => setHoveredIdx(null)}
     >
-      <svg width={width} height={height} viewBox={`0 -5 ${width} ${height + 10}`} style={{ overflow: 'visible' }}>
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <polyline points={fillPoints} fill={`url(#${gradientId})`} />
-        
-        {/* Render Hover Indicator Lines Below the Main Stroke */}
-        {hoveredIdx !== null && (
-          <>
-            <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
-          </>
-        )}
+      {isLoading ? (
+        <Loader2 size={18} className="animate-spin" color={color} style={{ opacity: 0.7 }} />
+      ) : (!data || data.length === 0) ? null : (
+        <>
+          <svg width={width} height={height} viewBox={`0 -5 ${width} ${height + 10}`} style={{ overflow: 'visible', position: 'absolute', left: 0, top: 0 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <polyline points={fillPoints} fill={`url(#${gradientId})`} />
+            
+            {/* Render Hover Indicator Lines Below the Main Stroke */}
+            {hoveredIdx !== null && (
+              <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
+            )}
 
-        <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-        
-        {/* Default end dot if no hover */}
-        {hoveredIdx === null && (
-          <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
-        )}
+            <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            
+            {/* Default end dot if no hover */}
+            {hoveredIdx === null && (
+              <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
+            )}
 
-        {/* Hover Active Dot */}
-        {hoveredIdx !== null && (
-          <circle cx={points[hoveredIdx].x} cy={points[hoveredIdx].y} r="4.5" fill={color} stroke="#fff" strokeWidth="2" style={{ transition: 'all 0.1s' }} />
-        )}
+            {/* Hover Active Dot */}
+            {hoveredIdx !== null && (
+              <circle cx={points[hoveredIdx].x} cy={points[hoveredIdx].y} r="4.5" fill={color} stroke="#fff" strokeWidth="2" style={{ transition: 'all 0.1s' }} />
+            )}
 
-        {/* Invisible Hit Area Columns for Cursor Tracking */}
-        {points.map((p, i) => (
-          <rect
-            key={i}
-            x={p.x - colWidth / 2}
-            y={-5}
-            width={colWidth}
-            height={height + 10}
-            fill="transparent"
-            onMouseEnter={() => setHoveredIdx(i)}
-            style={{ cursor: 'crosshair' }}
-          />
-        ))}
-      </svg>
-      
-      {/* Dynamic Popover Overlay */}
-      {hoveredIdx !== null && (
-        <div style={{
-          position: 'absolute',
-          bottom: '100%',
-          left: `${points[hoveredIdx].x}px`,
-          transform: 'translateX(-50%) translateY(-8px)',
-          background: 'rgba(15,15,20,0.95)',
-          border: '1px solid var(--glass-border)',
-          padding: '0.4rem 0.6rem',
-          borderRadius: '6px',
-          color: 'white',
-          pointerEvents: 'none',
-          whiteSpace: 'nowrap',
-          zIndex: 50,
-          boxShadow: '0 8px 16px rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(5px)'
-        }}>
-          <div style={{ color: color, fontWeight: '700', fontSize: '1rem', lineHeight: '1.2' }}>
-            {Number(points[hoveredIdx].val.toFixed(1))}M
-          </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Week {hoveredIdx + 1}
-          </div>
-        </div>
+            {/* Invisible Hit Area Columns for Cursor Tracking */}
+            {points.map((p, i) => (
+              <rect
+                key={i}
+                x={p.x - colWidth / 2}
+                y={-5}
+                width={colWidth}
+                height={height + 10}
+                fill="transparent"
+                onMouseEnter={() => setHoveredIdx(i)}
+                style={{ cursor: 'crosshair' }}
+              />
+            ))}
+          </svg>
+          
+          {/* Dynamic Popover Overlay */}
+          {hoveredIdx !== null && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: `${points[hoveredIdx].x}px`,
+              transform: 'translateX(-50%) translateY(-8px)',
+              background: 'rgba(15,15,20,0.95)',
+              border: '1px solid var(--glass-border)',
+              padding: '0.4rem 0.6rem',
+              borderRadius: '6px',
+              color: 'white',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+              zIndex: 50,
+              boxShadow: '0 8px 16px rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(5px)'
+            }}>
+              <div style={{ color: color, fontWeight: '700', fontSize: '1rem', lineHeight: '1.2' }}>
+                {Number(points[hoveredIdx].val.toFixed(1))}M
+              </div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                {displayLabels[hoveredIdx]}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -209,17 +272,19 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
           borderColor: index === 0 ? 'rgba(0, 240, 255, 0.3)' : undefined,
           cursor: 'pointer',
           position: 'relative',
-          overflow: 'hidden',
+          overflow: 'visible',
           transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s, background 0.3s'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'translateX(8px)';
           e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
+          e.currentTarget.style.zIndex = '50';
           if (index !== 0) e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'translateX(0)';
           e.currentTarget.style.boxShadow = 'none';
+          e.currentTarget.style.zIndex = '1';
           if (index !== 0) e.currentTarget.style.background = '';
         }}
       >
@@ -303,7 +368,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
           </div>
         </div>
 
-        <Sparkline data={song.trend} color={rowColor} />
+        <Sparkline song={song} color={rowColor} />
 
         <div className="score-info-container" style={{ textAlign: 'right', minWidth: '60px' }}>
           <div className="text-gradient chart-score">
