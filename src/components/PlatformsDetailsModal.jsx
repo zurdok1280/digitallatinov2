@@ -154,7 +154,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
     >
       <div 
         className="glass-panel animate-fade-in modal-container" 
-        style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
+        style={{ width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
         <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>

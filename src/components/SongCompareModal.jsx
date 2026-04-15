@@ -207,7 +207,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                         <th className="song1-text">{song1.song}</th>
                         <th className="song2-text">{song2.song}</th>
                         <th>Dif.</th>
-                        <th>Ganador</th>
+                        <th>Más Popular</th>
                       </tr>
                     </thead>
                     <tbody>

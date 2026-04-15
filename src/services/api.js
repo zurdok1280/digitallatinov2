@@ -372,6 +372,22 @@ export const getSongById = async (csSong) => {
 };
 
 /**
+ * Fetches the historical streams for a given song by its internal cs_song ID.
+ */
+export const getSongHistoricalStreams = async (csSong) => {
+  if (!csSong) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongHistoricalStreams/${csSong}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error(`API Error fetching song historical streams for ${csSong}:`, error);
+    return [];
+  }
+};
+
+/**
  * Fetches the trending debut songs (Heavy Hitters)
  */
 export const getDebutSongs = async (formatId = 0, countryId = 0) => {

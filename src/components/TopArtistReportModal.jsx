@@ -139,7 +139,7 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
       zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' 
     }}>
       <div className="modal-content glass-panel animate-zoom-in modal-container" style={{ 
-        width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'hidden', 
+        width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflow: 'hidden', 
         display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid var(--glass-border)' 
       }}>
         

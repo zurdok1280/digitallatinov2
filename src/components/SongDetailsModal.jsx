@@ -5,6 +5,7 @@ import { getSongBySpotifyId } from '../services/api';
 
 const SongDetailsModal = ({ song, onClose }) => {
   const [songData, setSongData] = useState(null);
+  const [historicalData, setHistoricalData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const formatNumber = (num) => {
@@ -44,6 +45,16 @@ const SongDetailsModal = ({ song, onClose }) => {
         if (isMounted && res && res.data && Object.keys(res.data).length > 0) {
           setSongData(res.data);
         }
+
+        if (internalId) {
+          const { getSongHistoricalStreams } = await import('../services/api');
+          const histData = await getSongHistoricalStreams(internalId);
+          if (isMounted && histData && histData.length > 0) {
+            // Data typically comes in reverse chronological order from similar analytics endpoints
+            // so we reverse it to chronological (left-to-right) for the chart
+            setHistoricalData([...histData].reverse());
+          }
+        }
       } catch (e) {
         console.error("Error fetching song details:", e);
       } finally {
@@ -62,12 +73,18 @@ const SongDetailsModal = ({ song, onClose }) => {
   const displayArtist = songData?.artist_name || song.artists || song.artistName || "Artista Desconocido";
   const displayImage = songData?.image_url || song.imageUrl || song.avatar || song.url || song.backend_avatar || "/logo.png";
   const totalStreams = songData?.spotify_streams || song.spotify_streams_total || song.streams || song.spotify_streams || 0;
-  const popularity = songData?.popularity || song.popularity || 0;
   const currentRank = songData?.rk || song.rk || "--";
   const currentScore = songData?.score || song.score || 0;
   
-  // Demo historical data if not provided by API
-  const chartData = [
+  // Use score for popularity if available, otherwise fallback to popularity
+  const popularity = currentScore ? Math.round(currentScore) : (songData?.popularity || song.popularity || 0);
+
+  // Parse historical data for chart
+  const chartData = historicalData && historicalData.length > 0 ? historicalData.map(d => {
+    const parts = d.date.split('-');
+    const name = parts.length === 3 ? `${parts[1]}/${parts[2]}` : d.date;
+    return { name, val: d.streams_total };
+  }) : [
     { name: 'S1', val: Math.floor(totalStreams * 0.85) || 0 },
     { name: 'S2', val: Math.floor(totalStreams * 0.90) || 0 },
     { name: 'S3', val: Math.floor(totalStreams * 0.95) || 0 },
@@ -85,7 +102,7 @@ const SongDetailsModal = ({ song, onClose }) => {
     >
       <div 
         className="glass-panel animate-fade-in" 
-        style={{ width: '100%', maxWidth: '800px', maxHeight: '95vh', overflowY: 'auto', background: '#0a0a0c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', display: 'flex', flexDirection: 'column' }}
+        style={{ width: '100%', maxWidth: 'min(1000px, 95vw)', maxHeight: '95vh', overflowY: 'auto', background: '#0a0a0c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header with Cover Blur Background */}
         <div style={{ position: 'relative', minHeight: '280px', width: '100%', overflow: 'hidden' }}>

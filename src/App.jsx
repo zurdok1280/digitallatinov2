@@ -154,8 +154,8 @@ function Dashboard() {
         if (selectedGenre === 'All') setSelectedGenre(0);
       }
 
-      // Use Country 1 (Default USA/Global) for Format fetching if in CuratorPicks or TiktokerPicks
-      const targetCountry = (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') ? 1 : selectedCountry;
+      // Use Country 0 (Global/All) for Format fetching if in CuratorPicks or TiktokerPicks
+      const targetCountry = (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') ? 0 : selectedCountry;
 
       if (targetCountry !== null) {
         const [formatsData, citiesData] = await Promise.all([

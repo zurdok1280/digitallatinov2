@@ -1,11 +1,119 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Users, Music, Radio, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, ExternalLink, ChevronLeft, ChevronRight, CircleUser, MapPin, Trophy } from 'lucide-react';
+import { X, Users, Music, Radio, Activity, SquarePlay, Headphones, TrendingUp, Heart, Map, Loader2, ExternalLink, ChevronLeft, ChevronRight, CircleUser, MapPin, Trophy, BarChart2 } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId } from '../services/api';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreams } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+
+// ── Platform definitions for the song metrics panel ──────────────────────────
+const SONG_PLATFORMS = [
+  {
+    key: 'spotify', name: 'Spotify', logo: '/logos/spotify-icon.png', accentColor: '#1DB954',
+    rankKey: 'rk_spotify',
+    fields: [
+      { key: 'spotify_streams_total', label: 'Total Streams' },
+      { key: 'spotify_popularity_current', label: 'Popularidad' },
+      { key: 'spotify_playlists_current', label: 'Playlists Actuales' },
+      { key: 'spotify_playlists_reach_current', label: 'Reach Actual' },
+      { key: 'spotify_playlists_reach_total', label: 'Reach Total' },
+      { key: 'spotify_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
+    key: 'apple', name: 'Apple Music', logo: '/logos/applemusic-icon.png', accentColor: '#fc3c44',
+    rankKey: 'rk_apple',
+    fields: [
+      { key: 'apple_playlists_current', label: 'Playlists Actuales' },
+      { key: 'apple_playlists_total', label: 'Playlists Total' },
+      { key: 'apple_charts_currents', label: 'Charts Actuales' },
+      { key: 'apple_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
+    key: 'amazon', name: 'Amazon Music', logo: '/logos/amazonmusic-icon.svg', accentColor: '#00A8E1',
+    rankKey: 'rk_amazon',
+    fields: [
+      { key: 'amazon_playlists_current', label: 'Playlists Actuales' },
+      { key: 'amazon_paylists_total', label: 'Playlists Total' },
+      { key: 'amazon_charts_current', label: 'Charts Actuales' },
+      { key: 'amazon_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
+    key: 'deezer', name: 'Deezer', logo: '/logos/deezer-icon.png', accentColor: '#A238FF',
+    rankKey: 'rk_deezer',
+    fields: [
+      { key: 'deezer_popularity_current', label: 'Popularidad' },
+      { key: 'deezer_playlists_current', label: 'Playlists Actuales' },
+      { key: 'deezer_playlists_total', label: 'Playlists Total' },
+      { key: 'deezer_charts_current', label: 'Charts Actuales' },
+      { key: 'deezer_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
+    key: 'tiktok', name: 'TikTok', logo: '/logos/tiktok-icon.png', accentColor: '#ff0050',
+    rankKey: 'rk_tiktok',
+    fields: [
+      { key: 'tiktok_videos_total', label: 'Videos Total' },
+      { key: 'tiktok_views_total', label: 'Views Total' },
+      { key: 'tiktok_likes_total', label: 'Likes Total' },
+      { key: 'tiktok_shares_total', label: 'Shares Total' },
+      { key: 'tiktok_engagement_rate_total', label: 'Engagement Rate', isRate: true },
+    ],
+  },
+  {
+    key: 'youtube', name: 'YouTube', logo: '/logos/youtube-icon.svg', accentColor: '#FF0000',
+    rankKey: 'rk_youtube',
+    fields: [
+      { key: 'youtube_video_views_total', label: 'Views Totales' },
+      { key: 'youtube_video_likes_total', label: 'Likes Totales' },
+      { key: 'youtube_shorts_total', label: 'Shorts Total' },
+      { key: 'youtube_short_views_total', label: 'Short Views' },
+      { key: 'youtube_engagement_rate_total', label: 'Engagement Rate', isRate: true },
+    ],
+  },
+  {
+    key: 'shazam', name: 'Shazam', logo: '/logos/shazam-icon.svg', accentColor: '#0A88FF',
+    rankKey: 'rk_shazam',
+    fields: [
+      { key: 'shazam_shazams_total', label: 'Shazams Total' },
+      { key: 'shazam_charts_current', label: 'Charts Actuales' },
+      { key: 'shazam_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
+    key: 'tidal', name: 'Tidal', logo: '/logos/tidal-icon.png', accentColor: '#00FFFF',
+    rankKey: 'rk_tidal',
+    fields: [
+      { key: 'tidal_popularity_current', label: 'Popularidad' },
+      { key: 'tidal_playlists_current', label: 'Playlists Actuales' },
+      { key: 'tidal_playlists_total', label: 'Playlists Total' },
+    ],
+  },
+  {
+    key: 'soundcloud', name: 'SoundCloud', logo: '/logos/soundcloud-icon.svg', accentColor: '#FF5500',
+    rankKey: 'rk_soundcloud',
+    fields: [
+      { key: 'soundcloud_streams_total', label: 'Streams Total' },
+      { key: 'soundcloud_favorites_total', label: 'Favoritos Total' },
+      { key: 'soundcloud_reposts_total', label: 'Reposts Total' },
+      { key: 'soundcloud_engagement_rate_total', label: 'Engagement Rate', isRate: true },
+    ],
+  },
+];
+
+const fmtPlatVal = (val, isRate) => {
+  if (val === null || val === undefined || isNaN(Number(val))) return 'N/A';
+  const n = Number(val);
+  if (isRate) return (n * 100).toFixed(1) + '%';
+  if (n >= 1000000000) return (n / 1000000000).toFixed(1) + 'B';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString();
+};
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -40,7 +148,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
 );
 
 const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('mapa');
   const [artistData, setArtistData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -62,6 +170,13 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [topSongsData, setTopSongsData] = useState([]);
   const [isTopSongsLoading, setIsTopSongsLoading] = useState(false);
+
+  // ── Song details tab state ────────────────────────────────────────────────
+  const [selectedPlatformKey, setSelectedPlatformKey] = useState('spotify');
+  const [songPlatformData, setSongPlatformData] = useState(null);
+  const [isSongPlatformLoading, setIsSongPlatformLoading] = useState(false);
+  const [songHistoricalData, setSongHistoricalData] = useState([]);
+  const [isSongHistoricalLoading, setIsSongHistoricalLoading] = useState(false);
 
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
@@ -172,18 +287,46 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     let isMounted = true;
     const fetchTopSongs = async () => {
       setIsTopSongsLoading(true);
-      const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1); // fallback to 1 (Global) since countryId from modal might not be strictly country for this endpoint
+      const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1);
       if (isMounted) {
         setTopSongsData(data || []);
         setIsTopSongsLoading(false);
       }
     };
-    // Fetch only if the tab is selected and we don't have the data yet
     if (activeTab === 'detalles_cancion' && topSongsData.length === 0) {
       fetchTopSongs();
     }
     return () => { isMounted = false; };
   }, [artist, activeTab, topSongsData.length]);
+
+  // Fetch platform data + historical streams when the song details tab opens
+  useEffect(() => {
+    let isMounted = true;
+    const csSong = artist?.cs_song || artist?.csSong;
+    if (activeTab !== 'detalles_cancion' || !csSong) return;
+
+    const fetchSongMetrics = async () => {
+      // Platform data
+      setIsSongPlatformLoading(true);
+      const pd = await getSongPlatformData(csSong, 0, 0);
+      if (isMounted) {
+        // API returns array or object
+        setSongPlatformData(Array.isArray(pd) ? pd[0] : pd);
+        setIsSongPlatformLoading(false);
+      }
+
+      // Historical streams
+      setIsSongHistoricalLoading(true);
+      const hist = await getSongHistoricalStreams(csSong);
+      if (isMounted) {
+        setSongHistoricalData(Array.isArray(hist) ? [...hist].reverse() : []);
+        setIsSongHistoricalLoading(false);
+      }
+    };
+
+    if (!songPlatformData) fetchSongMetrics();
+    return () => { isMounted = false; };
+  }, [activeTab, artist]);
 
   useEffect(() => {
     let isMounted = true;
@@ -226,7 +369,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     >
       <div 
         className="glass-panel animate-fade-in modal-container" 
-        style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
+        style={{ width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
         <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%' }}>
@@ -275,11 +418,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
           `}</style>
           {[
-            { id: 'overview', label: 'Panorama', icon: Activity },
-            ...(artist?.songName ? [{ id: 'detalles_cancion', label: `Detalles de ${artist.songName}`, icon: Music }] : []),
             { id: 'mapa', label: 'Mapa', icon: Map },
+            ...(artist?.songName ? [{ id: 'detalles_cancion', label: `Detalles de ${artist.songName}`, icon: Music }] : []),
             { id: 'playlists', label: 'Playlists Recomendadas', icon: Music },
             { id: 'tiktok', label: 'TikTokers', icon: Users },
+            { id: 'overview', label: 'Panorama', icon: Activity },
             { id: 'radio', label: 'Emisoras Gap', icon: Radio },
             { id: 'neuronal', label: 'Grafo Neuronal', icon: Activity },
             { id: 'sunburst', label: 'Grafo v2 (Sunburst)', icon: Activity },
@@ -390,61 +533,167 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
           {activeTab === 'detalles_cancion' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Estadísticas Sociales Rápidas - Horizontal Scroll/Flexbox for Mobile */}
+
+              {/* ── Platform Metrics Panel ────────────────────────────────── */}
               <div>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                  <TrendingUp size={20} color="var(--accent-primary)" /> Estadísticas Sociales Rápidas
+                {/* Section Title */}
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem' }}>
+                  <TrendingUp size={18} color="var(--accent-primary)" /> Estadísticas por Plataformas
                 </h3>
-                <div style={{
-                  display: 'flex',
-                  gap: '1rem',
-                  overflowX: 'auto',
-                  paddingBottom: '0.5rem',
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none'
-                }}>
-                  <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-                  
-                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #E1306C' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                      <InstagramIcon size={16} color="#E1306C" /> Instagram
-                    </div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.followers_total_instagram || 0)}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Seguidores</div>
-                  </div>
 
-                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #ff0050' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                      <Users size={16} color="#ff0050" /> TikTok
-                    </div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.followers_total_tiktok || 0)}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Seguidores</div>
-                  </div>
-
-                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #FF0000' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                      <SquarePlay size={16} color="#FF0000" /> YouTube
-                    </div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.subscribers_total_youtube || 0)}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Suscriptores</div>
-                  </div>
-
-                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #1877F2' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                      <FacebookIcon size={16} color="#1877F2" /> Facebook
-                    </div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.followers_total_facebook || 0)}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Seguidores</div>
-                  </div>
-                  
-                  <div className="glass-panel" style={{ minWidth: '160px', padding: '1rem', flex: '1 0 auto', borderTop: '3px solid #1DB954' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                      <Music size={16} color="#1DB954" /> Spotify
-                    </div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{formatNumber(artistData?.monthly_listeners || artist.monthlyListeners)}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Mensuales</div>
-                  </div>
+                {/* Platform Pills — flex-wrap so they form at most 2 rows */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.2rem' }}>
+                  {SONG_PLATFORMS.map(p => (
+                    <button
+                      key={p.key}
+                      onClick={() => setSelectedPlatformKey(p.key)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.45rem',
+                        padding: '0.4rem 0.85rem',
+                        borderRadius: '999px',
+                        border: selectedPlatformKey === p.key ? `2px solid ${p.accentColor}` : '2px solid rgba(255,255,255,0.08)',
+                        background: selectedPlatformKey === p.key ? `${p.accentColor}22` : 'rgba(255,255,255,0.03)',
+                        color: selectedPlatformKey === p.key ? p.accentColor : 'var(--text-muted)',
+                        fontWeight: selectedPlatformKey === p.key ? 700 : 400,
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <img src={p.logo} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain', borderRadius: 3, filter: selectedPlatformKey !== p.key ? 'grayscale(60%) opacity(0.6)' : 'none' }} />
+                      {p.name}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Active Platform Header */}
+                {(() => {
+                  const activePlat = SONG_PLATFORMS.find(p => p.key === selectedPlatformKey);
+                  const rankVal = songPlatformData ? songPlatformData[activePlat.rankKey] : null;
+                  return (
+                    <div
+                      className="glass-panel"
+                      style={{
+                        padding: '1.5rem',
+                        borderTop: `3px solid ${activePlat.accentColor}`,
+                        background: `linear-gradient(135deg, ${activePlat.accentColor}0d 0%, rgba(0,0,0,0) 60%)`,
+                        position: 'relative', overflow: 'hidden',
+                      }}
+                    >
+                      {/* Watermark glow */}
+                      <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: `radial-gradient(circle, ${activePlat.accentColor}33 0%, transparent 70%)`, pointerEvents: 'none' }} />
+
+                      {/* Header row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: `1px solid ${activePlat.accentColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }}>
+                            <img src={activePlat.logo} alt={activePlat.name} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>{activePlat.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Métricas de la canción</div>
+                          </div>
+                        </div>
+
+                        {rankVal > 0 && (
+                          <div style={{ background: `${activePlat.accentColor}22`, border: `1px solid ${activePlat.accentColor}55`, borderRadius: 12, padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Trophy size={14} color={activePlat.accentColor} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: activePlat.accentColor }}>Rank #{fmtPlatVal(rankVal, false)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Metrics Grid */}
+                      {isSongPlatformLoading ? (
+                        <div className="flex-center" style={{ height: 120 }}>
+                          <Loader2 className="loading-spinner" size={28} color={activePlat.accentColor} />
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.8rem' }}>
+                          {activePlat.fields.map(field => {
+                            const rawVal = songPlatformData ? songPlatformData[field.key] : null;
+                            const formatted = rawVal !== null && rawVal !== undefined ? fmtPlatVal(rawVal, field.isRate) : 'N/A';
+                            const hasData = rawVal && Number(rawVal) > 0;
+                            return (
+                              <div
+                                key={field.key}
+                                style={{
+                                  background: 'rgba(255,255,255,0.04)',
+                                  border: '1px solid rgba(255,255,255,0.07)',
+                                  borderRadius: 12,
+                                  padding: '0.9rem 1rem',
+                                  display: 'flex', flexDirection: 'column', gap: '0.3rem',
+                                  transition: 'all 0.2s',
+                                  cursor: 'default',
+                                  borderLeft: hasData ? `3px solid ${activePlat.accentColor}` : '3px solid rgba(255,255,255,0.06)',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                              >
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{field.label}</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 900, color: hasData ? 'var(--text-main)' : 'rgba(255,255,255,0.2)', lineHeight: 1.1 }}>{formatted}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* No data message */}
+                      {!isSongPlatformLoading && songPlatformData && activePlat.fields.every(f => !songPlatformData[f.key] || Number(songPlatformData[f.key]) === 0) && (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                          No hay datos disponibles para {activePlat.name}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* ── Spotify Historical Streams Chart ──────────────────────── */}
+              <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0, fontSize: '1rem' }}>
+                    <BarChart2 size={18} color="#1DB954" /> Rendimiento en Spotify
+                  </h3>
+                  {songHistoricalData.length > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.7rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <TrendingUp size={11} /> {songHistoricalData.length} días de historial
+                    </div>
+                  )}
+                </div>
+                {isSongHistoricalLoading ? (
+                  <div className="flex-center" style={{ height: 180 }}>
+                    <Loader2 className="loading-spinner" size={28} color="#1DB954" />
+                  </div>
+                ) : songHistoricalData.length === 0 ? (
+                  <div className="flex-center" style={{ height: 120, color: 'var(--text-muted)', fontSize: '0.9rem', flexDirection: 'column', gap: '0.5rem' }}>
+                    <BarChart2 size={32} style={{ opacity: 0.2 }} />
+                    Sin historial de streams disponible
+                  </div>
+                ) : (
+                  <div style={{ width: '100%', height: 180 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={songHistoricalData.map(d => ({ name: d.date?.slice(5), val: d.streams_total }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="songTabGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35}/>
+                            <stop offset="95%" stopColor="#1DB954" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#555', fontSize: 10 }} interval="preserveStartEnd" />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#555', fontSize: 10 }} tickFormatter={v => formatNumber(v)} />
+                        <Tooltip
+                          contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '0.8rem' }}
+                          itemStyle={{ color: '#1DB954' }}
+                          formatter={v => [formatNumber(v), 'Streams']}
+                        />
+                        <Area type="monotone" dataKey="val" stroke="#1DB954" strokeWidth={2.5} fillOpacity={1} fill="url(#songTabGrad)" dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
 
               {/* Lista de Recomendación Top 5 */}
@@ -646,7 +895,19 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
           {activeTab === 'mapa' && (
             <div className="animate-fade-in">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              {/* 1. Mapa o cargador en la parte superior */}
+              {isMapLoading ? (
+                <div className="flex-center" style={{ height: '400px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid var(--glass-border)', marginBottom: '2rem' }}>
+                  <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
+                </div>
+              ) : (
+                <div style={{ marginBottom: '2rem' }}>
+                  <ArtistMap data={mapData} />
+                </div>
+              )}
+
+              {/* 2. Título, descripción y selector en el medio */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Map size={20} color="var(--accent-primary)" /> Distribución Geográfica de Audiencia
@@ -668,63 +929,55 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 </div>
               </div>
 
-              {isMapLoading ? (
-                <div className="flex-center" style={{ height: '400px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-                  <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
-                </div>
-              ) : (
-                <>
-                  <ArtistMap data={mapData} />
-
-                  {/* Top 10 Cities Cards */}
-                  <div style={{ marginTop: '2.5rem' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>
-                      <Trophy size={18} color="#ffb700" /> Top 10 Ciudades de Consumo
-                    </h4>
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
-                      gap: '1rem' 
-                    }}>
-                      {[...mapData]
-                        .sort((a, b) => b.current_listeners - a.current_listeners)
-                        .slice(0, 10)
-                        .map((city, idx) => (
-                          <div 
-                            key={idx} 
-                            className="glass-panel-interactive animate-fade-in"
-                            style={{ 
-                              padding: '1rem', 
-                              position: 'relative',
-                              borderLeft: idx < 3 ? `3px solid ${idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32'}` : '1px solid var(--glass-border)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.4rem',
-                              animationDelay: `${idx * 0.05}s`
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <span style={{ 
-                                fontSize: '0.7rem', 
-                                fontWeight: 900, 
-                                color: idx < 3 ? (idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32') : 'var(--text-dim)' 
-                              }}>
-                                #{idx + 1}
-                              </span>
-                              <MapPin size={12} color="var(--text-dim)" opacity={0.5} />
-                            </div>
-                            <h5 style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {city.city_name}
-                            </h5>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
-                              {formatNumber(city.current_listeners)} <span style={{ fontSize: '0.65rem', fontWeight: 400, color: 'var(--text-muted)' }}>oyentes</span>
-                            </div>
+              {/* 3. Top 10 Ciudades en la parte inferior */}
+              {!isMapLoading && (
+                <div style={{ marginTop: '1rem' }}>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>
+                    <Trophy size={18} color="#ffb700" /> Top 10 Ciudades de Consumo
+                  </h4>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
+                    gap: '1rem' 
+                  }}>
+                    {[...mapData]
+                      .sort((a, b) => b.current_listeners - a.current_listeners)
+                      .slice(0, 10)
+                      .map((city, idx) => (
+                        <div 
+                          key={idx} 
+                          className="glass-panel-interactive animate-fade-in"
+                          style={{ 
+                            padding: '1rem', 
+                            position: 'relative',
+                            borderLeft: idx < 3 ? `3px solid ${idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32'}` : '1px solid var(--glass-border)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.4rem',
+                            animationDelay: `${idx * 0.05}s`
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ 
+                              fontSize: '0.7rem', 
+                              fontWeight: 900, 
+                              color: idx < 3 ? (idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32') : 'var(--text-dim)' 
+                            }}>
+                              #{idx + 1}
+                            </span>
+                            <MapPin size={12} color="var(--text-dim)" opacity={0.5} />
                           </div>
-                        ))
-                      }
-                    </div>
+                          <h5 style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {city.city_name}
+                          </h5>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
+                            {formatNumber(city.current_listeners)} <span style={{ fontSize: '0.65rem', fontWeight: 400, color: 'var(--text-muted)' }}>oyentes</span>
+                          </div>
+                        </div>
+                      ))
+                    }
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}
