@@ -20,8 +20,8 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
   const showFilters = location.pathname === '/';
 
   return (
-    <header className="glass-panel header-container">
-      <div className="flex-center" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
+    <header className="header-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'transparent', padding: '0.5rem 0' }}>
+      <div className="flex-center" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between', padding: '0 1rem' }}>
         <div className="flex-center" style={{ gap: '1rem' }}>
           <button onClick={onToggleSidebar} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
             <Menu size={28} />
@@ -122,8 +122,8 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
         </div>
 
       </div>
-      {showFilters && (
-        <div className="header-filters">
+      {showFilters && (
+        <div className="glass-panel header-filters" style={{ alignSelf: 'center', margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
           {/* Country Filter */}
           {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
           <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
