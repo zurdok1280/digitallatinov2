@@ -154,7 +154,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [mapData, setMapData] = useState([]);
   const [isMapLoading, setIsMapLoading] = useState(false);
-  const [selectedMapCountry, setSelectedMapCountry] = useState(artist?.countryId ?? 1);
+  const [selectedMapCountry, setSelectedMapCountry] = useState(0);
 
   const [playlistTypes, setPlaylistTypes] = useState([{ name: 'Todos', id: 0 }]);
   const [selectedPlaylistType, setSelectedPlaylistType] = useState(0);
@@ -912,8 +912,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Map size={20} color="var(--accent-primary)" /> Distribución Geográfica de Audiencia
                   </h3>
-                  <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Ciudades core ordenadas por concentración y volumen métrico de escuchas activos.</p>
-                </div>
+                  </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filtrar por país:</span>
