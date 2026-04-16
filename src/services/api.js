@@ -19,6 +19,23 @@ const withCache = async (key, fetcher) => {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Fallback utilitario para asegurar que ninguna respuesta traiga canciones duplicadas
+ * ya que si esto llega a Componentes React puede renderizar elementos duplicados.
+ */
+const deduplicateSongs = (songs) => {
+  if (!Array.isArray(songs)) return [];
+  const seen = new Set();
+  return songs.filter(song => {
+    // Tomamos como ID prioritario cs_song o spotifyid, si no existe, usamos rk
+    const primaryId = song.cs_song || song.spotifyid;
+    const key = primaryId ? `id_${primaryId}` : `rk_${song.rk || Math.random()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+/**
  * Fetches the list of countries from the API.
  * Returns an array of objects: { id: number, description: string }
  */
@@ -78,7 +95,8 @@ export const getChartDigital = async (genreId, countryId, cityId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
+    const rawArray = Array.isArray(data) ? data : (data?.data || []);
+    return deduplicateSongs(rawArray);
   } catch (error) {
     console.error("API Error fetching chart:", error);
     return [];
@@ -99,7 +117,8 @@ export const getChartDigitalHitsRadio = async (genreId, countryId, cityId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
+    const rawArray = Array.isArray(data) ? data : (data?.data || []);
+    return deduplicateSongs(rawArray);
   } catch (error) {
     console.error("API Error fetching radio chart:", error);
     return [];
@@ -398,7 +417,8 @@ export const getDebutSongs = async (formatId = 0, countryId = 0) => {
     const response = await fetch(`${API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
+    const rawArray = Array.isArray(data) ? data : (data?.data || []);
+    return deduplicateSongs(rawArray);
   } catch (error) {
     console.error("API Error fetching debut songs:", error);
     return [];
@@ -416,7 +436,8 @@ export const getCuratorPics = async (formatId = 0, typeId = 0) => {
     const response = await fetch(`${API_BASE_URL}/report/getCuratorPics/${fId}/${tId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
+    const rawArray = Array.isArray(data) ? data : (data?.data || []);
+    return deduplicateSongs(rawArray);
   } catch (error) {
     console.error("API Error fetching curator pics:", error);
     return [];
@@ -447,10 +468,12 @@ export const getTiktokPics = async (formatId = 0) => {
   const fId = formatId === 'All' ? 0 : formatId;
 
   try {
+
     const response = await fetch(`${API_BASE_URL}/report/getTiktokPics/${fId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    return Array.isArray(data) ? data : (data?.data || []);
+    const rawArray = Array.isArray(data) ? data : (data?.data || []);
+    return deduplicateSongs(rawArray);
   } catch (error) {
     console.error("API Error fetching tiktok pics:", error);
     return [];
