@@ -735,7 +735,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         </div>
                         
                         <img 
-                          src={song.avatar || artist.imageUrl || '/logo.png'} 
+                          src={(song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || artist.imageUrl || '/logo.png'} 
                           alt={song.song} 
                           style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} 
                         />

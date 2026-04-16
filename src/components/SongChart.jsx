@@ -309,7 +309,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
           </div>
 
           <div className="chart-img-wrapper">
-            <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={(song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div className="eq-container">
               <div className="eq-bar" style={{ height: '16px' }} />
               <div className="eq-bar" style={{ height: '24px' }} />
@@ -353,11 +353,11 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
                   id: song.spotifyartistid || song.cs_song,
                   spotifyid: song.spotifyartistid || song.cs_song,
                   name: song.artists,
-                  imageUrl: song.avatar || song.url || song.spotifyid,
+                  imageUrl: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || song.url,
                   monthlyListeners: song.spotify_streams_total || 0,
                   followers: song.audience_total || 0,
                   artist: song.artists,
-                  img: song.spotifyid || song.url || song.avatar || '/logo.png',
+                  img: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.url || song.avatar || '/logo.png',
                   songName: song.song,
                   cs_song: song.cs_song
                 });

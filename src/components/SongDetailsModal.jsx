@@ -71,7 +71,7 @@ const SongDetailsModal = ({ song, onClose }) => {
   // Use either the incoming song object for immediate display or the fetched songData
   const displayTitle = songData?.song_name || song.song || song.trackName || song.title || "Detalles de Canción";
   const displayArtist = songData?.artist_name || song.artists || song.artistName || "Artista Desconocido";
-  const displayImage = songData?.image_url || song.imageUrl || song.avatar || song.url || song.backend_avatar || "/logo.png";
+  const displayImage = (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || songData?.image_url || song.imageUrl || song.avatar || song.url || song.backend_avatar || "/logo.png";
   const totalStreams = songData?.spotify_streams || song.spotify_streams_total || song.streams || song.spotify_streams || 0;
   const currentRank = songData?.rk || song.rk || "--";
   const currentScore = songData?.score || song.score || 0;
