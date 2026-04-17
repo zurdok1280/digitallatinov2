@@ -232,6 +232,22 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
         ) : activeView === 'Charts' ? (
           <>
             <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f15b29' }}>
+                <MapPin size={16} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>CIUDAD TARGET</span>
+              </div>
+              <SearchableSelect
+                options={cityOptions}
+                value={String(selectedCity)}
+                onChange={(val) => {
+                  if (!user) { onLoginClick(); return; }
+                  setSelectedCity(val);
+                }}
+                placeholder="Todas las ciudades"
+                disabled={cities.length === 0}
+              />
+            </div>
+            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffb700' }}>
                 <AudioLines size={16} />
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>FORMATO STATUS</span>
@@ -257,22 +273,6 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 <option value="C">Current</option>
                 <option value="N">Todos</option>
               </select>
-            </div>
-            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f15b29' }}>
-                <MapPin size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>CIUDAD TARGET</span>
-              </div>
-              <SearchableSelect
-                options={cityOptions}
-                value={String(selectedCity)}
-                onChange={(val) => {
-                  if (!user) { onLoginClick(); return; }
-                  setSelectedCity(val);
-                }}
-                placeholder="Todas las ciudades"
-                disabled={cities.length === 0}
-              />
             </div>
           </>
         ) : (
