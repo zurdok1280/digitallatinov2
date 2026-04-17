@@ -5,7 +5,7 @@ import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek } from '../services/api';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
@@ -289,10 +289,41 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     const fetchTopSongs = async () => {
       setIsTopSongsLoading(true);
       const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1);
-      if (isMounted) {
+      
+      if (isMounted && data && data.length > 0) {
+        // Enriquecer las primeras 5 canciones con detalles extras del endpoint getSongById
+        const top5 = data.slice(0, 5);
+        const enriched = await Promise.all(
+          top5.map(async (song) => {
+            const trackId = song.cs_song || song.id || song.fk_track;
+            if (!trackId) return song;
+            
+            try {
+              const detail = await getSongById(trackId);
+              if (detail) {
+                return {
+                  ...song,
+                  // El endpoint getSongById usa "title" y "label"
+                  song: detail.title || detail.tittle || song.song || 'Sin título',
+                  label: detail.label || song.label || '',
+                  avatar: song.image_url || song.avatar
+                };
+              }
+            } catch (e) {
+              console.error("Error enriqueciendo canción:", trackId, e);
+            }
+            return song;
+          })
+        );
+        
+        if (isMounted) {
+          setTopSongsData(enriched);
+        }
+      } else if (isMounted) {
         setTopSongsData(data || []);
-        setIsTopSongsLoading(false);
       }
+      
+      if (isMounted) setIsTopSongsLoading(false);
     };
     if (activeTab === 'detalles_cancion' && topSongsData.length === 0) {
       fetchTopSongs();
@@ -759,7 +790,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         </div>
                         
                         <img 
-                          src={(song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || artist.imageUrl || '/logo.png'} 
+                          src={song.avatar || song.image_url || artist.imageUrl || '/logo.png'} 
                           alt={song.song} 
                           style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} 
                         />
@@ -769,7 +800,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                             {song.song}
                           </h4>
                           <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                            {song.label || 'Independiente'}
+                            {song.label || ''}
                           </p>
                           {song.release_date && (
                              <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
