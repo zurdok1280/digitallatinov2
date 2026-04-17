@@ -5,7 +5,7 @@ import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreams } from '../services/api';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
@@ -317,7 +317,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
       // Historical streams
       setIsSongHistoricalLoading(true);
-      const hist = await getSongHistoricalStreams(csSong);
+      const hist = await getSongHistoricalStreamsWeek(csSong, 0, 0);
       if (isMounted) {
         setSongHistoricalData(Array.isArray(hist) ? [...hist].reverse() : []);
         setIsSongHistoricalLoading(false);
@@ -658,7 +658,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   </h3>
                   {songHistoricalData.length > 0 && (
                     <div style={{ fontSize: '0.75rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.7rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <TrendingUp size={11} /> {songHistoricalData.length} días de historial
+                      <TrendingUp size={11} /> {songHistoricalData.length} semanas de historial
                     </div>
                   )}
                 </div>
@@ -674,7 +674,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 ) : (
                   <div style={{ width: '100%', height: 180 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={songHistoricalData.map(d => ({ name: d.date?.slice(5), val: d.streams_total }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                      <AreaChart data={songHistoricalData.map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                         <defs>
                           <linearGradient id="songTabGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35}/>

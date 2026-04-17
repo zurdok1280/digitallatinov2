@@ -407,6 +407,22 @@ export const getSongHistoricalStreams = async (csSong) => {
 };
 
 /**
+ * Fetches the weekly historical streams for a given song.
+ */
+export const getSongHistoricalStreamsWeek = async (csSong, countryId = 0, formatId = 0) => {
+  if (!csSong) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getSongHistoricalStreamsWeek/${csSong}/${countryId}/${formatId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error(`API Error fetching song weekly streams for ${csSong}:`, error);
+    return [];
+  }
+};
+
+/**
  * Fetches the trending debut songs (Heavy Hitters)
  */
 export const getDebutSongs = async (formatId = 0, countryId = 0) => {
