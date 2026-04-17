@@ -3,7 +3,7 @@ import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User
 import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
 
-const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick }) => {
+const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, selectedCRG, setSelectedCRG, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick }) => {
 
   // Build option arrays for SearchableSelect
   const countryOptions = [
@@ -229,6 +229,52 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
               placeholder="Todos los Tipos"
             />
           </div>
+        ) : activeView === 'Charts' ? (
+          <>
+            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffb700' }}>
+                <AudioLines size={16} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>FORMATO STATUS</span>
+              </div>
+              <select
+                value={selectedCRG}
+                onChange={(e) => {
+                  if (!user) { onLoginClick(); return; }
+                  setSelectedCRG(e.target.value);
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--glass-border)',
+                  padding: '0.5rem 0.8rem',
+                  borderRadius: 'var(--radius-sm)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  width: '100%'
+                }}
+              >
+                <option value="C">Current</option>
+                <option value="N">Todos</option>
+              </select>
+            </div>
+            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f15b29' }}>
+                <MapPin size={16} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>CIUDAD TARGET</span>
+              </div>
+              <SearchableSelect
+                options={cityOptions}
+                value={String(selectedCity)}
+                onChange={(val) => {
+                  if (!user) { onLoginClick(); return; }
+                  setSelectedCity(val);
+                }}
+                placeholder="Todas las ciudades"
+                disabled={cities.length === 0}
+              />
+            </div>
+          </>
         ) : (
           // Ciudad Target with searchable select
           <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>

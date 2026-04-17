@@ -84,13 +84,13 @@ export const getCitiesByCountry = async (countryId) => {
 /**
  * Fetches the digital chart list based on dynamic filters.
  */
-export const getChartDigital = async (genreId, countryId, cityId) => {
+export const getChartDigital = async (genreId, countryId, cityId, crg = 'C') => {
   const gId = genreId === 'All' ? 0 : genreId;
   const cId = countryId === 'All' ? 0 : countryId;
   const ctyId = cityId === 'All' ? 0 : cityId;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/C/${ctyId}`);
+    const response = await fetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/${crg}/${ctyId}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

@@ -64,6 +64,7 @@ function Dashboard() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('0');
   const [selectedPlaylistType, setSelectedPlaylistType] = useState('0');
+  const [selectedCRG, setSelectedCRG] = useState('C');
 
   const [selectedSong, setSelectedSong] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -226,7 +227,7 @@ function Dashboard() {
         if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       } else if (activeView === 'Charts') {
         setIsLoading(true);
-        const data = await getChartDigital(selectedGenre, selectedCountry, selectedCity);
+        const data = await getChartDigital(selectedGenre, selectedCountry, selectedCity, selectedCRG);
         if (!signal.aborted) { setSongs(data); setIsLoading(false); }
       }
     };
@@ -234,7 +235,7 @@ function Dashboard() {
     fetchChartData();
     // Cleanup: abort the pending request when the effect re-runs
     return () => controller.abort();
-  }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, activeView]);
+  }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, selectedCRG, activeView]);
 
   // Comparison Handlers
   const handleToggleComparisonMode = () => {
@@ -327,6 +328,8 @@ function Dashboard() {
             setSelectedPlatform={setSelectedPlatform}
             selectedPlaylistType={selectedPlaylistType}
             setSelectedPlaylistType={setSelectedPlaylistType}
+            selectedCRG={selectedCRG}
+            setSelectedCRG={setSelectedCRG}
             onToggleSidebar={() => setIsSidebarOpen(true)}
             onOpenSearch={() => setIsSearchOpen(true)}
             user={user}
