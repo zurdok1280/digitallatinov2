@@ -148,7 +148,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
 );
 
 const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
-  const [activeTab, setActiveTab] = useState('mapa');
+  const [activeTab, setActiveTab] = useState(artist?.initialTab || 'mapa');
   const [artistData, setArtistData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -177,6 +177,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const [isSongPlatformLoading, setIsSongPlatformLoading] = useState(false);
   const [songHistoricalData, setSongHistoricalData] = useState([]);
   const [isSongHistoricalLoading, setIsSongHistoricalLoading] = useState(false);
+  const [isHistoricalChronological, setIsHistoricalChronological] = useState(true);
 
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
@@ -657,8 +658,31 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     <BarChart2 size={18} color="#1DB954" /> Rendimiento en Spotify
                   </h3>
                   {songHistoricalData.length > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.7rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <TrendingUp size={11} /> {songHistoricalData.length} semanas de historial
+                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                      <button 
+                        onClick={() => setIsHistoricalChronological(!isHistoricalChronological)}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '20px',
+                          padding: '0.25rem 0.8rem',
+                          color: 'var(--text-main)',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                      >
+                        <TrendingUp size={12} color={isHistoricalChronological ? "var(--text-muted)" : "var(--accent-primary)"} />
+                        {isHistoricalChronological ? 'Cronológico' : 'Menor a Mayor'}
+                      </button>
+                      <div style={{ fontSize: '0.75rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.7rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <BarChart2 size={11} /> {songHistoricalData.length} semanas de historial
+                      </div>
                     </div>
                   )}
                 </div>
@@ -674,7 +698,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 ) : (
                   <div style={{ width: '100%', height: 180 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={songHistoricalData.map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                      <AreaChart data={(isHistoricalChronological ? songHistoricalData : [...songHistoricalData].sort((a,b) => (a.spotify_streams || 0) - (b.spotify_streams || 0))).map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                         <defs>
                           <linearGradient id="songTabGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35}/>
