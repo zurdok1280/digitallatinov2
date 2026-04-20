@@ -115,7 +115,7 @@ const SunburstGraph = ({ artistId }) => {
         .attr("text-anchor", "middle")
         .style("user-select", "none")
         .selectAll("text")
-        .data(root.descendants().filter(d => d.depth && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.04))
+        .data(root.descendants().filter(d => d.depth && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.015))
         .join("text")
         .attr("dy", "0.35em")
         .attr("fill", "#fff")

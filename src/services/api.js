@@ -242,7 +242,7 @@ export const getArtistRadioRelated = async (spotifyId, countryId = 0) => {
 export const getArtistGraph = async (spotifyId) => {
   if (!spotifyId) return null;
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistRelatedGraph/${encodeURIComponent(spotifyId)}`);
+    const response = await fetch(`${API_BASE_URL}/report/getArtistRelatedGraphv2/${encodeURIComponent(spotifyId)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;

@@ -111,7 +111,7 @@ const CirclePackGraph = ({ artistId }) => {
         .attr("pointer-events", "none")
         .attr("text-anchor", "middle")
         .selectAll("text")
-        .data(packedData.descendants().filter(d => !d.children && d.r > 16)) 
+        .data(packedData.descendants().filter(d => !d.children && d.r > 10)) 
         .join("text")
         .attr("x", d => d.x)
         .attr("y", d => d.y)
