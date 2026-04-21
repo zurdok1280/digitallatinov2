@@ -253,6 +253,22 @@ export const getArtistGraph = async (spotifyId) => {
 };
 
 /**
+ * Fetches opportunities in cities comparing artist current listeners vs related artists average
+ */
+export const getCitiesGapData = async (countryId, spotifyId) => {
+  if (!spotifyId) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getDataArtistCountryRelated/${countryId}/${encodeURIComponent(spotifyId)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching cities gap data:", error);
+    return [];
+  }
+};
+
+/**
  * Fetches platform-specific detailed data for a given song across Spotify, TikTok, etc.
  */
 export const getSongPlatformData = async (csSong, formatId = 0, countryId = 0) => {
