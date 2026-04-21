@@ -3,9 +3,9 @@ import { X, Users, Music, Radio, Activity, SquarePlay, Headphones, TrendingUp, H
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
-import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById } from '../services/api';
+import CitiesGapMap from './CitiesGapMap';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById, getCitiesGapData } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 
@@ -172,6 +172,10 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const [topSongsData, setTopSongsData] = useState([]);
   const [isTopSongsLoading, setIsTopSongsLoading] = useState(false);
 
+  const [citiesGapData, setCitiesGapData] = useState([]);
+  const [isCitiesGapLoading, setIsCitiesGapLoading] = useState(false);
+  const [selectedCitiesGapCountry, setSelectedCitiesGapCountry] = useState(artist?.countryId ?? 1);
+
   // ── Song details tab state ────────────────────────────────────────────────
   const [selectedPlatformKey, setSelectedPlatformKey] = useState('spotify');
   const [songPlatformData, setSongPlatformData] = useState(null);
@@ -291,7 +295,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     const fetchTopSongs = async () => {
       setIsTopSongsLoading(true);
       const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1);
-      
+
       if (isMounted && data && data.length > 0) {
         // Enriquecer las primeras 5 canciones con detalles extras del endpoint getSongById
         const top5 = data.slice(0, 5);
@@ -299,7 +303,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
           top5.map(async (song) => {
             const trackId = song.cs_song || song.id || song.fk_track;
             if (!trackId) return song;
-            
+
             try {
               const detail = await getSongById(trackId);
               if (detail) {
@@ -317,14 +321,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             return song;
           })
         );
-        
+
         if (isMounted) {
           setTopSongsData(enriched);
         }
       } else if (isMounted) {
         setTopSongsData(data || []);
       }
-      
+
       if (isMounted) setIsTopSongsLoading(false);
     };
     if (activeTab === 'detalles_cancion' && topSongsData.length === 0) {
@@ -394,15 +398,31 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     return () => { isMounted = false; };
   }, [artist, selectedRadioCountry]);
 
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCitiesGap = async () => {
+      setIsCitiesGapLoading(true);
+      const data = await getCitiesGapData(selectedCitiesGapCountry, artist.id);
+      if (isMounted) {
+        setCitiesGapData(data);
+        setIsCitiesGapLoading(false);
+      }
+    };
+    if (artist?.id) {
+      fetchCitiesGap();
+    }
+    return () => { isMounted = false; };
+  }, [artist, selectedCitiesGapCountry]);
+
   if (!artist) return null;
 
   return (
-    <div 
-      className="flex-center modal-overlay-padding" 
+    <div
+      className="flex-center modal-overlay-padding"
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
     >
-      <div 
-        className="glass-panel animate-fade-in modal-container" 
+      <div
+        className="glass-panel animate-fade-in modal-container"
         style={{ width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
@@ -415,13 +435,13 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
           >
             <X size={24} />
           </button>
-          
+
           <div className="modal-hero-info" style={{ position: 'absolute', bottom: '1.5rem', left: '2rem', display: 'flex', alignItems: 'flex-end', gap: '1.5rem' }}>
             <img className="modal-hero-avatar" src={artist.imageUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
             <div>
               <h1 className="modal-hero-title" style={{ fontSize: '3rem', fontWeight: 800, margin: 0, lineHeight: 1 }}>{artist.name}</h1>
               <p className="modal-hero-monthly" style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
-                <Users size={16} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'text-bottom' }}/> 
+                <Users size={16} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'text-bottom' }} />
                 {(artist.monthlyListeners / 1000000).toFixed(1)}M Monthly Listeners
               </p>
             </div>
@@ -429,13 +449,13 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         </div>
 
         {/* Tabs */}
-        <div 
+        <div
           ref={tabsRef}
           className="custom-scrollbar modal-tab-bar"
-          style={{ 
-            display: 'flex', 
-            borderBottom: '1px solid var(--glass-border)', 
-            padding: '0 2rem', 
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid var(--glass-border)',
+            padding: '0 2rem',
             gap: '2rem',
             overflowX: 'auto',
             flexShrink: 0,
@@ -458,9 +478,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             { id: 'tiktok', label: 'TikTokers', icon: Users },
             { id: 'overview', label: 'Panorama', icon: Activity },
             { id: 'radio', label: 'Emisoras Gap', icon: Radio },
+            { id: 'ciudades', label: 'Ciudades', icon: MapPin },
             { id: 'neuronal', label: 'Grafo Neuronal', icon: Activity },
-            { id: 'sunburst', label: 'Grafo v2 (Sunburst)', icon: Activity },
-            { id: 'circlepack', label: 'Grafo v3 (Bubble Pack)', icon: Activity }
+            { id: 'sunburst', label: 'Grafo v2 (Sunburst)', icon: Activity }
           ].map(tab => (
             <button
               key={tab.id}
@@ -692,7 +712,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   </h3>
                   {songHistoricalData.length > 0 && (
                     <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                      <button 
+                      <button
                         onClick={() => setIsHistoricalChronological(!isHistoricalChronological)}
                         style={{
                           background: 'rgba(255,255,255,0.05)',
@@ -731,11 +751,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 ) : (
                   <div style={{ width: '100%', height: 180 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={(isHistoricalChronological ? songHistoricalData : [...songHistoricalData].sort((a,b) => (a.spotify_streams || 0) - (b.spotify_streams || 0))).map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                      <AreaChart data={(isHistoricalChronological ? songHistoricalData : [...songHistoricalData].sort((a, b) => (a.spotify_streams || 0) - (b.spotify_streams || 0))).map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                         <defs>
                           <linearGradient id="songTabGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35}/>
-                            <stop offset="95%" stopColor="#1DB954" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#1DB954" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
@@ -758,7 +778,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                   <Trophy size={20} color="#ffb700" /> Top 5 Recomendación de Canciones
                 </h3>
-                
+
                 {isTopSongsLoading ? (
                   <div className="flex-center" style={{ height: '200px' }}>
                     <Loader2 className="loading-spinner" size={32} color="var(--accent-primary)" />
@@ -770,33 +790,33 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {topSongsData.slice(0, 5).map((song, i) => (
-                      <div key={i} className="glass-panel" style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '1.5rem', 
+                      <div key={i} className="glass-panel" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1.5rem',
                         padding: '1rem',
-                        flexWrap: 'wrap' 
+                        flexWrap: 'wrap'
                       }}>
-                        <div style={{ 
-                          width: '32px', 
-                          height: '32px', 
-                          borderRadius: '50%', 
-                          background: 'rgba(255,255,255,0.05)', 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.05)',
+                          display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 'bold',
                           color: 'var(--text-muted)'
                         }}>
                           {i + 1}
                         </div>
-                        
-                        <img 
-                          src={song.avatar || song.image_url || artist.imageUrl || '/logo.png'} 
-                          alt={song.song} 
-                          style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} 
+
+                        <img
+                          src={song.avatar || song.image_url || artist.imageUrl || '/logo.png'}
+                          alt={song.song}
+                          style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }}
                         />
-                        
+
                         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                           <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {song.song}
@@ -805,18 +825,18 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                             {song.label || ''}
                           </p>
                           {song.release_date && (
-                             <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
-                               Fecha: {song.release_date}
-                             </p>
+                            <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+                              Fecha: {song.release_date}
+                            </p>
                           )}
                         </div>
-                        
+
                         <div style={{ marginLeft: 'auto' }}>
-                          <button 
-                            className="btn-primary" 
-                            style={{ 
-                              padding: '0.5rem 1.5rem', 
-                              borderRadius: '20px', 
+                          <button
+                            className="btn-primary"
+                            style={{
+                              padding: '0.5rem 1.5rem',
+                              borderRadius: '20px',
                               background: 'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))',
                               border: 'none',
                               color: 'white',
@@ -848,7 +868,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
               />
             </div>
           )}
-            
+
           {/* Similar Artists Carousel Section */}
           {activeTab === 'overview' && !isLoading && (
             <div style={{ marginTop: '0rem', paddingBottom: '2rem', animation: 'fadeIn 0.5s ease-out' }}>
@@ -914,7 +934,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         key={i}
                         style={{
                           minWidth: '200px',
-                          height: '260px',
+                          height: '80px',
                           borderRadius: '16px',
                           position: 'relative',
                           overflow: 'hidden',
@@ -944,11 +964,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                           <h4 style={{ margin: '0 0 0.4rem 0', fontSize: '1.2rem', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {sim.label}
                           </h4>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                          {/*<div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                             {cty} |
                             <br />
                             <span style={{ color: 'var(--text-dim)' }}>{gen}</span>
-                          </div>
+                          </div>*/}
                         </div>
                       </div>
                     );
@@ -977,8 +997,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Map size={20} color="var(--accent-primary)" /> Distribución Geográfica de Audiencia
                   </h3>
-                  </div>
-                
+                </div>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filtrar por país:</span>
                   <SearchableSelect
@@ -999,20 +1019,20 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>
                     <Trophy size={18} color="#ffb700" /> Top 10 Ciudades de Consumo
                   </h4>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
-                    gap: '1rem' 
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: '1rem'
                   }}>
                     {[...mapData]
                       .sort((a, b) => b.current_listeners - a.current_listeners)
                       .slice(0, 10)
                       .map((city, idx) => (
-                        <div 
-                          key={idx} 
+                        <div
+                          key={idx}
                           className="glass-panel-interactive animate-fade-in"
-                          style={{ 
-                            padding: '1rem', 
+                          style={{
+                            padding: '1rem',
                             position: 'relative',
                             borderLeft: idx < 3 ? `3px solid ${idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32'}` : '1px solid var(--glass-border)',
                             display: 'flex',
@@ -1022,10 +1042,10 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <span style={{ 
-                              fontSize: '0.7rem', 
-                              fontWeight: 900, 
-                              color: idx < 3 ? (idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32') : 'var(--text-dim)' 
+                            <span style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 900,
+                              color: idx < 3 ? (idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32') : 'var(--text-dim)'
                             }}>
                               #{idx + 1}
                             </span>
@@ -1069,7 +1089,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Apariciones en listas de curación Editorial, Personalized o Chart.</p>
                   )}
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '180px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo:</span>
                   <SearchableSelect
@@ -1316,6 +1336,113 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             </div>
           )}
 
+          {activeTab === 'ciudades' && (
+            <div className="animate-fade-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MapPin size={20} color="#ffb700" /> Oportunidades por Ciudad
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Ciudades con mayor oportunidad de crecimiento basadas en artistas de tu cluster.</p>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filtrar por país:</span>
+                  <select
+                    value={selectedCitiesGapCountry}
+                    onChange={(e) => setSelectedCitiesGapCountry(e.target.value)}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--glass-border)',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: 'var(--radius-sm)',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    <option value={0}>Global (Todos)</option>
+                    {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {isCitiesGapLoading ? (
+                <div className="flex-center" style={{ height: '300px' }}>
+                  <Loader2 className="loading-spinner" size={32} color="#ffb700" />
+                </div>
+              ) : citiesGapData.length === 0 ? (
+                <div className="flex-center" style={{ height: '200px', color: 'var(--text-muted)' }}>
+                  No se encontraron gaps de ciudades para este artista.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                  <CitiesGapMap data={citiesGapData} />
+
+                  <div>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>
+                      <Trophy size={18} color="#ffb700" /> Ciudades Gap Top 15
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                      {[...citiesGapData]
+                        .sort((a,b) => b.opportunity_score - a.opportunity_score)
+                        .slice(0, 15)
+                        .map((city, idx) => {
+                          const isPriority = city.priority_level === 'priority';
+                          const isMissing = city.recommendation_type === 'missing';
+                          const isUnder = city.recommendation_type === 'underperforming';
+                          const dotColor = isPriority ? '#ff0055' : isMissing ? '#ffb700' : isUnder ? '#00f0ff' : '#a29bfe';
+                          const label = isPriority ? 'Priority' : isMissing ? 'Missing' : 'Underperforming';
+
+                          return (
+                            <div key={idx} className="glass-panel" style={{ padding: '1.2rem', borderLeft: `3px solid ${dotColor}`, position: 'relative' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                  <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    {city.city_name} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{city.country_code}</span>
+                                  </h4>
+                                  <div style={{ background: `${dotColor}22`, color: dotColor, padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', display: 'inline-block', marginTop: '0.5rem' }}>
+                                    {label}
+                                  </div>
+                                </div>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'rgba(255,255,255,0.1)' }}>#{idx + 1}</span>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px' }}>
+                                <div>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Tus Listeners</div>
+                                  <div style={{ color: 'white', fontWeight: 'bold' }}>{Math.round(city.main_current_listeners).toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Prom. Similares</div>
+                                  <div style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{Math.round(city.related_avg_current_listeners).toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Gap Total</div>
+                                  <div style={{ color: dotColor, fontWeight: 'bold' }}>{Math.round(city.listeners_gap_vs_avg_related).toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Score</div>
+                                  <div style={{ color: '#c084fc', fontWeight: 'bold' }}>{Math.round(city.opportunity_score).toLocaleString()}</div>
+                                </div>
+                              </div>
+
+                              {city.related_artists_names && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={city.related_artists_names}>
+                                  <span style={{ color: 'var(--text-muted)' }}>Destacan:</span> {city.related_artists_names}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'neuronal' && (
             <div>
               <h3 style={{ marginBottom: '1rem' }}>Comparativa de Audiencias (Cluster)</h3>
@@ -1332,13 +1459,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             </div>
           )}
 
-          {activeTab === 'circlepack' && (
-            <div className="animate-fade-in">
-              <h3 style={{ marginBottom: '1rem' }}>Cosmos de Influencia (Bubble Pack)</h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>Visualiza las familias musicales empacadas unas dentro de otras basadas en su alcance geográfico y volumen.</p>
-              <CirclePackGraph artistId={artist.id} />
-            </div>
-          )}
+
         </div>
 
       </div>
