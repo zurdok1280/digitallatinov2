@@ -4,6 +4,7 @@ import ArtistMap from './ArtistMap';
 import BoxDisplayInfoPlatform from './buttonSongInfo/BoxDisplayInfoPlatform';
 import { getSongPlatformData, getCityDataForSong, getSongTopPlaylists, getPlaylistTypes } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -37,6 +38,7 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [platformData, setPlatformData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const [mapData, setMapData] = useState([]);
   const [isMapLoading, setIsMapLoading] = useState(false);
@@ -554,8 +556,25 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
               )}
             </div>
           )}
+          {/* ── Recommendations Banner ── */}
+          <RecommendationsBanner
+            songName={song?.song}
+            csSong={song?.cs_song || song?.csSong || song?.id}
+            spotifyId={song?.spotifyid || song?.spotify_id}
+            onOpen={() => setShowRecommendations(true)}
+          />
         </div>
       </div>
+
+      {/* Recommendations Modal (renders above this modal) */}
+      <RecommendationsModal
+        isOpen={showRecommendations}
+        onClose={() => setShowRecommendations(false)}
+        songName={song?.song}
+        songImage={song?.image_url || song?.img || song?.avatar}
+        csSong={song?.cs_song || song?.csSong || song?.id}
+        spotifyId={song?.spotifyid || song?.spotify_id}
+      />
     </div>
   );
 };

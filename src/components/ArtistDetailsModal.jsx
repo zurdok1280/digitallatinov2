@@ -7,6 +7,7 @@ import CirclePackGraph from './CirclePackGraph';
 import ArtistMap from './ArtistMap';
 import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [
@@ -181,6 +182,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const scrollRef = useRef(null);
   const tabsRef = useRef(null);
 
@@ -836,6 +838,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   </div>
                 )}
               </div>
+
+              {/* Recommendations Banner — at the end of Detalles de Cancion tab */}
+              <RecommendationsBanner
+                songName={artist?.songName}
+                csSong={artist?.cs_song || artist?.csSong}
+                spotifyId={artist?.spotifyid}
+                onOpen={() => setShowRecommendations(true)}
+              />
             </div>
           )}
             
@@ -1332,6 +1342,16 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         </div>
 
       </div>
+
+      {/* Recommendations Modal — renders on top of this modal */}
+      <RecommendationsModal
+        isOpen={showRecommendations}
+        onClose={() => setShowRecommendations(false)}
+        songName={artist?.songName}
+        songImage={artist?.imageUrl || artist?.img || artist?.avatar}
+        csSong={artist?.cs_song || artist?.csSong}
+        spotifyId={artist?.spotifyid}
+      />
     </div>
   );
 };

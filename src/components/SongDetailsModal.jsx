@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { X, Play, Music, Headphones, TrendingUp, BarChart2, Loader2, Calendar, Disc, Globe, Heart, ExternalLink, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getSongBySpotifyId } from '../services/api';
+import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 
 const SongDetailsModal = ({ song, onClose }) => {
   const [songData, setSongData] = useState(null);
   const [historicalData, setHistoricalData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const formatNumber = (num) => {
     if (!num) return '0';
@@ -250,10 +252,28 @@ const SongDetailsModal = ({ song, onClose }) => {
                     </div>
                   </div>
               </div>
+
+              {/* Recommendations Banner */}
+              <RecommendationsBanner
+                songName={displayTitle}
+                csSong={song?.cs_song || song?.id}
+                spotifyId={song?.spotify_id || song?.spotifyid}
+                onOpen={() => setShowRecommendations(true)}
+              />
             </>
           )}
         </div>
       </div>
+
+      {/* Recommendations Modal */}
+      <RecommendationsModal
+        isOpen={showRecommendations}
+        onClose={() => setShowRecommendations(false)}
+        songName={displayTitle}
+        songImage={displayImage}
+        csSong={song?.cs_song || song?.id}
+        spotifyId={song?.spotify_id || song?.spotifyid}
+      />
     </div>
   );
 };
