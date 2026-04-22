@@ -12,7 +12,7 @@ const formatFollowers = (n) => {
 };
 
 // ─── Song Result Row ─────────────────────────────────────────────────────────
-const SongRow = ({ track, onMetricsClick }) => {
+const SongRow = ({ track, onMetricsClick, onLoginClick, user }) => {
   const hasMetrics = !!track.my_song_id;
 
   return (
@@ -82,16 +82,34 @@ const SongRow = ({ track, onMetricsClick }) => {
         {/* Campaña */}
         {track.spotify_id && (
           <button
-            onClick={(e) => { e.stopPropagation(); window.open(`/campaign?spotifyId=${track.spotify_id}`, '_blank'); }}
-            title="Ver Campaña"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!user) {
+                // Same pattern as legacy: require login before accessing campaign
+                onLoginClick ? onLoginClick() : null;
+                return;
+              }
+              // Build URL matching legacy handleSearchResultSelect structure
+              const params = new URLSearchParams({ spotifyId: track.spotify_id });
+              // Pass extra track metadata as fallback for the widget
+              if (track.artist_name) params.set('artist', track.artist_name);
+              if (track.song_name)   params.set('track',  track.song_name);
+              if (track.image_url)   params.set('coverUrl', track.image_url);
+              window.open(`/campaign?${params.toString()}`, '_blank');
+            }}
+            title={user ? 'Ver Campaña' : 'Inicia sesión para ver campaña'}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '5px 11px', borderRadius: '6px', border: 'none',
-              background: 'linear-gradient(135deg, #334155 0%, #1d4ed8 100%)',
-              color: 'white', fontSize: '0.75rem', fontWeight: 600,
+              background: user
+                ? 'linear-gradient(135deg, #334155 0%, #1d4ed8 100%)'
+                : 'rgba(255,255,255,0.06)',
+              color: user ? 'white' : 'var(--text-dim)',
+              fontSize: '0.75rem', fontWeight: 600,
               cursor: 'pointer', transition: 'transform 0.15s',
+              opacity: user ? 1 : 0.55,
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+            onMouseEnter={e => { if (user) e.currentTarget.style.transform = 'scale(1.05)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             <ExternalLink size={12} />
@@ -369,6 +387,8 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
                           key={`${track.spotify_id}-${i}`}
                           track={track}
                           onMetricsClick={handleSongMetrics}
+                          onLoginClick={onLoginClick}
+                          user={user}
                         />
                       ))}
                     </div>

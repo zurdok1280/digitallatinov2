@@ -8,6 +8,7 @@ import CitiesGapMap from './CitiesGapMap';
 import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById, getCitiesGapData } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
+import { useAuth } from '../hooks/useAuth';
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [
@@ -149,6 +150,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
 );
 
 const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || 'mapa');
   const [artistData, setArtistData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -837,20 +839,45 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                             style={{
                               padding: '0.5rem 1.5rem',
                               borderRadius: '20px',
-                              background: 'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))',
+                              background: song.spotifyid && user
+                                ? 'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))'
+                                : 'rgba(255,255,255,0.06)',
                               border: 'none',
-                              color: 'white',
+                              color: song.spotifyid && user ? 'white' : 'var(--text-dim)',
                               fontWeight: 600,
                               cursor: song.spotifyid ? 'pointer' : 'not-allowed',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '0.5rem',
-                              opacity: song.spotifyid ? 1 : 0.5
+                              opacity: song.spotifyid ? 1 : 0.45,
+                              transition: 'transform 0.15s, opacity 0.2s',
                             }}
-                            onClick={() => { if (song.spotifyid) window.open(`/campaign?spotifyId=${song.spotifyid}`, '_blank'); }}
+                            onClick={() => {
+                              if (!song.spotifyid) return;
+                              if (!user) {
+                                // Require login — same pattern as legacy searchArtist.tsx
+                                import('../hooks/use-toast').then(({ toast }) => {
+                                  toast({
+                                    title: '🔒 Inicia sesión',
+                                    description: 'Necesitas una cuenta para acceder a las campañas de promoción.',
+                                  });
+                                });
+                                return;
+                              }
+                              // Build URL with full song metadata — same as legacy handleSearchResultSelect
+                              const params = new URLSearchParams({ spotifyId: song.spotifyid });
+                              if (song.artists || artist?.name) params.set('artist', song.artists || artist.name);
+                              if (song.song)        params.set('track',    song.song);
+                              if (song.avatar || song.image_url) params.set('coverUrl', song.avatar || song.image_url);
+                              window.open(`/campaign?${params.toString()}`, '_blank');
+                            }}
+                            onMouseEnter={e => { if (song.spotifyid && user) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                            title={!song.spotifyid ? 'Sin Spotify ID' : !user ? 'Inicia sesión para ver campaña' : 'Ver Campaña'}
                             disabled={!song.spotifyid}
                           >
-                            <Activity size={16} /> Ver Campaña
+                            <Activity size={16} />
+                            {user ? 'Ver Campaña' : '🔒 Campaña'}
                           </button>
                         </div>
                       </div>

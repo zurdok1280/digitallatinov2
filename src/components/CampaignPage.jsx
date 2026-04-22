@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const CampaignPage = () => {
-   // TODO: Reemplazar el string estático con JWT por el destructuring de tu auth context real.
-   // Ejemplo: const { token } = useAuth();
-   const token = "TOKEN_DE_DESARROLLO_ALPHANUMERIC_TEMPORAL_123456789";
+   const { token } = useAuth();
 
    const [widgetToken, setWidgetToken] = useState(null);
    const [isLoading, setIsLoading] = useState(true);
