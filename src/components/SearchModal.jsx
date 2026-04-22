@@ -203,9 +203,19 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
     return () => clearTimeout(t);
   }, [query]);
 
-  // Reset on close
+  // Reset on close and manage background scroll
   useEffect(() => {
-    if (!isOpen) { setQuery(''); setResults(null); }
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      setQuery(''); 
+      setResults(null);
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
