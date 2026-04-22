@@ -107,6 +107,7 @@ const SONG_PLATFORMS = [
   },
 ];
 
+
 const fmtPlatVal = (val, isRate) => {
   if (val === null || val === undefined || isNaN(Number(val))) return 'N/A';
   const n = Number(val);
@@ -444,7 +445,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
               <h1 className="modal-hero-title" style={{ fontSize: '3rem', fontWeight: 800, margin: 0, lineHeight: 1 }}>{artist.name}</h1>
               <p className="modal-hero-monthly" style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
                 <Users size={16} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'text-bottom' }} />
-                {(artist.monthlyListeners / 1000000).toFixed(1)}M Monthly Listeners
+                {formatNumber(artistData?.monthly_listeners)} Monthly Listeners
               </p>
             </div>
           </div>
@@ -1372,7 +1373,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   </h3>
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Ciudades con mayor oportunidad de crecimiento basadas en artistas de tu cluster.</p>
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filtrar por país:</span>
                   <select
@@ -1413,7 +1414,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     </h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                       {[...citiesGapData]
-                        .sort((a,b) => b.opportunity_score - a.opportunity_score)
+                        .sort((a, b) => b.opportunity_score - a.opportunity_score)
                         .slice(0, 15)
                         .map((city, idx) => {
                           const isPriority = city.priority_level === 'priority';
