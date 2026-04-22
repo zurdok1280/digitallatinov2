@@ -515,7 +515,19 @@ function Dashboard() {
         onSongClick={(song) => {
           if (!user) { setIsLoginModalOpen(true); return; }
           if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-          setSelectedSongPlatform(song);
+          setSelectedArtist({
+            id: song.spotifyartistid || song.cs_song,
+            spotifyid: song.spotifyartistid || song.cs_song,
+            name: song.artists,
+            imageUrl: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || song.url,
+            monthlyListeners: song.spotify_streams_total || 0,
+            followers: song.audience_total || 0,
+            artist: song.artists,
+            img: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.url || song.avatar || '/logo.png',
+            songName: song.song,
+            cs_song: song.cs_song,
+            initialTab: 'detalles_cancion'
+          });
         }}
         onLoginClick={() => setIsLoginModalOpen(true)}
       />
