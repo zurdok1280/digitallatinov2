@@ -68,6 +68,16 @@ const SongDetailsModal = ({ song, onClose }) => {
     return () => { isMounted = false; };
   }, [song]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!song) return null;
 
   // Use either the incoming song object for immediate display or the fetched songData

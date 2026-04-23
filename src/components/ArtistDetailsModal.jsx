@@ -215,6 +215,16 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
     let isMounted = true;
     const fetchArtist = async () => {
       setIsLoading(true);

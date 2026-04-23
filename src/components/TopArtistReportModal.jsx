@@ -62,6 +62,16 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Horizontal scroll for tabs
   useEffect(() => {
     const el = tabsRef.current;
