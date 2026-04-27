@@ -25,6 +25,60 @@ const SONG_PLATFORMS = [
     ],
   },
   {
+    key: 'youtube', name: 'YouTube', logo: '/logos/youtube-icon.svg', accentColor: '#FF0000',
+    rankKey: 'rk_youtube',
+    fields: [
+      { key: 'youtube_video_views_total', label: 'Views Totales' },
+      { key: 'youtube_video_likes_total', label: 'Likes Totales' },
+      { key: 'youtube_shorts_total', label: 'Shorts Total' },
+      { key: 'youtube_short_views_total', label: 'Short Views' },
+      { key: 'youtube_engagement_rate_total', label: 'Engagement Rate', isRate: true },
+    ],
+  },
+  {
+    key: 'tiktok', name: 'TikTok', logo: '/logos/tiktok-icon.png', accentColor: '#ff0050',
+    rankKey: 'rk_tiktok',
+    fields: [
+      { key: 'tiktok_videos_total', label: 'Videos Total' },
+      { key: 'tiktok_views_total', label: 'Views Total' },
+      { key: 'tiktok_likes_total', label: 'Likes Total' },
+      { key: 'tiktok_shares_total', label: 'Shares Total' },
+      { key: 'tiktok_engagement_rate_total', label: 'Engagement Rate', isRate: true },
+    ],
+  },
+  {
+    key: 'radio', name: 'Radio', icon: Radio, accentColor: '#FF9800',
+    rankKey: 'rk_radio',
+    fields: [
+      { key: 'radio_spins_total', label: 'Spins' },
+      { key: 'radio_score', label: 'Score' },
+      { key: 'radio_tw_stations', label: 'No. de emisoras' },
+      { key: 'radio_audience_total', label: 'Reach Total' },
+      { key: 'radio_tw_audience', label: 'Reach TW' },
+      { key: 'radio_tw_spins', label: 'Spins TW' },
+    ],
+  },
+  {
+    key: 'shazam', name: 'Shazam', logo: '/logos/shazam-icon.svg', accentColor: '#0A88FF',
+    rankKey: 'rk_shazam',
+    fields: [
+      { key: 'shazam_shazams_total', label: 'Shazams Total' },
+      { key: 'shazam_charts_current', label: 'Charts Actuales' },
+      { key: 'shazam_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
+    key: 'deezer', name: 'Deezer', logo: '/logos/deezer-icon.png', accentColor: '#A238FF',
+    rankKey: 'rk_deezer',
+    fields: [
+      { key: 'deezer_popularity_current', label: 'Popularidad' },
+      { key: 'deezer_playlists_current', label: 'Playlists Actuales' },
+      { key: 'deezer_playlists_total', label: 'Playlists Total' },
+      { key: 'deezer_charts_current', label: 'Charts Actuales' },
+      { key: 'deezer_charts_total', label: 'Charts Total' },
+    ],
+  },
+  {
     key: 'apple', name: 'Apple Music', logo: '/logos/applemusic-icon.png', accentColor: '#fc3c44',
     rankKey: 'rk_apple',
     fields: [
@@ -45,45 +99,13 @@ const SONG_PLATFORMS = [
     ],
   },
   {
-    key: 'deezer', name: 'Deezer', logo: '/logos/deezer-icon.png', accentColor: '#A238FF',
-    rankKey: 'rk_deezer',
+    key: 'soundcloud', name: 'SoundCloud', logo: '/logos/soundcloud-icon.svg', accentColor: '#FF5500',
+    rankKey: 'rk_soundcloud',
     fields: [
-      { key: 'deezer_popularity_current', label: 'Popularidad' },
-      { key: 'deezer_playlists_current', label: 'Playlists Actuales' },
-      { key: 'deezer_playlists_total', label: 'Playlists Total' },
-      { key: 'deezer_charts_current', label: 'Charts Actuales' },
-      { key: 'deezer_charts_total', label: 'Charts Total' },
-    ],
-  },
-  {
-    key: 'tiktok', name: 'TikTok', logo: '/logos/tiktok-icon.png', accentColor: '#ff0050',
-    rankKey: 'rk_tiktok',
-    fields: [
-      { key: 'tiktok_videos_total', label: 'Videos Total' },
-      { key: 'tiktok_views_total', label: 'Views Total' },
-      { key: 'tiktok_likes_total', label: 'Likes Total' },
-      { key: 'tiktok_shares_total', label: 'Shares Total' },
-      { key: 'tiktok_engagement_rate_total', label: 'Engagement Rate', isRate: true },
-    ],
-  },
-  {
-    key: 'youtube', name: 'YouTube', logo: '/logos/youtube-icon.svg', accentColor: '#FF0000',
-    rankKey: 'rk_youtube',
-    fields: [
-      { key: 'youtube_video_views_total', label: 'Views Totales' },
-      { key: 'youtube_video_likes_total', label: 'Likes Totales' },
-      { key: 'youtube_shorts_total', label: 'Shorts Total' },
-      { key: 'youtube_short_views_total', label: 'Short Views' },
-      { key: 'youtube_engagement_rate_total', label: 'Engagement Rate', isRate: true },
-    ],
-  },
-  {
-    key: 'shazam', name: 'Shazam', logo: '/logos/shazam-icon.svg', accentColor: '#0A88FF',
-    rankKey: 'rk_shazam',
-    fields: [
-      { key: 'shazam_shazams_total', label: 'Shazams Total' },
-      { key: 'shazam_charts_current', label: 'Charts Actuales' },
-      { key: 'shazam_charts_total', label: 'Charts Total' },
+      { key: 'soundcloud_streams_total', label: 'Streams Total' },
+      { key: 'soundcloud_favorites_total', label: 'Favoritos Total' },
+      { key: 'soundcloud_reposts_total', label: 'Reposts Total' },
+      { key: 'soundcloud_engagement_rate_total', label: 'Engagement Rate', isRate: true },
     ],
   },
   {
@@ -93,16 +115,6 @@ const SONG_PLATFORMS = [
       { key: 'tidal_popularity_current', label: 'Popularidad' },
       { key: 'tidal_playlists_current', label: 'Playlists Actuales' },
       { key: 'tidal_playlists_total', label: 'Playlists Total' },
-    ],
-  },
-  {
-    key: 'soundcloud', name: 'SoundCloud', logo: '/logos/soundcloud-icon.svg', accentColor: '#FF5500',
-    rankKey: 'rk_soundcloud',
-    fields: [
-      { key: 'soundcloud_streams_total', label: 'Streams Total' },
-      { key: 'soundcloud_favorites_total', label: 'Favoritos Total' },
-      { key: 'soundcloud_reposts_total', label: 'Reposts Total' },
-      { key: 'soundcloud_engagement_rate_total', label: 'Engagement Rate', isRate: true },
     ],
   },
 ];
@@ -628,7 +640,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <img src={p.logo} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain', borderRadius: 3, filter: selectedPlatformKey !== p.key ? 'grayscale(60%) opacity(0.6)' : 'none' }} />
+                      {p.icon ? (
+                        <p.icon size={16} color={selectedPlatformKey === p.key ? p.accentColor : 'gray'} style={{ filter: selectedPlatformKey !== p.key ? 'opacity(0.6)' : 'none' }} />
+                      ) : (
+                        <img src={p.logo} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain', borderRadius: 3, filter: selectedPlatformKey !== p.key ? 'grayscale(60%) opacity(0.6)' : 'none' }} />
+                      )}
                       {p.name}
                     </button>
                   ))}
@@ -655,7 +671,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.8rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: `1px solid ${activePlat.accentColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }}>
-                            <img src={activePlat.logo} alt={activePlat.name} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                            {activePlat.icon ? (
+                              <activePlat.icon size={32} color={activePlat.accentColor} />
+                            ) : (
+                              <img src={activePlat.logo} alt={activePlat.name} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                            )}
                           </div>
                           <div>
                             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>{activePlat.name}</div>
