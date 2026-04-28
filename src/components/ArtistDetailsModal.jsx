@@ -54,7 +54,7 @@ import RecommendationsModal, {
   RecommendationsBanner,
 } from "./RecommendationsModal";
 import { useAuth } from "../hooks/useAuth";
-import { useAudioPreview } from "../hooks/useAudioPreview";
+import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [
@@ -1632,7 +1632,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                               e.stopPropagation();
                               handlePlayPreview(
                                 song.id,
-                                `https://audios.monitorlatino.com/Iam/${song.id}.mp3`
+                                `https://audios.monitorlatino.com/Iam/${song.id}.mp3`,
+                                {
+                                  title: song.title || song.song,
+                                  artist: artist.name,
+                                  image: song.image_url || song.avatar || artist.imageUrl || "/logo.png"
+                                }
                               );
                             }}
                             style={{

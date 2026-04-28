@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Music, Zap } from 'lucide-react';
-import { useAudioPreview } from '../hooks/useAudioPreview';
+import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getDebutSongs } from '../services/api';
 
 const rankColors = [
@@ -305,7 +305,8 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
                       e.stopPropagation();
                       handlePlayPreview(
                         song.rk,
-                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
+                        { title: song.song, artist: song.artists || song.artist, image: song.spotifyid || song.img || song.url || song.avatar || '/logo.png' }
                       );
                     }}
                     style={{

@@ -1,6 +1,6 @@
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useAudioPreview } from '../hooks/useAudioPreview';
+import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useMemo, useState, useEffect, useRef } from 'react';
 
@@ -324,7 +324,8 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
                 e.stopPropagation();
                 handlePlayPreview(
                   song.rk,
-                  `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
+                  `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
+                  { title: song.song, artist: song.artists, image: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.img || song.image_url || song.url || song.avatar || '/logo.png' }
                 );
               }}
               style={{

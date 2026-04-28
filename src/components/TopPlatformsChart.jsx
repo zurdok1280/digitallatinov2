@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
-import { useAudioPreview } from '../hooks/useAudioPreview';
+import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getTrendingTopPlatforms } from '../services/api';
 
 const rankColors = [
@@ -267,7 +267,8 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
                       e.stopPropagation();
                       handlePlayPreview(
                         song.rk,
-                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
+                        { title: song.song, artist: song.artists || song.artist, image: song.img || song.avatar || song.url || '/logo.png' }
                       );
                     }}
                     style={{
