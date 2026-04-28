@@ -18,6 +18,8 @@ import {
   MapPin,
   Trophy,
   BarChart2,
+  Play,
+  Pause,
 } from "lucide-react";
 import {
   AreaChart,
@@ -52,6 +54,7 @@ import RecommendationsModal, {
   RecommendationsBanner,
 } from "./RecommendationsModal";
 import { useAuth } from "../hooks/useAuth";
+import { useAudioPreview } from "../hooks/useAudioPreview";
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [
@@ -269,6 +272,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
 
 const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const { user } = useAuth();
+  const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
   const [artistData, setArtistData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1605,21 +1609,70 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                           {i + 1}
                         </div>
 
-                        <img
-                          src={
-                            song.image_url ||
-                            song.avatar ||
-                            artist.imageUrl ||
-                            "/logo.png"
-                          }
-                          alt={song.title || song.song}
-                          style={{
-                            width: "60px",
-                            height: "60px",
-                            borderRadius: "8px",
-                            objectFit: "cover",
-                          }}
-                        />
+                        <div style={{ position: "relative", width: "60px", height: "60px", flexShrink: 0 }}>
+                          <img
+                            src={
+                              song.image_url ||
+                              song.avatar ||
+                              artist.imageUrl ||
+                              "/logo.png"
+                            }
+                            alt={song.title || song.song}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              borderRadius: "8px",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <div
+                            className="play-overlay"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handlePlayPreview(
+                                song.id,
+                                `https://audios.monitorlatino.com/Iam/${song.id}.mp3`
+                              );
+                            }}
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'rgba(0,0,0,0.5)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              opacity: currentlyPlaying === song.id ? 1 : 0,
+                              transition: 'opacity 0.2s',
+                              cursor: 'pointer',
+                              borderRadius: '8px'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                            onMouseLeave={(e) => { if (currentlyPlaying !== song.id) e.currentTarget.style.opacity = 0; }}
+                          >
+                            <div
+                              style={{
+                                width: "32px",
+                                height: "32px",
+                                background: "rgba(0,0,0,0.7)",
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "white",
+                                transition: "transform 0.2s"
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                            >
+                              {currentlyPlaying === song.id ? (
+                                <Pause size={14} />
+                              ) : (
+                                <Play size={14} style={{ marginLeft: "2px" }} />
+                              )}
+                            </div>
+                          </div>
+                        </div>
 
                         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                           <h4

@@ -416,6 +416,17 @@ select option {
   opacity: 1;
 }
 
+/* Audio Play Overlay — sits above eq-container */
+.play-overlay {
+  z-index: 20;
+}
+.chart-img-wrapper:hover .eq-container {
+  opacity: 0 !important;
+}
+.chart-img-wrapper:hover .play-overlay {
+  opacity: 1 !important;
+}
+
 /* Zoom-in entry for modals */
 @keyframes zoomIn {
   from { opacity: 0; transform: scale(0.96); }
