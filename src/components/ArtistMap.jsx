@@ -4,7 +4,7 @@ import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 're
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 // Extracted outside the component so it's a stable reference (no re-creation on every render)
-const clusterData = (dataset, distanceThreshold = 3.5) => {
+const clusterData = (dataset, distanceThreshold = 1.5) => {
   const sorted = [...dataset].sort((a, b) => b.current_listeners - a.current_listeners);
   const clusters = [];
   for (const city of sorted) {
@@ -25,13 +25,22 @@ const clusterData = (dataset, distanceThreshold = 3.5) => {
   return clusters;
 };
 
+const formatNumber = (num) => {
+  if (!num) return '0';
+  const n = typeof num === 'string' ? parseFloat(num) : num;
+  if (n >= 1000000000) return (n / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return Math.round(n).toLocaleString();
+};
+
 const ArtistMap = ({ data }) => {
   const [hoveredNode, setHoveredNode] = useState(null);
 
   // ✅ All hooks MUST be called before any early return
   const clusteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
-    const clustered = clusterData(data, 3.5);
+    const clustered = clusterData(data, 1.5);
     return clustered.sort((a, b) => b.current_listeners - a.current_listeners);
   }, [data]);
 
@@ -124,7 +133,7 @@ const ArtistMap = ({ data }) => {
                       zIndex: isHovered ? 999 : 1
                     }}
                   >
-                    {cluster.cities.length > 1 ? `${cluster.city_name} (+${cluster.cities.length - 1})` : cluster.city_name}
+                    {`${cluster.city_name} (${formatNumber(cluster.current_listeners)} oyentes)`}
                   </text>
                 )}
               </Marker>

@@ -3,10 +3,13 @@ import { X, Play, Music, Headphones, TrendingUp, BarChart2, Loader2, Calendar, D
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getSongBySpotifyId } from '../services/api';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
+import SongPlatformsMetrics from './SongPlatformsMetrics';
 
 const SongDetailsModal = ({ song, onClose }) => {
   const [songData, setSongData] = useState(null);
   const [historicalData, setHistoricalData] = useState(null);
+  const [songPlatformData, setSongPlatformData] = useState(null);
+  const [isSongPlatformLoading, setIsSongPlatformLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showRecommendations, setShowRecommendations] = useState(false);
 
@@ -49,7 +52,18 @@ const SongDetailsModal = ({ song, onClose }) => {
         }
 
         if (internalId) {
-          const { getSongHistoricalStreams } = await import('../services/api');
+          const { getSongHistoricalStreams, getSongPlatformData } = await import('../services/api');
+          
+          setIsSongPlatformLoading(true);
+          getSongPlatformData(internalId, 0, 0).then(pd => {
+            if (isMounted) {
+              setSongPlatformData(Array.isArray(pd) ? pd[0] : pd);
+              setIsSongPlatformLoading(false);
+            }
+          }).catch(e => {
+            if (isMounted) setIsSongPlatformLoading(false);
+          });
+          
           const histData = await getSongHistoricalStreams(internalId);
           if (isMounted && histData && histData.length > 0) {
             // Data typically comes in reverse chronological order from similar analytics endpoints
@@ -67,6 +81,16 @@ const SongDetailsModal = ({ song, onClose }) => {
     fetchSongDetails();
     return () => { isMounted = false; };
   }, [song]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (!song) return null;
 
@@ -174,6 +198,12 @@ const SongDetailsModal = ({ song, onClose }) => {
                    </div>
                  )}
                </div>
+
+              {/* Platform Metrics */}
+              <SongPlatformsMetrics 
+                songPlatformData={songPlatformData} 
+                isSongPlatformLoading={isSongPlatformLoading} 
+              />
 
               {/* Chart Section */}
               <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)' }}>

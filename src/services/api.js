@@ -374,6 +374,23 @@ export const getFormatsByCountryArtist = async (countryId) => {
     }
   });
 };
+
+/**
+ * Fetches the list of songs for an artist by Spotify ID using the getArtistSongs endpoint
+ */
+export const getArtistSongs = async (spotifyId) => {
+  if (!spotifyId) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getArtistSongs/${encodeURIComponent(spotifyId)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching artist songs:", error);
+    return [];
+  }
+};
+
 /**
  * Fetches the list of top songs for an artist by Spotify ID and country ID
  */
@@ -593,6 +610,7 @@ export const getSongBySpotifyId = async (id) => {
 
 export const digitalLatinoApi = {
   getSongsArtistBySpotifyId,
+  getArtistSongs,
   getSongById,
   getSongBySpotifyId,
   getArtistData
