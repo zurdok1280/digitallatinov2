@@ -5,7 +5,7 @@ import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import ArtistMap from './ArtistMap';
 import CitiesGapMap from './CitiesGapMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById, getCitiesGapData } from '../services/api';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getArtistSongs, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById, getCitiesGapData } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 import { useAuth } from '../hooks/useAuth';
@@ -16,11 +16,11 @@ const SONG_PLATFORMS = [
     key: 'spotify', name: 'Spotify', logo: '/logos/spotify-icon.png', accentColor: '#1DB954',
     rankKey: 'rk_spotify',
     fields: [
-      { key: 'spotify_streams_total', label: 'Total Streams' },
+      { key: 'spotify_streams_total', label: 'Tw Streams' },
       { key: 'spotify_popularity_current', label: 'Popularidad' },
       { key: 'spotify_playlists_current', label: 'Playlists Actuales' },
       { key: 'spotify_playlists_reach_current', label: 'Reach Actual' },
-      { key: 'spotify_playlists_reach_total', label: 'Reach Total' },
+      { key: 'spotify_playlists_reach_total', label: 'Historical Reach' },
       { key: 'spotify_charts_total', label: 'Charts Total' },
     ],
   },
@@ -50,7 +50,7 @@ const SONG_PLATFORMS = [
     key: 'radio', name: 'Radio', icon: Radio, accentColor: '#FF9800',
     rankKey: 'rk_radio',
     fields: [
-      { key: 'radio_spins_total', label: 'Spins' },
+      { key: 'radio_spins_total', label: 'Spins Total' },
       { key: 'radio_score', label: 'Score' },
       { key: 'radio_tw_stations', label: 'No. de emisoras' },
       { key: 'radio_audience_total', label: 'Reach Total' },
@@ -319,38 +319,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     let isMounted = true;
     const fetchTopSongs = async () => {
       setIsTopSongsLoading(true);
-      const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1);
+      const data = await getArtistSongs(artist.spotifyid || artist.id);
 
-      if (isMounted && data && data.length > 0) {
-        // Enriquecer las primeras 5 canciones con detalles extras del endpoint getSongById
-        const top5 = data.slice(0, 5);
-        const enriched = await Promise.all(
-          top5.map(async (song) => {
-            const trackId = song.cs_song || song.id || song.fk_track;
-            if (!trackId) return song;
-
-            try {
-              const detail = await getSongById(trackId);
-              if (detail) {
-                return {
-                  ...song,
-                  // El endpoint getSongById usa "title" y "label"
-                  song: detail.title || detail.tittle || song.song || 'Sin título',
-                  label: detail.label || song.label || '',
-                  avatar: song.image_url || song.avatar
-                };
-              }
-            } catch (e) {
-              console.error("Error enriqueciendo canción:", trackId, e);
-            }
-            return song;
-          })
-        );
-
-        if (isMounted) {
-          setTopSongsData(enriched);
-        }
-      } else if (isMounted) {
+      if (isMounted) {
         setTopSongsData(data || []);
       }
 
@@ -738,78 +709,80 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
               </div>
 
               {/* ── Spotify Historical Streams Chart ──────────────────────── */}
-              <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0, fontSize: '1rem' }}>
-                    <BarChart2 size={18} color="#1DB954" /> Rendimiento en Spotify
-                  </h3>
-                  {songHistoricalData.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                      <button
-                        onClick={() => setIsHistoricalChronological(!isHistoricalChronological)}
-                        style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '20px',
-                          padding: '0.25rem 0.8rem',
-                          color: 'var(--text-main)',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                      >
-                        <TrendingUp size={12} color={isHistoricalChronological ? "var(--text-muted)" : "var(--accent-primary)"} />
-                        {isHistoricalChronological ? 'Cronológico' : 'Menor a Mayor'}
-                      </button>
-                      <div style={{ fontSize: '0.75rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.7rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <BarChart2 size={11} /> {songHistoricalData.length} semanas de historial
+              {selectedPlatformKey === 'spotify' && (
+                <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0, fontSize: '1rem' }}>
+                      <BarChart2 size={18} color="#1DB954" /> Rendimiento en Spotify
+                    </h3>
+                    {songHistoricalData.length > 0 && (
+                      <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                        <button
+                          onClick={() => setIsHistoricalChronological(!isHistoricalChronological)}
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '20px',
+                            padding: '0.25rem 0.8rem',
+                            color: 'var(--text-main)',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        >
+                          <TrendingUp size={12} color={isHistoricalChronological ? "var(--text-muted)" : "var(--accent-primary)"} />
+                          {isHistoricalChronological ? 'Cronológico' : 'Menor a Mayor'}
+                        </button>
+                        <div style={{ fontSize: '0.75rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.7rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <BarChart2 size={11} /> {songHistoricalData.length} semanas de historial
+                        </div>
                       </div>
+                    )}
+                  </div>
+                  {isSongHistoricalLoading ? (
+                    <div className="flex-center" style={{ height: 180 }}>
+                      <Loader2 className="loading-spinner" size={28} color="#1DB954" />
+                    </div>
+                  ) : songHistoricalData.length === 0 ? (
+                    <div className="flex-center" style={{ height: 120, color: 'var(--text-muted)', fontSize: '0.9rem', flexDirection: 'column', gap: '0.5rem' }}>
+                      <BarChart2 size={32} style={{ opacity: 0.2 }} />
+                      Sin historial de streams disponible
+                    </div>
+                  ) : (
+                    <div style={{ width: '100%', height: 180 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={(isHistoricalChronological ? songHistoricalData : [...songHistoricalData].sort((a, b) => (a.spotify_streams || 0) - (b.spotify_streams || 0))).map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="songTabGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35} />
+                              <stop offset="95%" stopColor="#1DB954" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#555', fontSize: 10 }} interval="preserveStartEnd" />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#555', fontSize: 10 }} tickFormatter={v => formatNumber(v)} />
+                          <Tooltip
+                            contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '0.8rem' }}
+                            itemStyle={{ color: '#1DB954' }}
+                            formatter={v => [formatNumber(v), 'Streams']}
+                          />
+                          <Area type="monotone" dataKey="val" stroke="#1DB954" strokeWidth={2.5} fillOpacity={1} fill="url(#songTabGrad)" dot={false} />
+                        </AreaChart>
+                      </ResponsiveContainer>
                     </div>
                   )}
                 </div>
-                {isSongHistoricalLoading ? (
-                  <div className="flex-center" style={{ height: 180 }}>
-                    <Loader2 className="loading-spinner" size={28} color="#1DB954" />
-                  </div>
-                ) : songHistoricalData.length === 0 ? (
-                  <div className="flex-center" style={{ height: 120, color: 'var(--text-muted)', fontSize: '0.9rem', flexDirection: 'column', gap: '0.5rem' }}>
-                    <BarChart2 size={32} style={{ opacity: 0.2 }} />
-                    Sin historial de streams disponible
-                  </div>
-                ) : (
-                  <div style={{ width: '100%', height: 180 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={(isHistoricalChronological ? songHistoricalData : [...songHistoricalData].sort((a, b) => (a.spotify_streams || 0) - (b.spotify_streams || 0))).map(d => ({ name: d.date_week?.slice(5), val: d.spotify_streams }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="songTabGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#1DB954" stopOpacity={0.35} />
-                            <stop offset="95%" stopColor="#1DB954" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#555', fontSize: 10 }} interval="preserveStartEnd" />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#555', fontSize: 10 }} tickFormatter={v => formatNumber(v)} />
-                        <Tooltip
-                          contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '0.8rem' }}
-                          itemStyle={{ color: '#1DB954' }}
-                          formatter={v => [formatNumber(v), 'Streams']}
-                        />
-                        <Area type="monotone" dataKey="val" stroke="#1DB954" strokeWidth={2.5} fillOpacity={1} fill="url(#songTabGrad)" dot={false} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Lista de Recomendación Top 5 */}
               <div>
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                  <Trophy size={20} color="#ffb700" /> Top 5 Recomendación de Canciones
+                  <Trophy size={20} color="#ffb700" /> Top 5 Canciones
                 </h3>
 
                 {isTopSongsLoading ? (
@@ -845,21 +818,18 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         </div>
 
                         <img
-                          src={song.avatar || song.image_url || artist.imageUrl || '/logo.png'}
-                          alt={song.song}
+                          src={song.image_url || artist.imageUrl || '/logo.png'}
+                          alt={song.title}
                           style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }}
                         />
 
                         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                           <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {song.song}
+                            {song.title}
                           </h4>
-                          <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                            {song.label || ''}
-                          </p>
-                          {song.release_date && (
-                            <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
-                              Fecha: {song.release_date}
+                          {song.score !== undefined && (
+                            <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                              Score: {formatNumber(song.score)}
                             </p>
                           )}
                         </div>
@@ -898,8 +868,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                               // Build URL with full song metadata — same as legacy handleSearchResultSelect
                               const params = new URLSearchParams({ spotifyId: song.spotifyid });
                               if (song.artists || artist?.name) params.set('artist', song.artists || artist.name);
-                              if (song.song)        params.set('track',    song.song);
-                              if (song.avatar || song.image_url) params.set('coverUrl', song.avatar || song.image_url);
+                              if (song.title) params.set('track', song.title);
+                              if (song.image_url) params.set('coverUrl', song.image_url);
                               window.open(`/campaign?${params.toString()}`, '_blank');
                             }}
                             onMouseEnter={e => { if (song.spotifyid && user) e.currentTarget.style.transform = 'scale(1.05)'; }}
