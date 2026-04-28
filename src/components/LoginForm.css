@@ -5,12 +5,17 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  padding: 2rem;
+  padding: 1.5rem;
   max-width: 450px;
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   margin: 0 auto;
   position: relative;
   font-family: 'Outfit', sans-serif;
+}
+
+.login-modal-wrapper.signup-mode {
+  max-width: 700px;
 }
 
 .login-close-btn {
@@ -107,9 +112,9 @@
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  max-height: 50vh; /* Permite scroll vertical interno asegurando que nunca rompa el modal verticalmente */
+  max-height: 80vh; /* Ampliado para que quepan todos los campos y el botón */
   overflow-y: auto;
   min-height: 250px;
 }
@@ -166,7 +171,7 @@
   outline: none;
   transition: all 0.2s ease;
   padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-  height: 3rem;
+  height: 2.75rem;
   background: rgba(0, 0, 0, 0.2);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -211,7 +216,7 @@
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  height: 3rem;
+  height: 2.75rem;
   border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 600;
