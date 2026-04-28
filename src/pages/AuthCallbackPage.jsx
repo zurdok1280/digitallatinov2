@@ -12,7 +12,7 @@ const AuthCallbackPage = () => {
     const token = searchParams.get('token');
     if (token) {
       login(token);
-      navigate('/payment', { replace: true });
+      navigate('/?payment=true', { replace: true });
     } else {
       navigate('/?error=auth_failed', { replace: true });
     }

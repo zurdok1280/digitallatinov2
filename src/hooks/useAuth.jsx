@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback, useMemo } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode"; // Force resolution re-scan
 import { useNavigate } from 'react-router-dom';
 
 import { toast } from './use-toast';

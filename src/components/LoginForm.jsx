@@ -13,7 +13,7 @@ export function LoginForm({ onClose }) {
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-    const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -32,8 +32,8 @@ export function LoginForm({ onClose }) {
     setLoading(true);
 
     try {
-           const response = await fetch('https://security.digital-latino.com/api/auth/login', {
-    //  const response = await fetch('http://localhost:8085/api/auth/login', {
+      const response = await fetch('https://security.digital-latino.com/api/auth/login', {
+      // const response = await fetch('http://localhost:8085/api/auth/login', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,8 +74,8 @@ export function LoginForm({ onClose }) {
     setLoading(true);
 
     try {
-           const response = await fetch('https://security.digital-latino.com/api/auth/register', {
-     // const response = await fetch('http://localhost:8085/api/auth/register', {
+      const response = await fetch('https://security.digital-latino.com/api/auth/register', {
+      // const response = await fetch('http://localhost:8085/api/auth/register', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,7 +130,7 @@ export function LoginForm({ onClose }) {
     password !== confirmPassword;
 
   return (
-    <div className="login-modal-wrapper">
+    <div className={`login-modal-wrapper ${activeTab === 'signup' ? 'signup-mode' : ''}`}>
       {/* Botón de cerrar interno */}
       <button
         onClick={onClose}
@@ -249,117 +249,123 @@ export function LoginForm({ onClose }) {
         {/* TabsContent - Sign Up */}
         {activeTab === "signup" && (
           <div className="login-form-container">
-            <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="login-form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="signup-firstname" className="login-label">
-                  Nombre
-                </label>
-                <div className="login-input-wrapper">
-                  <User className="login-input-icon" />
-                  <input
-                    id="signup-firstname"
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="login-input"
-                    placeholder="Nombre"
-                    required
-                  />
+            <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="login-form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-firstname" className="login-label">
+                    Nombre
+                  </label>
+                  <div className="login-input-wrapper">
+                    <User className="login-input-icon" />
+                    <input
+                      id="signup-firstname"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="login-input"
+                      placeholder="Nombre"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="login-form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-lastname" className="login-label">
+                    Apellidos
+                  </label>
+                  <div className="login-input-wrapper">
+                    <User className="login-input-icon" />
+                    <input
+                      id="signup-lastname"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="login-input"
+                      placeholder="Apellidos"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="login-form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="signup-lastname" className="login-label">
-                  Apellidos
-                </label>
-                <div className="login-input-wrapper">
-                  <User className="login-input-icon" />
-                  <input
-                    id="signup-lastname"
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="login-input"
-                    placeholder="Apellidos"
-                    required
-                  />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="login-form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-phone" className="login-label">
+                    Teléfono (Opcional)
+                  </label>
+                  <div className="login-input-wrapper">
+                    <Phone className="login-input-icon" />
+                    <input
+                      id="signup-phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="login-input"
+                      placeholder="Tu número de teléfono"
+                    />
+                  </div>
+                </div>
+
+                <div className="login-form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-email" className="login-label">
+                    Email
+                  </label>
+                  <div className="login-input-wrapper">
+                    <Mail className="login-input-icon" />
+                    <input
+                      id="signup-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="login-input"
+                      placeholder="tu@email.com"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="login-form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="signup-phone" className="login-label">
-                  Teléfono (Opcional)
-                </label>
-                <div className="login-input-wrapper">
-                  <Phone className="login-input-icon" />
-                  <input
-                    id="signup-phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="login-input"
-                    placeholder="Tu número de teléfono"
-                  />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="login-form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-password" className="login-label">
+                    Contraseña
+                  </label>
+                  <div className="login-input-wrapper">
+                    <Lock className="login-input-icon" />
+                    <input
+                      id="signup-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="login-input"
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div className="login-form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="signup-confirm-password" className="login-label">
+                    Confirmar Contraseña
+                  </label>
+                  <div className="login-input-wrapper">
+                    <Lock className="login-input-icon" />
+                    <input
+                      id="signup-confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="login-input"
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="login-form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="signup-email" className="login-label">
-                  Email
-                </label>
-                <div className="login-input-wrapper">
-                  <Mail className="login-input-icon" />
-                  <input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="login-input"
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="login-form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="signup-password" className="login-label">
-                  Contraseña
-                </label>
-                <div className="login-input-wrapper">
-                  <Lock className="login-input-icon" />
-                  <input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="login-input"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
-              </div>
-
-              <div className="login-form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="signup-confirm-password" className="login-label">
-                  Confirmar Contraseña
-                </label>
-                <div className="login-input-wrapper">
-                  <Lock className="login-input-icon" />
-                  <input
-                    id="signup-confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="login-input"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: '-0.5rem' }}>
+              <div style={{ marginTop: '0.5rem' }}>
                 <PasswordStrength password_string={password} />
               </div>
 

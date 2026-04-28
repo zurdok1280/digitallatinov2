@@ -14,7 +14,10 @@ export function PasswordStrength({ password_string }) {
   const has_symbol = /[^A-Za-z0-9]/.test(password_string);
 
   return (
-    <ul className="space-y-1 mt-2 p-3 bg-white/5 backdrop-blur-md rounded-md border border-white/10">
+    <ul 
+      className="grid grid-cols-2 gap-y-2 gap-x-4 mt-2 py-4 bg-white/5 backdrop-blur-md rounded-xl border border-white/10"
+      style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}
+    >
       <Requirement met={has_length} text="Mínimo 10 caracteres" />
       <Requirement met={has_uppercase} text="Al menos una mayúscula" />
       <Requirement met={has_number} text="Al menos un número" />
