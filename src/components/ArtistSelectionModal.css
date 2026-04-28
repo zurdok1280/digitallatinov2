@@ -115,13 +115,22 @@
   box-shadow: 0 0 0 3px rgba(193, 147, 255, 0.15);
 }
 
+@keyframes spin-centered {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
 .artist-modal-search-loader {
   position: absolute;
   right: 2.25rem;
   top: 50%;
   transform: translateY(-50%);
   color: #ff3366;
-  animation: spin 1s linear infinite;
+  animation: spin-centered 1s linear infinite;
 }
 
 .artist-modal-list {

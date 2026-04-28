@@ -1,6 +1,6 @@
 import { BarChart3 } from 'lucide-react';
 import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+import { Routes, Route, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -53,6 +53,7 @@ const AdminPanelLazy = withLazy(AdminPanel);
 
 
 function Dashboard() {
+  const location = useLocation();
   const [selectedCountry, setSelectedCountry] = useState('0');
   const [selectedGenre, setSelectedGenre] = useState('0');
   const [selectedCity, setSelectedCity] = useState('0');
@@ -100,9 +101,6 @@ function Dashboard() {
         setShowArtistSelection(true);
       } else {
         setShowArtistSelection(false);
-        if (location.pathname === '/') {
-          navigate('/my-artist');
-        }
       }
     } else {
       setShowArtistSelection(false);
@@ -112,6 +110,8 @@ function Dashboard() {
   useEffect(() => {
     if (searchParams.get('payment') === 'true') {
       setIsPaymentModalOpen(true);
+    } else {
+      setIsPaymentModalOpen(false);
     }
   }, [searchParams]);
 
@@ -123,7 +123,7 @@ function Dashboard() {
       }
       updateUser({ allowedArtistId: artistId, allowedArtistName: artistName });
       setShowArtistSelection(false);
-      navigate('/my-artist');
+      navigate('/');
     } catch (error) {
       console.error("Error setting artist:", error);
     }
@@ -588,7 +588,7 @@ function Dashboard() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, padding: '1rem' }}
           onClick={(e) => e.target === e.currentTarget && setIsLoginModalOpen(false)}
         >
-          <div style={{ width: '100%', maxWidth: '450px' }}>
+          <div style={{ width: '100%', maxWidth: '700px', margin: 'auto' }}>
             <LoginForm onClose={() => setIsLoginModalOpen(false)} />
           </div>
         </div>
@@ -624,7 +624,8 @@ function Dashboard() {
 }
 
 export default function App() {
-  if (window.location.pathname === '/campaign') {
+  const location = useLocation();
+  if (location.pathname === '/campaign') {
     return <CampaignPage />;
   }
   if (location.pathname === '/payment') {

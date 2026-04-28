@@ -13,7 +13,7 @@ const PLANS = {
   MONTHLY: {
     id: "price_1STRTuKFPi4gMQQnEZL9oIYo",
     name: "Plan Mensual",
-    amount: 120,
+    amount: 499,
     interval: "/mes",
     features: [
       "Información de todos los artistas",
@@ -24,7 +24,7 @@ const PLANS = {
   YEARLY: {
     id: "price_1STRTuKFPi4gMQQnRrzC1aXX",
     name: "Plan Anual",
-    amount: 1000,
+    amount: 999,
     interval: "/año",
     features: [
       "Información de todos los artistas",
@@ -35,7 +35,7 @@ const PLANS = {
   ARTIST: {
     id: "price_1SXXeBKFPi4gMQQn2cx9SPB1",
     name: "Plan Artista",
-    amount: 10,
+    amount: 99,
     interval: "/mes",
     features: [
       "Acceso único al Artista ",
