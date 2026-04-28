@@ -5,7 +5,7 @@ import NeuronalGraph from './NeuronalGraph';
 import SunburstGraph from './SunburstGraph';
 import ArtistMap from './ArtistMap';
 import CitiesGapMap from './CitiesGapMap';
-import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById, getCitiesGapData } from '../services/api';
+import { getArtistData, getMapData, getPlaylistTypes, getArtistPlaylists, getArtistTiktokers, getArtistRadioRelated, getArtistGraph, getSongsArtistBySpotifyId, getArtistSongs, getSongPlatformData, getSongHistoricalStreamsWeek, getSongById, getCitiesGapData } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 import { useAuth } from '../hooks/useAuth';
@@ -297,42 +297,13 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
     let isMounted = true;
     const fetchTopSongs = async () => {
       setIsTopSongsLoading(true);
-      const data = await getSongsArtistBySpotifyId(artist.spotifyid || artist.id, 1);
+      // Usamos el nuevo endpoint getArtistSongs que devuelve el top 5 optimizado
+      const data = await getArtistSongs(artist.spotifyid || artist.id);
 
-      if (isMounted && data && data.length > 0) {
-        // Enriquecer las primeras 5 canciones con detalles extras del endpoint getSongById
-        const top5 = data.slice(0, 5);
-        const enriched = await Promise.all(
-          top5.map(async (song) => {
-            const trackId = song.cs_song || song.id || song.fk_track;
-            if (!trackId) return song;
-
-            try {
-              const detail = await getSongById(trackId);
-              if (detail) {
-                return {
-                  ...song,
-                  // El endpoint getSongById usa "title" y "label"
-                  song: detail.title || detail.tittle || song.song || 'Sin título',
-                  label: detail.label || song.label || '',
-                  avatar: song.image_url || song.avatar
-                };
-              }
-            } catch (e) {
-              console.error("Error enriqueciendo canción:", trackId, e);
-            }
-            return song;
-          })
-        );
-
-        if (isMounted) {
-          setTopSongsData(enriched);
-        }
-      } else if (isMounted) {
+      if (isMounted) {
         setTopSongsData(data || []);
+        setIsTopSongsLoading(false);
       }
-
-      if (isMounted) setIsTopSongsLoading(false);
     };
     if (activeTab === 'detalles_cancion' && topSongsData.length === 0) {
       fetchTopSongs();
@@ -815,15 +786,20 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         </div>
 
                         <img
-                          src={song.avatar || song.image_url || artist.imageUrl || '/logo.png'}
-                          alt={song.song}
+                          src={song.image_url || song.avatar || artist.imageUrl || '/logo.png'}
+                          alt={song.title || song.song}
                           style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }}
                         />
 
                         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                           <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {song.song}
+                            {song.title || song.song}
                           </h4>
+                          {song.score !== undefined && (
+                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-primary)', marginTop: '0.2rem' }}>
+                              Score: {Number(song.score).toFixed(1)}
+                            </div>
+                          )}
                           <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             {song.label || ''}
                           </p>
@@ -868,8 +844,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                               // Build URL with full song metadata — same as legacy handleSearchResultSelect
                               const params = new URLSearchParams({ spotifyId: song.spotifyid });
                               if (song.artists || artist?.name) params.set('artist', song.artists || artist.name);
-                              if (song.song)        params.set('track',    song.song);
-                              if (song.avatar || song.image_url) params.set('coverUrl', song.avatar || song.image_url);
+                              if (song.title || song.song) params.set('track', song.title || song.song);
+                              if (song.image_url || song.avatar) params.set('coverUrl', song.image_url || song.avatar);
                               window.open(`/campaign?${params.toString()}`, '_blank');
                             }}
                             onMouseEnter={e => { if (song.spotifyid && user) e.currentTarget.style.transform = 'scale(1.05)'; }}

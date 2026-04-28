@@ -392,6 +392,22 @@ export const getSongsArtistBySpotifyId = async (spotifyId, countryId = 1) => {
 };
 
 /**
+ * Fetches the top 5 songs for an artist by Spotify ID
+ */
+export const getArtistSongs = async (spotifyId) => {
+  if (!spotifyId) return [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getArtistSongs/${encodeURIComponent(spotifyId)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching artist top 5 songs:", error);
+    return [];
+  }
+};
+
+/**
  * Fetches basic song info (name, label, artist) by internal cs_song ID.
  * Mirrors the legacy getSongById used in expandRowArtist.tsx.
  */
