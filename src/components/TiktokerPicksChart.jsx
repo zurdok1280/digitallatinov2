@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info, Video, Zap } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Video, Zap } from 'lucide-react';
+import { useAudioPreview } from '../hooks/useAudioPreview';
 
 const rankColors = [
   '#ff0050', '#ff2a6d', '#ff5a8d', '#ff7eb3', '#ffb700',
@@ -109,6 +110,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+  const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
     return songs.map((s, idx) => {
@@ -288,12 +290,59 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                   )}
                 </div>
 
-                <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)', position: 'relative' }}>
+                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
                   <div className="eq-container">
                     <div className="eq-bar" style={{ height: '16px', background: '#ff0050' }} />
                     <div className="eq-bar" style={{ height: '24px', background: '#ff0050' }} />
                     <div className="eq-bar" style={{ height: '12px', background: '#ff0050' }} />
+                  </div>
+                  <div
+                    className="play-overlay"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePlayPreview(
+                        song.rk,
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
+                      );
+                    }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: currentlyPlaying === song.rk ? 1 : 0,
+                      transition: 'opacity 0.2s',
+                      cursor: 'pointer',
+                      borderRadius: 'inherit'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={(e) => { if (currentlyPlaying !== song.rk) e.currentTarget.style.opacity = 0; }}
+                  >
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "rgba(0,0,0,0.7)",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        transition: "transform 0.2s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                      {currentlyPlaying === song.rk ? (
+                        <Pause size={20} />
+                      ) : (
+                        <Play size={20} style={{ marginLeft: "2px" }} />
+                      )}
+                    </div>
                   </div>
                 </div>
 

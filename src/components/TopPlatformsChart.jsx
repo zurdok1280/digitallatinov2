@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Play, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
+import { useAudioPreview } from '../hooks/useAudioPreview';
 import { getTrendingTopPlatforms } from '../services/api';
 
 const rankColors = [
@@ -109,6 +110,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, onSongClick }) => {
+  const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -256,10 +258,54 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
                   </div>
                 </div>
 
-                <div className="chart-img-wrapper">
+                <div className="chart-img-wrapper" style={{ position: 'relative' }}>
                   <img src={song.img || song.avatar || song.url || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div className="flex-center" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.opacity = 1} onMouseLeave={(e) => e.currentTarget.style.opacity = 0}>
-                    <Play size={20} color="#fff" />
+                  <div
+                    className="play-overlay"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePlayPreview(
+                        song.rk,
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
+                      );
+                    }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: currentlyPlaying === song.rk ? 1 : 0,
+                      transition: 'opacity 0.2s',
+                      cursor: 'pointer',
+                      borderRadius: 'inherit'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={(e) => { if (currentlyPlaying !== song.rk) e.currentTarget.style.opacity = 0; }}
+                  >
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "rgba(0,0,0,0.7)",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        transition: "transform 0.2s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                      {currentlyPlaying === song.rk ? (
+                        <Pause size={20} />
+                      ) : (
+                        <Play size={20} style={{ marginLeft: "2px" }} />
+                      )}
+                    </div>
                   </div>
                 </div>
 
