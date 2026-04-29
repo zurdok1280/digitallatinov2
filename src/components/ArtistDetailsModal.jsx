@@ -270,7 +270,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
-const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
+const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true }) => {
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
@@ -335,12 +335,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   }, []);
 
   useEffect(() => {
-    // Bloquear el scroll de la página de fondo
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, []);
+    if (isModal) {
+      // Bloquear el scroll de la página de fondo
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "unset";
+      };
+    }
+  }, [isModal]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -554,29 +556,43 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   if (!artist) return null;
 
+  const containerStyle = isModal ? {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.8)",
+    zIndex: 1000,
+    padding: "2rem",
+    backdropFilter: "blur(8px)",
+  } : {
+    width: "100%",
+    padding: "0",
+  };
+
+  const modalContainerStyle = isModal ? {
+    width: "100%",
+    maxWidth: "min(1200px, 95vw)",
+    maxHeight: "92vh",
+    overflowY: "auto",
+    background: "var(--bg-dark)",
+    display: "flex",
+    flexDirection: "column",
+  } : {
+    width: "100%",
+    background: "var(--bg-dark)",
+    display: "flex",
+    flexDirection: "column",
+    borderRadius: "2rem",
+    overflow: "hidden"
+  };
+
   return (
     <div
-      className="flex-center modal-overlay-padding"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.8)",
-        zIndex: 1000,
-        padding: "2rem",
-        backdropFilter: "blur(8px)",
-      }}
+      className={isModal ? "flex-center modal-overlay-padding" : ""}
+      style={containerStyle}
     >
       <div
-        className="glass-panel animate-fade-in modal-container"
-        style={{
-          width: "100%",
-          maxWidth: "min(1200px, 95vw)",
-          maxHeight: "92vh",
-          overflowY: "auto",
-          background: "var(--bg-dark)",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        className={isModal ? "glass-panel animate-fade-in modal-container" : "glass-panel animate-fade-in"}
+        style={modalContainerStyle}
       >
         {/* Header */}
         <div
@@ -601,20 +617,22 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 "linear-gradient(to top, var(--bg-dark), transparent)",
             }}
           />
-          <button
-            onClick={onClose}
-            style={{
-              position: "absolute",
-              top: "1rem",
-              right: "1rem",
-              background: "rgba(0,0,0,0.5)",
-              padding: "0.5rem",
-              borderRadius: "50%",
-              color: "white",
-            }}
-          >
-            <X size={24} />
-          </button>
+          {isModal && onClose && (
+            <button
+              onClick={onClose}
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                background: "rgba(0,0,0,0.5)",
+                padding: "0.5rem",
+                borderRadius: "50%",
+                color: "white",
+              }}
+            >
+              <X size={24} />
+            </button>
+          )}
 
           <div
             className="modal-hero-info"
