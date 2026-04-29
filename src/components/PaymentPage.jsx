@@ -140,12 +140,12 @@ const PaymentPage = ({ onClose }) => {
               plan={PLANS.YEARLY}
               onSelect={() => setSelectedPlan(PLANS.YEARLY)}
               formatPrice={formatPrice}
-              isPopular={true}
             />
             <PlanCard
               plan={PLANS.ARTIST}
               onSelect={() => setSelectedPlan(PLANS.ARTIST)}
               formatPrice={formatPrice}
+              isPopular={true}
             />
           </div>
         </div>
