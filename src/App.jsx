@@ -27,6 +27,8 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import { ArtistSelectionModal } from './components/ArtistSelectionModal';
 import MyArtist from './pages/MyArtist';
 import SongDetailsModal from './components/SongDetailsModal';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 
@@ -112,7 +114,14 @@ function Dashboard() {
     } else {
       setIsPaymentModalOpen(false);
     }
-  }, [searchParams]);
+
+    if (searchParams.get('login') === 'true') {
+      setIsLoginModalOpen(true);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('login');
+      setSearchParams(newParams);
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleArtistSelected = async (artistId, artistName) => {
     try {
@@ -628,6 +637,12 @@ export default function App() {
   }
   if (location.pathname === '/payment') {
     return <PaymentPage />;
+  }
+  if (location.pathname === '/forgot-password') {
+    return <ForgotPassword />;
+  }
+  if (location.pathname === '/reset-password') {
+    return <ResetPassword />;
   }
   return <Dashboard />;
 }
