@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User, LogOut } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
-import AccountModal from './AccountModal';
 
 const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, selectedCRG, setSelectedCRG, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick }) => {
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
   // Build option arrays for SearchableSelect
   const countryOptions = [
@@ -70,15 +68,8 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
           <div className="flex-center" style={{ gap: '1rem' }}>
             {user ? (
               <>
-                <div 
-                  style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer' }}
-                  onClick={() => setIsAccountModalOpen(true)}
-                >
-                  <span 
-                    style={{ fontSize: '0.9rem', fontWeight: 500, borderBottom: '1px solid transparent', transition: 'all 0.2s', paddingBottom: '2px' }}
-                    onMouseOver={(e) => e.target.style.borderBottom = '1px solid rgba(255,255,255,0.5)'}
-                    onMouseOut={(e) => e.target.style.borderBottom = '1px solid transparent'}
-                  >
+                <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>
                     <span style={{ opacity: 0.7 }}>Hola,</span> {user.name}
                   </span>
                 </div>
@@ -305,7 +296,6 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
           )}
         </div>
       )}
-      {isAccountModalOpen && <AccountModal onClose={() => setIsAccountModalOpen(false)} />}
     </header>
   );
 };
