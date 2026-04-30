@@ -17,9 +17,9 @@ export default function MyArtist() {
             }
 
             try {
-                // Obtenemos las canciones para sacar la imagen del artista
+                // Obtenemos las canciones para sacar la "Top Song" y la imagen del artista
                 const songsData = await getArtistSongs(user.allowedArtistId);
-
+                
                 let imageUrl = "/placeholder.png";
 
                 if (songsData && songsData.length > 0) {
@@ -58,13 +58,11 @@ export default function MyArtist() {
 
     if (!user || user.role !== 'ARTIST') {
         return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4 text-center p-8">
-                <Lock className="w-16 h-16 text-[#c193ff] opacity-50" />
-                <h2 className="text-2xl font-bold text-white">Acceso Restringido</h2>
-                <p className="text-gray-400 max-w-md">
-                    Esta sección es exclusiva para artistas con una cuenta verificada.
-                    Por favor inicia sesión con tu cuenta de artista.
-                </p>
+            <div className="flex min-h-[80vh] items-center justify-center flex-col gap-5 text-center p-4">
+                <div className="bg-red-500/10 p-5 rounded-full border border-red-500/20 text-red-400">
+                    <Lock size={40} />
+                </div>
+                <h2 className="text-3xl font-bold text-white">Acceso Restringido</h2>
             </div>
         );
     }
@@ -87,11 +85,10 @@ export default function MyArtist() {
     }
 
     return (
-        <div style={{ width: '100%', minHeight: '100vh' }}>
-            <ArtistDetailsModal
-                artist={artistProp}
-                countries={[]}
-                isModal={false}
+        <div className="min-h-screen bg-[#0a0b10] p-4 sm:p-6 lg:p-8 relative pb-32">
+            <ArtistDetailsModal 
+                artist={artistProp} 
+                isModal={false} 
             />
         </div>
     );

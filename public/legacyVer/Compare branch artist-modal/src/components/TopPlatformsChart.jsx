@@ -1,20 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Video, Zap } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview';
+import { getTrendingTopPlatforms } from '../services/api';
 
 const rankColors = [
-  '#ff0050', '#ff2a6d', '#ff5a8d', '#ff7eb3', '#ffb700',
-  '#00f2fe', '#8a88ff', '#00f0ff', '#c193ff', '#fdcb6e'
+  '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
+  '#00e676', '#ff3366', '#74b9ff', '#a29bfe', '#fdcb6e',
+  '#1db954', '#e056fd', '#00cec9', '#fd79a8', '#ffeaa7'
 ];
-
-const formatNumber = (num) => {
-  if (!num) return '0';
-  const n = typeof num === 'string' ? parseFloat(num) : num;
-  if (n >= 1000000000) return (n / 1000000000).toFixed(0) + 'B';
-  if (n >= 1000000) return (n / 1000000).toFixed(0) + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
-  return n.toFixed(0);
-};
 
 const Sparkline = ({ data, color }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -33,7 +26,7 @@ const Sparkline = ({ data, color }) => {
 
   const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
   const fillPoints = `${pointsString} ${width},${height} 0,${height}`;
-  const gradientId = `spark-tiktok-${color.replace('#', '')}`;
+  const gradientId = `spark-${color.replace('#', '')}`;
   const colWidth = width / data.length;
 
   return (
@@ -52,20 +45,26 @@ const Sparkline = ({ data, color }) => {
         </defs>
         <polyline points={fillPoints} fill={`url(#${gradientId})`} />
         
+        {/* Render Hover Indicator Lines Below the Main Stroke */}
         {hoveredIdx !== null && (
-          <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
+          <>
+            <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
+          </>
         )}
 
         <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
         
+        {/* Default end dot if no hover */}
         {hoveredIdx === null && (
           <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
         )}
 
+        {/* Hover Active Dot */}
         {hoveredIdx !== null && (
           <circle cx={points[hoveredIdx].x} cy={points[hoveredIdx].y} r="4.5" fill={color} stroke="#fff" strokeWidth="2" style={{ transition: 'all 0.1s' }} />
         )}
 
+        {/* Invisible Hit Area Columns for Cursor Tracking */}
         {points.map((p, i) => (
           <rect
             key={i}
@@ -80,6 +79,7 @@ const Sparkline = ({ data, color }) => {
         ))}
       </svg>
       
+      {/* Dynamic Popover Overlay */}
       {hoveredIdx !== null && (
         <div style={{
           position: 'absolute',
@@ -98,10 +98,10 @@ const Sparkline = ({ data, color }) => {
           backdropFilter: 'blur(5px)'
         }}>
           <div style={{ color: color, fontWeight: '700', fontSize: '1rem', lineHeight: '1.2' }}>
-            {formatNumber(points[hoveredIdx].val)}
+            {Number(points[hoveredIdx].val.toFixed(1))}M
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Views Hist.
+            Week {hoveredIdx + 1}
           </div>
         </div>
       )}
@@ -109,16 +109,38 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, onSongClick }) => {
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
+  const [songs, setSongs] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPlatforms = async () => {
+      setIsLoading(true);
+      
+      // Enforce default values if they are 'All' or 0, as Platforms API strictly requires valid IDs
+      const safeFormat = (selectedGenre === 'All' || selectedGenre === 0 || selectedGenre === '0') ? 1 : selectedGenre;
+      const safeCountry = (selectedCountry === 'All' || selectedCountry === 0 || selectedCountry === '0') ? 1 : selectedCountry;
+
+      const data = await getTrendingTopPlatforms(selectedPlatform, safeFormat, safeCountry);
+      if (isMounted) {
+        setSongs(data || []);
+        setIsLoading(false);
+      }
+    };
+    fetchPlatforms();
+    return () => { isMounted = false; };
+  }, [selectedGenre, selectedCountry, selectedPlatform]);
+
+  // Generate deterministic "historical" trend data for demonstration purposes
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
     return songs.map((s, idx) => {
-      // Create a deterministic but nice looking trend
-      let val = (s.views_total || 5000) * 0.8;
+      let val = 100 - (s.rk * 0.3);
       const trend = [];
       for (let i = 0; i < 20; i++) {
-        val = val + (Math.sin(idx * 1.5 + i * 0.7) * (val * 0.08)) + (Math.cos(i * 0.5) * (val * 0.03));
+        val = val + (Math.sin(s.rk * 1.3 + i * 0.8) * 8) + (Math.cos(idx + i) * 6);
         trend.push(Math.max(10, val));
       }
       return { ...s, trend };
@@ -127,10 +149,9 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
 
   if (isLoading) {
     return (
-      <div className="glass-panel" style={{ padding: '1rem' }}>
-        <div className="grid-base" style={{ gap: '0.5rem' }}>
-          {[...Array(5)].map((_, i) => <ChartRowSkeleton key={i} />)}
-        </div>
+      <div className="glass-panel flex-center" style={{ padding: '5rem', flexDirection: 'column', minHeight: '300px' }}>
+        <Loader2 className="loading-spinner" size={48} color="var(--accent-primary)" />
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem' }}>Cargando analítica digital de plataformas...</p>
       </div>
     );
   }
@@ -138,10 +159,18 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron elementos para este género.</p>
+        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones en esta plataforma.</p>
       </div>
     );
   }
+
+  const renderMovement = (mo) => {
+    if (!mo) return null;
+    const mov = String(mo).toLowerCase();
+    if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title="Subió" />;
+    if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title="Bajó" />;
+    return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+  };
 
   return (
     <div className="glass-panel" style={{ padding: '1rem' }}>
@@ -151,6 +180,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
           .sparkline-wrapper { display: block; }
         }
         
+        /* Tooltip classes */
         .score-info-container { position: relative; }
         .score-tooltip {
           position: absolute;
@@ -192,72 +222,20 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
           visibility: visible;
           transform: translateY(-50%) translateX(0);
         }
-
-        /* Comparison Styles */
-        .chart-row.selected-for-compare {
-          border-color: var(--accent-primary) !important;
-          background: rgba(138, 136, 255, 0.1) !important;
-          box-shadow: 0 0 20px rgba(138, 136, 255, 0.2);
-        }
-
-        .compare-checkbox-wrapper {
-          padding: 0 0.5rem 0 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 5;
-        }
-
-        .compare-checkbox {
-          width: 20px;
-          height: 20px;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s;
-          color: transparent;
-        }
-
-        .compare-checkbox.checked {
-          background: var(--accent-primary);
-          border-color: var(--accent-primary);
-          color: white;
-          box-shadow: 0 0 10px rgba(138, 136, 255, 0.5);
-        }
-
-        .chart-row:hover .compare-checkbox:not(.checked) {
-          border-color: rgba(255, 255, 255, 0.5);
-        }
       `}</style>
       <div className="grid-base" style={{ gap: '0.5rem' }}>
         {enrichedSongs.map((song, index) => {
           const rowColor = rankColors[index % rankColors.length];
-          const rank = song.rk || index + 1;
-          
           return (
             <div
-              key={index}
-              className={`chart-row glass-panel-interactive ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'selected-for-compare' : ''}`}
-              onClick={(e) => {
-                if (comparisonMode) {
-                  e.stopPropagation();
-                  onSongSelect(song);
-                } else if (onSongClick) {
-                  onSongClick(song);
-                }
-              }}
+              key={song.cs_song || index}
+              className="chart-row glass-panel-interactive"
+              onClick={() => onSongClick(song)}
               style={{
-                background: index === 0 ? 'rgba(255, 0, 80, 0.05)' : undefined,
-                borderColor: index === 0 ? 'rgba(255, 0, 80, 0.3)' : undefined,
+                background: index === 0 ? 'rgba(0, 240, 255, 0.05)' : undefined,
+                borderColor: index === 0 ? 'rgba(0, 240, 255, 0.3)' : undefined,
                 cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden',
-                opacity: 0,
-                animation: 'slideUpFade 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                animationDelay: `${index * 0.06}s`,
-                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s, background 0.3s'
+                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateX(8px)';
@@ -270,33 +248,18 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                 if (index !== 0) e.currentTarget.style.background = '';
               }}
             >
-              {comparisonMode && (
-                <div className="compare-checkbox-wrapper">
-                  <div className={`compare-checkbox ${selectedSongs.some(s => s.cs_song === song.cs_song) ? 'checked' : ''}`}>
-                    {selectedSongs.some(s => s.cs_song === song.cs_song) && <Zap size={14} fill="currentColor" />}
-                  </div>
-                </div>
-              )}
-              <div className="neon-watermark">#{index + 1}</div>
               <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
-                <div className="chart-rank" style={{ minWidth: '40px' }}>
+                <div className="chart-rank">
                   <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
-                    {rank}
+                    {song.rk}
                   </span>
-                  {song.no_videos != null && (
-                    <div style={{ marginTop: '0.15rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      <Video size={10} /> {formatNumber(song.no_videos)}
-                    </div>
-                  )}
+                  <div style={{ marginTop: '0.15rem' }}>
+                    {renderMovement(song.movement)}
+                  </div>
                 </div>
 
-                <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)', position: 'relative' }}>
-                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
-                  <div className="eq-container">
-                    <div className="eq-bar" style={{ height: '16px', background: '#ff0050' }} />
-                    <div className="eq-bar" style={{ height: '24px', background: '#ff0050' }} />
-                    <div className="eq-bar" style={{ height: '12px', background: '#ff0050' }} />
-                  </div>
+                <div className="chart-img-wrapper" style={{ position: 'relative' }}>
+                  <img src={song.img || song.avatar || song.url || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div
                     className="play-overlay"
                     onClick={(e) => {
@@ -304,8 +267,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                       e.stopPropagation();
                       handlePlayPreview(
                         song.rk,
-                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
-                        { title: song.song, artist: song.artists || song.artist, image: song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png' }
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
                       );
                     }}
                     style={{
@@ -348,30 +310,25 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                 </div>
 
                 <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
-                  <h3 className="chart-title" style={{ marginBottom: '0.1rem' }}>{song.song}</h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <p className="chart-artist" style={{ fontSize: '0.85rem', opacity: 0.8 }}>{song.artists || song.artist}</p>
-                    {song.label && (
-                      <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>
-                        {song.label}
-                      </span>
-                    )}
-                  </div>
+                  <h3 className="chart-title">{song.song}</h3>
+                  <p className="chart-artist">{song.artists || song.artist}</p>
                 </div>
               </div>
 
+              {/* Responsive Trend Sparkline */}
               <Sparkline data={song.trend} color={rowColor} />
 
-              <div className="score-info-container" style={{ textAlign: 'right', minWidth: '80px' }}>
-                <div className="chart-score" style={{ fontSize: '1.4rem', color: rowColor }}>
-                  {formatNumber(song.views_total)}
+              <div className="score-info-container" style={{ textAlign: 'right', minWidth: '60px' }}>
+                <div className="text-gradient chart-score">
+                  {song.data_res ? (song.data_res >= 1000000 ? (song.data_res/1000000).toFixed(1) + 'M' : song.data_res.toLocaleString()) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
                 </div>
-                <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
-                   Views <Info size={10} style={{ opacity: 0.6 }} />
+                <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
+                  Reproducciones <Info size={11} style={{ opacity: 0.7 }} />
                 </span>
                 
+                {/* Score Disclaimer Tooltip */}
                 <div className="score-tooltip">
-                  Este número representa las <strong style={{ color: '#fff' }}>Views Totales</strong> del track en TikTok bajo este género.
+                  El número de <strong style={{ color: '#fff' }}>Reproducciones</strong> indica el rendimiento principal o acumulado de la canción en la plataforma seleccionada.
                 </div>
               </div>
             </div>
@@ -382,18 +339,4 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   );
 };
 
-export default TiktokerPicksChart;
-
-const ChartRowSkeleton = () => (
-  <div className="glass-panel" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', height: '72px', position: 'relative', overflow: 'hidden' }}>
-    <div className="shimmer-effect" />
-    <div className="skeleton-block" style={{ width: '32px', height: '32px', borderRadius: '6px', flexShrink: 0 }} />
-    <div className="skeleton-block" style={{ width: '48px', height: '48px', borderRadius: '8px', flexShrink: 0 }} />
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-      <div className="skeleton-block" style={{ height: '14px', width: '45%' }} />
-      <div className="skeleton-block" style={{ height: '10px', width: '28%' }} />
-    </div>
-    <div className="skeleton-block" style={{ width: '120px', height: '30px', flexShrink: 0 }} />
-    <div className="skeleton-block" style={{ width: '42px', height: '42px', flexShrink: 0 }} />
-  </div>
-);
+export default TopPlatformsChart;

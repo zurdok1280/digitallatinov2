@@ -1,20 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Video, Zap } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Music, Zap } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview';
+import { getDebutSongs } from '../services/api';
 
 const rankColors = [
-  '#ff0050', '#ff2a6d', '#ff5a8d', '#ff7eb3', '#ffb700',
-  '#00f2fe', '#8a88ff', '#00f0ff', '#c193ff', '#fdcb6e'
+  '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
+  '#00e676', '#ff3366', '#74b9ff', '#a29bfe', '#fdcb6e',
+  '#1db954', '#e056fd', '#00cec9', '#fd79a8', '#ffeaa7'
 ];
-
-const formatNumber = (num) => {
-  if (!num) return '0';
-  const n = typeof num === 'string' ? parseFloat(num) : num;
-  if (n >= 1000000000) return (n / 1000000000).toFixed(0) + 'B';
-  if (n >= 1000000) return (n / 1000000).toFixed(0) + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
-  return n.toFixed(0);
-};
 
 const Sparkline = ({ data, color }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -33,7 +26,7 @@ const Sparkline = ({ data, color }) => {
 
   const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
   const fillPoints = `${pointsString} ${width},${height} 0,${height}`;
-  const gradientId = `spark-tiktok-${color.replace('#', '')}`;
+  const gradientId = `spark-debut-${color.replace('#', '')}`;
   const colWidth = width / data.length;
 
   return (
@@ -98,10 +91,10 @@ const Sparkline = ({ data, color }) => {
           backdropFilter: 'blur(5px)'
         }}>
           <div style={{ color: color, fontWeight: '700', fontSize: '1rem', lineHeight: '1.2' }}>
-            {formatNumber(points[hoveredIdx].val)}
+            {Number(points[hoveredIdx].val.toFixed(1))}
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Views Hist.
+            Score Hist.
           </div>
         </div>
       )}
@@ -109,17 +102,17 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
     return songs.map((s, idx) => {
       // Create a deterministic but nice looking trend
-      let val = (s.views_total || 5000) * 0.8;
+      let val = 80 + (idx * 0.5);
       const trend = [];
       for (let i = 0; i < 20; i++) {
-        val = val + (Math.sin(idx * 1.5 + i * 0.7) * (val * 0.08)) + (Math.cos(i * 0.5) * (val * 0.03));
-        trend.push(Math.max(10, val));
+        val = val + (Math.sin(idx * 1.5 + i * 0.7) * 10) + (Math.cos(i * 0.5) * 5);
+        trend.push(Math.max(20, val));
       }
       return { ...s, trend };
     });
@@ -138,10 +131,19 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron elementos para este género.</p>
+        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones debutantes en este género/país.</p>
       </div>
     );
   }
+
+  const renderMovement = (mo) => {
+    if (!mo) return null;
+    const mov = String(mo).toUpperCase();
+    if (mov.includes('UP')) return <ArrowUp size={16} color="#00e676" title="Subió" />;
+    if (mov.includes('DOWN')) return <ArrowDown size={16} color="#ff3366" title="Bajó" />;
+    if (mov.includes('NEW')) return <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-primary)', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px' }}>NEW</span>;
+    return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+  };
 
   return (
     <div className="glass-panel" style={{ padding: '1rem' }}>
@@ -234,7 +236,8 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
       <div className="grid-base" style={{ gap: '0.5rem' }}>
         {enrichedSongs.map((song, index) => {
           const rowColor = rankColors[index % rankColors.length];
-          const rank = song.rk || index + 1;
+          // Determine rank: use s.rk_trending or fall back to index + 1
+          const rank = song.rk_trending || song.rk || index + 1;
           
           return (
             <div
@@ -249,8 +252,8 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                 }
               }}
               style={{
-                background: index === 0 ? 'rgba(255, 0, 80, 0.05)' : undefined,
-                borderColor: index === 0 ? 'rgba(255, 0, 80, 0.3)' : undefined,
+                background: index === 0 ? 'rgba(170, 99, 255, 0.05)' : undefined,
+                borderColor: index === 0 ? 'rgba(170, 99, 255, 0.3)' : undefined,
                 cursor: 'pointer',
                 position: 'relative',
                 overflow: 'hidden',
@@ -279,23 +282,21 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
               )}
               <div className="neon-watermark">#{index + 1}</div>
               <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
-                <div className="chart-rank" style={{ minWidth: '40px' }}>
+                <div className="chart-rank">
                   <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
                     {rank}
                   </span>
-                  {song.no_videos != null && (
-                    <div style={{ marginTop: '0.15rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      <Video size={10} /> {formatNumber(song.no_videos)}
-                    </div>
-                  )}
+                  <div style={{ marginTop: '0.15rem' }}>
+                    {renderMovement(song.movement || song.mo)}
+                  </div>
                 </div>
 
                 <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)', position: 'relative' }}>
-                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
+                  <img src={song.spotifyid || song.img || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
                   <div className="eq-container">
-                    <div className="eq-bar" style={{ height: '16px', background: '#ff0050' }} />
-                    <div className="eq-bar" style={{ height: '24px', background: '#ff0050' }} />
-                    <div className="eq-bar" style={{ height: '12px', background: '#ff0050' }} />
+                    <div className="eq-bar" style={{ height: '16px' }} />
+                    <div className="eq-bar" style={{ height: '24px' }} />
+                    <div className="eq-bar" style={{ height: '12px' }} />
                   </div>
                   <div
                     className="play-overlay"
@@ -304,8 +305,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                       e.stopPropagation();
                       handlePlayPreview(
                         song.rk,
-                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
-                        { title: song.song, artist: song.artists || song.artist, image: song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png' }
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
                       );
                     }}
                     style={{
@@ -349,29 +349,22 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
 
                 <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
                   <h3 className="chart-title" style={{ marginBottom: '0.1rem' }}>{song.song}</h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <p className="chart-artist" style={{ fontSize: '0.85rem', opacity: 0.8 }}>{song.artists || song.artist}</p>
-                    {song.label && (
-                      <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>
-                        {song.label}
-                      </span>
-                    )}
-                  </div>
+                  <p className="chart-artist" style={{ fontSize: '0.85rem', opacity: 0.8 }}>{song.artists || song.artist}</p>
                 </div>
               </div>
 
               <Sparkline data={song.trend} color={rowColor} />
 
               <div className="score-info-container" style={{ textAlign: 'right', minWidth: '80px' }}>
-                <div className="chart-score" style={{ fontSize: '1.4rem', color: rowColor }}>
-                  {formatNumber(song.views_total)}
+                <div className="text-gradient chart-score" style={{ fontSize: '1.4rem' }}>
+                  {song.tw_score != null ? Number(song.tw_score).toFixed(1) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
                 </div>
                 <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
-                   Views <Info size={10} style={{ opacity: 0.6 }} />
+                   Score <Info size={10} style={{ opacity: 0.6 }} />
                 </span>
                 
                 <div className="score-tooltip">
-                  Este número representa las <strong style={{ color: '#fff' }}>Views Totales</strong> del track en TikTok bajo este género.
+                  El <strong style={{ color: '#fff' }}>Score</strong> de Heavy Hitters representa el impacto de debut y la velocidad de crecimiento de la canción.
                 </div>
               </div>
             </div>
@@ -382,7 +375,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   );
 };
 
-export default TiktokerPicksChart;
+export default HeavyHittersChart;
 
 const ChartRowSkeleton = () => (
   <div className="glass-panel" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', height: '72px', position: 'relative', overflow: 'hidden' }}>

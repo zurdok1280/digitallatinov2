@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap } from 'lucide-react';
-import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
+import { useAudioPreview } from '../hooks/useAudioPreview';
 
 const rankColors = [
   '#ff3366', '#ff7eb3', '#ff758c', '#ff7eb3', '#ffb700',

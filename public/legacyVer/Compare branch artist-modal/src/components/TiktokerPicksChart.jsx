@@ -304,8 +304,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                       e.stopPropagation();
                       handlePlayPreview(
                         song.rk,
-                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
-                        { title: song.song, artist: song.artists || song.artist, image: song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png' }
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
                       );
                     }}
                     style={{

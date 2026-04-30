@@ -582,7 +582,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
     display: "flex",
     flexDirection: "column",
     borderRadius: "2rem",
-    overflow: "hidden",
+    overflow: "hidden"
   };
 
   return (
@@ -1650,12 +1650,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                               e.stopPropagation();
                               handlePlayPreview(
                                 song.id,
-                                `https://audios.monitorlatino.com/Iam/${song.id}.mp3`,
-                                {
-                                  title: song.title || song.song,
-                                  artist: artist.name,
-                                  image: song.image_url || song.avatar || artist.imageUrl || "/logo.png"
-                                }
+                                `https://audios.monitorlatino.com/Iam/${song.id}.mp3`
                               );
                             }}
                             style={{

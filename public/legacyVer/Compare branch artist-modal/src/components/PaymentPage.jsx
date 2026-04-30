@@ -46,12 +46,7 @@ const PLANS = {
   },
 };
 
-const PlanCard = ({
-  plan,
-  onSelect,
-  formatPrice,
-  isPopular = false,
-}) => (
+const PlanCard = ({ plan, onSelect, formatPrice, isPopular = false }) => (
   <div
     className={`plan-card ${isPopular ? "plan-card-popular" : "plan-card-normal"}`}
     onClick={onSelect}
@@ -64,12 +59,8 @@ const PlanCard = ({
 
     <div className="plan-price-container">
       <span className="plan-currency">USD</span>
-      <span className="plan-price">
-        {formatPrice(plan.amount)}
-      </span>
-      <span className="plan-interval">
-        {plan.interval}
-      </span>
+      <span className="plan-price">{formatPrice(plan.amount)}</span>
+      <span className="plan-interval">{plan.interval}</span>
     </div>
     <ul className="plan-features">
       {plan.features.map((feature) => (
@@ -112,17 +103,10 @@ const PaymentPage = ({ onClose }) => {
             </button>
           )}
           <div className="payment-header">
-            {/* Imagen corregida usando el logo local que sí existe */}
-            <img
-              src="/logo.png"
-              alt="Digital Latino"
-              className="payment-logo"
-            />
-            <h1 className="payment-title">
-              Elige tu Plan
-            </h1>
+            <img src="/logo.png" alt="Digital Latino" className="payment-logo" />
+            <h1 className="payment-title">Elige tu Plan</h1>
             <p className="payment-subtitle">
-              Accede a todas las funciones premium y maximiza tu impacto.
+              Prueba nuestra plataforma gratis por 24 horas.
             </p>
           </div>
           <div className="payment-grid">
@@ -132,7 +116,7 @@ const PaymentPage = ({ onClose }) => {
               onSelect={() => setSelectedPlan(PLANS.ARTIST_MONTHLY)}
               formatPrice={formatPrice}
             />
-            {/* 2. Plan Artista Anual (popular por el descuento) */}
+            {/* 2. Plan Artista Anual (Como popular por el descuento) */}
             <PlanCard
               plan={PLANS.ARTIST_ANNUAL}
               onSelect={() => setSelectedPlan(PLANS.ARTIST_ANNUAL)}
@@ -164,10 +148,9 @@ const PaymentPage = ({ onClose }) => {
           <h1 className="checkout-title">Completa tu Suscripción</h1>
           <p className="payment-subtitle">Tu prueba gratuita termina en 24 horas.</p>
         </div>
-        
+
         <div className="checkout-summary">
           <div className="checkout-summary-glow" />
-          
           <p className="checkout-summary-title">Total a pagar HOY:</p>
           <p className="checkout-summary-total">$0.00 USD</p>
 

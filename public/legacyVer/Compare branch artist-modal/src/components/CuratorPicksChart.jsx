@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Video, Zap } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview';
 
 const rankColors = [
-  '#ff0050', '#ff2a6d', '#ff5a8d', '#ff7eb3', '#ffb700',
-  '#00f2fe', '#8a88ff', '#00f0ff', '#c193ff', '#fdcb6e'
+  '#ff3366', '#ff7eb3', '#ff758c', '#ff7eb3', '#ffb700',
+  '#00e676', '#8a88ff', '#00f0ff', '#c193ff', '#fdcb6e'
 ];
 
 const formatNumber = (num) => {
@@ -33,7 +33,7 @@ const Sparkline = ({ data, color }) => {
 
   const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
   const fillPoints = `${pointsString} ${width},${height} 0,${height}`;
-  const gradientId = `spark-tiktok-${color.replace('#', '')}`;
+  const gradientId = `spark-curator-${color.replace('#', '')}`;
   const colWidth = width / data.length;
 
   return (
@@ -101,7 +101,7 @@ const Sparkline = ({ data, color }) => {
             {formatNumber(points[hoveredIdx].val)}
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Views Hist.
+            Followers Hist.
           </div>
         </div>
       )}
@@ -109,16 +109,16 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
-const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+const CuratorPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
     return songs.map((s, idx) => {
       // Create a deterministic but nice looking trend
-      let val = (s.views_total || 5000) * 0.8;
+      let val = (s.sum_followers || 1000) * 0.8;
       const trend = [];
       for (let i = 0; i < 20; i++) {
-        val = val + (Math.sin(idx * 1.5 + i * 0.7) * (val * 0.08)) + (Math.cos(i * 0.5) * (val * 0.03));
+        val = val + (Math.sin(idx * 1.5 + i * 0.7) * (val * 0.05)) + (Math.cos(i * 0.5) * (val * 0.02));
         trend.push(Math.max(10, val));
       }
       return { ...s, trend };
@@ -138,7 +138,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron elementos para este género.</p>
+        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones para este género y tipo de playlist.</p>
       </div>
     );
   }
@@ -249,8 +249,8 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                 }
               }}
               style={{
-                background: index === 0 ? 'rgba(255, 0, 80, 0.05)' : undefined,
-                borderColor: index === 0 ? 'rgba(255, 0, 80, 0.3)' : undefined,
+                background: index === 0 ? 'rgba(255, 51, 102, 0.05)' : undefined,
+                borderColor: index === 0 ? 'rgba(255, 51, 102, 0.3)' : undefined,
                 cursor: 'pointer',
                 position: 'relative',
                 overflow: 'hidden',
@@ -283,19 +283,19 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                   <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
                     {rank}
                   </span>
-                  {song.no_videos != null && (
-                    <div style={{ marginTop: '0.15rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      <Video size={10} /> {formatNumber(song.no_videos)}
+                  {song.avg_position && (
+                    <div style={{ marginTop: '0.15rem', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      AVG: {Number(song.avg_position) % 1 === 0 ? song.avg_position : Number(song.avg_position).toFixed(1)}
                     </div>
                   )}
                 </div>
 
                 <div className="chart-img-wrapper" style={{ borderRadius: '12px', border: '1px solid var(--glass-border)', position: 'relative' }}>
-                  <img src={song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
+                  <img src={song.image_url || '/logo.png'} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
                   <div className="eq-container">
-                    <div className="eq-bar" style={{ height: '16px', background: '#ff0050' }} />
-                    <div className="eq-bar" style={{ height: '24px', background: '#ff0050' }} />
-                    <div className="eq-bar" style={{ height: '12px', background: '#ff0050' }} />
+                    <div className="eq-bar" style={{ height: '16px' }} />
+                    <div className="eq-bar" style={{ height: '24px' }} />
+                    <div className="eq-bar" style={{ height: '12px' }} />
                   </div>
                   <div
                     className="play-overlay"
@@ -304,8 +304,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                       e.stopPropagation();
                       handlePlayPreview(
                         song.rk,
-                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`,
-                        { title: song.song, artist: song.artists || song.artist, image: song.spotifyid || song.img || song.image_url || song.url || song.avatar || '/logo.png' }
+                        `https://audios.monitorlatino.com/Iam/${song.entid}.mp3`
                       );
                     }}
                     style={{
@@ -364,14 +363,14 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
 
               <div className="score-info-container" style={{ textAlign: 'right', minWidth: '80px' }}>
                 <div className="chart-score" style={{ fontSize: '1.4rem', color: rowColor }}>
-                  {formatNumber(song.views_total)}
+                  {formatNumber(song.sum_followers)}
                 </div>
                 <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
-                   Views <Info size={10} style={{ opacity: 0.6 }} />
+                   Followers <Info size={10} style={{ opacity: 0.6 }} />
                 </span>
                 
                 <div className="score-tooltip">
-                  Este número representa las <strong style={{ color: '#fff' }}>Views Totales</strong> del track en TikTok bajo este género.
+                  Este número representa <strong style={{ color: '#fff' }}>Sum Followers</strong>. Un consolidado de la audiencia o alcance total de esta canción en sus playlists actuales.
                 </div>
               </div>
             </div>
@@ -382,7 +381,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   );
 };
 
-export default TiktokerPicksChart;
+export default CuratorPicksChart;
 
 const ChartRowSkeleton = () => (
   <div className="glass-panel" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', height: '72px', position: 'relative', overflow: 'hidden' }}>

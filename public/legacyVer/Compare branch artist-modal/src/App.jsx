@@ -27,7 +27,6 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import { ArtistSelectionModal } from './components/ArtistSelectionModal';
 import MyArtist from './pages/MyArtist';
 import SongDetailsModal from './components/SongDetailsModal';
-import AudioPlayer from './components/AudioPlayer';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
@@ -626,7 +625,6 @@ function Dashboard() {
         onArtistSelected={handleArtistSelected}
       />
 
-      <AudioPlayer />
       <Toaster />
     </>
   );
