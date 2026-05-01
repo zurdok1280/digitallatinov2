@@ -1,4 +1,4 @@
-import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music } from 'lucide-react';
+import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music, FileText } from 'lucide-react';
 import { searchSpotify } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
@@ -122,7 +122,7 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user }) => {
 };
 
 // ─── Artist Result Card (Horizontal Carousel) ────────────────────────────────
-const ArtistCard = ({ artist, onMetricsClick }) => {
+const ArtistCard = ({ artist, onMetricsClick, onContextClick }) => {
   const followers = formatFollowers(artist.followers);
 
   return (
@@ -147,21 +147,34 @@ const ArtistCard = ({ artist, onMetricsClick }) => {
           className="flex-center"
           style={{
             position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', opacity: 0,
-            transition: 'opacity 0.2s',
+            transition: 'opacity 0.2s', gap: '8px'
           }}
           onMouseEnter={e => e.currentTarget.style.opacity = 1}
           onMouseLeave={e => e.currentTarget.style.opacity = 0}
         >
           <button
             onClick={(e) => { e.stopPropagation(); onMetricsClick(artist); }}
+            title="Ver métricas"
             style={{
-              width: '36px', height: '36px', borderRadius: '50%', border: 'none',
+              width: '32px', height: '32px', borderRadius: '50%', border: 'none',
               background: 'var(--accent-primary)', color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-              cursor: 'pointer', boxShadow: '0 4px 10px rgba(108, 99, 255, 0.4)'
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: '0 4px 10px rgba(108, 99, 255, 0.4)', flexShrink: 0
             }}
           >
-            <BarChart size={16} />
+            <BarChart size={14} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onContextClick(artist); }}
+            title="Resumen Estratégico"
+            style={{
+              width: '32px', height: '32px', borderRadius: '50%', border: 'none',
+              background: '#ff0050', color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: '0 4px 10px rgba(255, 0, 80, 0.4)', flexShrink: 0
+            }}
+          >
+            <FileText size={14} />
           </button>
         </div>
       </div>
@@ -182,7 +195,7 @@ const ArtistCard = ({ artist, onMetricsClick }) => {
 };
 
 // ─── Main SearchModal ─────────────────────────────────────────────────────────
-const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick }) => {
+const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextClick, onLoginClick }) => {
   const [query, setQuery]         = useState('');
   const [results, setResults]     = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -251,6 +264,28 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
           followers:       artist.followers,
           monthlyListeners: 0,
           countryId:       0,
+        });
+      }, 10);
+    }
+  };
+
+  const handleContextClick = (artist) => {
+    if (!user) {
+      onLoginClick();
+      return;
+    }
+    if (onContextClick) {
+      onClose();
+      setTimeout(() => {
+        onContextClick({
+          id:              artist.spotify_id,
+          spotify_id:      artist.spotify_id,
+          name:            artist.artist_name,
+          artist_name:     artist.artist_name,
+          imageUrl:        artist.image_url,
+          image_url:       artist.image_url,
+          img:             artist.image_url,
+          followers:       artist.followers,
         });
       }, 10);
     }
@@ -390,6 +425,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
                           key={artist.spotify_id}
                           artist={artist}
                           onMetricsClick={handleArtistMetrics}
+                          onContextClick={handleContextClick}
                         />
                       ))}
                     </div>

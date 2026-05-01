@@ -1,27 +1,45 @@
-import { BarChart3 } from 'lucide-react';
-import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import { LoginForm } from './components/LoginForm';
-import SongChart from './components/SongChart';
-import ArtistDetailsModal from './components/ArtistDetailsModal';
-import PlatformsDetailsModal from './components/PlatformsDetailsModal';
-import SearchModal from './components/SearchModal';
-import TopPlatformsChart from './components/TopPlatformsChart';
-import { getCountries, getFormatsByCountry, getCitiesByCountry, getChartDigital, getFormatsByCountryArtist, getDebutSongs, getCuratorPics, getPlaylistType, getTiktokPics, getChartDigitalHitsRadio } from './services/api';
-import TopArtistsChart from './components/TopArtistsChart';
-import TopArtistReportModal from './components/TopArtistReportModal';
-import HeavyHittersChart from './components/HeavyHittersChart';
-import CuratorPicksChart from './components/CuratorPicksChart';
-import TiktokerPicksChart from './components/TiktokerPicksChart';
-import CampaignPage from './components/CampaignPage';
-import ComparisonBar from './components/ComparisonBar';
-import SongCompareModal from './components/SongCompareModal';
-import FloatingScrollButtons from './components/FloatingScrollButtons';
-import { Toaster } from './components/Toaster';
-import PaymentPage from './components/PaymentPage';
+import { BarChart3 } from "lucide-react";
+import React, { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import { LoginForm } from "./components/LoginForm";
+import SongChart from "./components/SongChart";
+import ArtistDetailsModal from "./components/ArtistDetailsModal";
+import PlatformsDetailsModal from "./components/PlatformsDetailsModal";
+import SearchModal from "./components/SearchModal";
+import TopPlatformsChart from "./components/TopPlatformsChart";
+import ArtistContextModal from "./components/ArtistContextModal";
+import {
+  getCountries,
+  getFormatsByCountry,
+  getCitiesByCountry,
+  getChartDigital,
+  getFormatsByCountryArtist,
+  getDebutSongs,
+  getCuratorPics,
+  getPlaylistType,
+  getTiktokPics,
+  getChartDigitalHitsRadio,
+} from "./services/api";
+import TopArtistsChart from "./components/TopArtistsChart";
+import TopArtistReportModal from "./components/TopArtistReportModal";
+import HeavyHittersChart from "./components/HeavyHittersChart";
+import CuratorPicksChart from "./components/CuratorPicksChart";
+import TiktokerPicksChart from "./components/TiktokerPicksChart";
+import CampaignPage from "./components/CampaignPage";
+import ComparisonBar from "./components/ComparisonBar";
+import SongCompareModal from "./components/SongCompareModal";
+import FloatingScrollButtons from "./components/FloatingScrollButtons";
+import { Toaster } from "./components/Toaster";
+import PaymentPage from "./components/PaymentPage";
 
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { ArtistSelectionModal } from './components/ArtistSelectionModal';
@@ -63,7 +81,8 @@ function Dashboard() {
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [selectedSongPlatform, setSelectedSongPlatform] = useState(null);
   const [selectedArtistReport, setSelectedArtistReport] = useState(null);
-  const [activeView, setActiveView] = useState('Charts');
+  const [selectedArtistContext, setSelectedArtistContext] = useState(null);
+  const [activeView, setActiveView] = useState("Charts");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('0');
@@ -518,17 +537,47 @@ function Dashboard() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onArtistClick={(artist) => {
-          if (!user) { setIsLoginModalOpen(true); return; }
-          if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
+          if (!user) {
+            setIsLoginModalOpen(true);
+            return;
+          }
+          if (!isAllowedForArtist(artist)) {
+            showRestrictedToast();
+            return;
+          }
           setSelectedArtist({ ...artist, countryId: 0 });
         }}
         onSongClick={(song) => {
-          if (!user) { setIsLoginModalOpen(true); return; }
-          if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+          if (!user) {
+            setIsLoginModalOpen(true);
+            return;
+          }
+          if (!isAllowedForArtist(song)) {
+            showRestrictedToast();
+            return;
+          }
           setSelectedSongPlatform(song);
+        }}
+        onContextClick={(artist) => {
+          if (!user) {
+            setIsLoginModalOpen(true);
+            return;
+          }
+          if (!isAllowedForArtist(artist)) {
+            showRestrictedToast();
+            return;
+          }
+          setSelectedArtistContext(artist);
         }}
         onLoginClick={() => setIsLoginModalOpen(true)}
       />
+
+      {selectedArtistContext && user && (
+        <ArtistContextModal
+          artist={selectedArtistContext}
+          onClose={() => setSelectedArtistContext(null)}
+        />
+      )}
 
       {selectedArtist && user && (
         <ArtistDetailsModal

@@ -592,12 +592,29 @@ export const getSongBySpotifyId = async (id) => {
   }
 };
 
+/**
+ * Fetches the context report for a specific artist by Spotify ID
+ */
+export const getArtistContext = async (spotifyId) => {
+  if (!spotifyId) return null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/report/getArtistContext/${encodeURIComponent(spotifyId)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("API Error fetching artist context:", error);
+    return null;
+  }
+};
+
 export const digitalLatinoApi = {
   getSongsArtistBySpotifyId,
   getArtistSongs,
   getSongById,
   getSongBySpotifyId,
-  getArtistData
+  getArtistData,
+  getArtistContext
 };
 
 
