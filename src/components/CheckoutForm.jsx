@@ -77,7 +77,7 @@ export const CheckoutForm = ({ priceId }) => {
       ) {
         toast({
           title: "¡Pago exitoso!",
-          description: "Tu prueba gratis de 15 días ha comenzado. Redirigiendo...",
+          description: "Tu prueba gratis ha comenzado. Redirigiendo...",
         });
 
         //Get new token with updated user info
@@ -148,7 +148,7 @@ export const CheckoutForm = ({ priceId }) => {
         disabled={!stripe || loading}
         className="btn-gradient"
       >
-        {loading ? "Procesando..." : "Iniciar 15 Días Gratis"}
+        {loading ? "Procesando..." : "Iniciar Prueba Gratis"}
       </button>
     </form>
   );
