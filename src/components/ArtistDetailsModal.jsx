@@ -55,7 +55,7 @@ import RecommendationsModal, {
 } from "./RecommendationsModal";
 import ArtistContextModal from "./ArtistContextModal";
 import { useAuth } from "../hooks/useAuth";
-import { useAudioPreview } from "../hooks/useAudioPreview";
+import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [

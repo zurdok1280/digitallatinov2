@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, createContext, useContext } from 'react';
+import { useAuth } from './useAuth.jsx';
 
 const AudioContext = createContext(null);
 
@@ -9,18 +10,16 @@ export const AudioProvider = ({ children }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [isPreviewLimitReached, setIsPreviewLimitReached] = useState(false);
   const audioRef = useRef(null);
   const progressInterval = useRef(null);
 
-  const startProgressTracking = useCallback(() => {
-    if (progressInterval.current) clearInterval(progressInterval.current);
-    progressInterval.current = setInterval(() => {
-      if (audioRef.current) {
-        setProgress(audioRef.current.currentTime);
-        setDuration(audioRef.current.duration || 0);
-      }
-    }, 250);
-  }, []);
+  const { user } = useAuth();
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const stopProgressTracking = useCallback(() => {
     if (progressInterval.current) {
@@ -29,10 +28,33 @@ export const AudioProvider = ({ children }) => {
     }
   }, []);
 
+  const startProgressTracking = useCallback(() => {
+    if (progressInterval.current) clearInterval(progressInterval.current);
+    progressInterval.current = setInterval(() => {
+      if (audioRef.current) {
+        const currentT = audioRef.current.currentTime;
+        if (!userRef.current && currentT >= 10) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 10;
+          setProgress(10);
+          setIsPreviewLimitReached(true);
+          stopProgressTracking();
+          return;
+        }
+        setProgress(currentT);
+        setDuration(audioRef.current.duration || 0);
+      }
+    }, 250);
+  }, [stopProgressTracking]);
+
   const handlePlayPreview = useCallback((trackId, audioUrl, meta = {}) => {
     // Si la misma canción está sonando, pausar/resumir
     if (currentlyPlaying === trackId) {
       if (audioRef.current) {
+        if (!userRef.current && audioRef.current.currentTime >= 10) {
+          setIsPreviewLimitReached(true);
+          return;
+        }
         if (audioRef.current.paused) {
           audioRef.current.play();
           startProgressTracking();
@@ -43,6 +65,8 @@ export const AudioProvider = ({ children }) => {
       }
       return;
     }
+
+    setIsPreviewLimitReached(false);
 
     // Si hay una canción sonando, detenerla
     if (audioRef.current) {
@@ -92,9 +116,14 @@ export const AudioProvider = ({ children }) => {
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
+    if (!userRef.current && audioRef.current.currentTime >= 10) {
+      setIsPreviewLimitReached(true);
+      return;
+    }
     if (audioRef.current.paused) {
       audioRef.current.play();
       startProgressTracking();
+      setIsPreviewLimitReached(false);
     } else {
       audioRef.current.pause();
       stopProgressTracking();
@@ -110,10 +139,19 @@ export const AudioProvider = ({ children }) => {
 
   const seekTo = useCallback((time) => {
     if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setProgress(time);
+      let targetTime = time;
+      if (!userRef.current && time > 10) {
+        targetTime = 10;
+        setIsPreviewLimitReached(true);
+        audioRef.current.pause();
+        stopProgressTracking();
+      } else {
+        setIsPreviewLimitReached(false);
+      }
+      audioRef.current.currentTime = targetTime;
+      setProgress(targetTime);
     }
-  }, []);
+  }, [stopProgressTracking]);
 
   const closePlayer = useCallback(() => {
     if (audioRef.current) {
@@ -124,6 +162,7 @@ export const AudioProvider = ({ children }) => {
     setCurrentlyPlaying(null);
     setTrackMeta(null);
     setIsVisible(false);
+    setIsPreviewLimitReached(false);
     setProgress(0);
     setDuration(0);
     stopProgressTracking();
@@ -150,6 +189,7 @@ export const AudioProvider = ({ children }) => {
     duration,
     isPaused,
     isVisible,
+    isPreviewLimitReached,
     handlePlayPreview,
     togglePlayPause,
     changeVolume,

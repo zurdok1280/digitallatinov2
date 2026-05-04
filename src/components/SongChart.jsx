@@ -1,6 +1,6 @@
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useAudioPreview } from '../hooks/useAudioPreview';
+import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useMemo, useState, useEffect, useRef } from 'react';
 
