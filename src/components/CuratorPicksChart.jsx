@@ -37,8 +37,8 @@ const Sparkline = ({ data, color }) => {
   const colWidth = width / data.length;
 
   return (
-    <div 
-      className="sparkline-wrapper" 
+    <div
+      className="sparkline-wrapper"
       onClick={(e) => e.stopPropagation()}
       style={{ width: `${width}px`, height: `${height}px`, opacity: 0.8, position: 'relative' }}
       onMouseLeave={() => setHoveredIdx(null)}
@@ -51,13 +51,13 @@ const Sparkline = ({ data, color }) => {
           </linearGradient>
         </defs>
         <polyline points={fillPoints} fill={`url(#${gradientId})`} />
-        
+
         {hoveredIdx !== null && (
           <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
         )}
 
         <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-        
+
         {hoveredIdx === null && (
           <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
         )}
@@ -79,7 +79,7 @@ const Sparkline = ({ data, color }) => {
           />
         ))}
       </svg>
-      
+
       {hoveredIdx !== null && (
         <div style={{
           position: 'absolute',
@@ -235,7 +235,7 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
         {enrichedSongs.map((song, index) => {
           const rowColor = rankColors[index % rankColors.length];
           const rank = song.rk || index + 1;
-          
+
           return (
             <div
               key={index}
@@ -360,16 +360,16 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
                 </div>
               </div>
 
-              <Sparkline data={song.trend} color={rowColor} />
+              {/*<Sparkline data={song.trend} color={rowColor} />*/}
 
               <div className="score-info-container" style={{ textAlign: 'right', minWidth: '80px' }}>
                 <div className="chart-score" style={{ fontSize: '1.4rem', color: rowColor }}>
                   {formatNumber(song.sum_followers)}
                 </div>
                 <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
-                   Followers <Info size={10} style={{ opacity: 0.6 }} />
+                  Followers <Info size={10} style={{ opacity: 0.6 }} />
                 </span>
-                
+
                 <div className="score-tooltip">
                   Este número representa <strong style={{ color: '#fff' }}>Sum Followers</strong>. Un consolidado de la audiencia o alcance total de esta canción en sus playlists actuales.
                 </div>

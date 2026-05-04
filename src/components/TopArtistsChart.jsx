@@ -36,8 +36,8 @@ const Sparkline = ({ data, color }) => {
   const colWidth = width / data.length;
 
   return (
-    <div 
-      className="sparkline-wrapper" 
+    <div
+      className="sparkline-wrapper"
       onClick={(e) => e.stopPropagation()}
       style={{ width: `${width}px`, height: `${height}px`, opacity: 0.8, position: 'relative' }}
       onMouseLeave={() => setHoveredIdx(null)}
@@ -50,13 +50,13 @@ const Sparkline = ({ data, color }) => {
           </linearGradient>
         </defs>
         <polyline points={fillPoints} fill={`url(#${gradientId})`} />
-        
+
         {hoveredIdx !== null && (
           <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
         )}
 
         <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-        
+
         {hoveredIdx === null && (
           <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
         )}
@@ -78,7 +78,7 @@ const Sparkline = ({ data, color }) => {
           />
         ))}
       </svg>
-      
+
       {hoveredIdx !== null && (
         <div style={{
           position: 'absolute',
@@ -116,7 +116,7 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
     let isMounted = true;
     const fetchArtists = async () => {
       setIsLoading(true);
-      
+
       const safeFormat = (selectedGenre === 'All' || selectedGenre === 0 || selectedGenre === '0') ? 0 : selectedGenre;
       const safeCountry = (selectedCountry === 'All' || selectedCountry === 0 || selectedCountry === '0') ? 1 : selectedCountry;
 
@@ -267,7 +267,7 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
                 </div>
               </div>
 
-              <Sparkline data={artist.trend} color={rowColor} />
+              {/*<Sparkline data={artist.trend} color={rowColor} />*/}
 
               <div className="artist-metrics-container">
                 {/* Monthly Listeners Metric */}

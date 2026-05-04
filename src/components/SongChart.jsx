@@ -32,7 +32,7 @@ const Sparkline = ({ song, color }) => {
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -40,15 +40,15 @@ const Sparkline = ({ song, color }) => {
     let isMounted = true;
     if (song?.cs_song && isVisible && !hasFetched) {
       setIsLoading(true);
-      fetch(`https://backend.digital-latino.com/api/report/getSongHistoricalStreams/${song.cs_song}`)
+      fetch(`https://backend.digital-latino.com/api/report/getSongHistoricalStreamsWeek/${song.cs_song}/0/0`)
         .then(res => res.json())
         .then(json => {
           if (isMounted) {
             setHasFetched(true);
             if (Array.isArray(json) && json.length > 0) {
-              const sorted = [...json].sort((a, b) => a.date.localeCompare(b.date));
-              setData(sorted.map(item => item.streams_total / 1000000));
-              setLabels(sorted.map(item => item.date));
+              const sorted = [...json].sort((a, b) => a.date_week.localeCompare(b.date_week));
+              setData(sorted.map(item => item.spotify_streams / 1000000));
+              setLabels(sorted.map(item => item.date_week));
             }
           }
         })
@@ -82,14 +82,14 @@ const Sparkline = ({ song, color }) => {
   const colWidth = width / displayData.length;
 
   return (
-    <div 
-      className="sparkline-wrapper" 
+    <div
+      className="sparkline-wrapper"
       onClick={(e) => e.stopPropagation()}
       ref={containerRef}
-      style={{ 
-        width: `${width}px`, 
-        height: `${height}px`, 
-        opacity: 0.8, 
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        opacity: 0.8,
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
@@ -109,14 +109,14 @@ const Sparkline = ({ song, color }) => {
               </linearGradient>
             </defs>
             <polyline points={fillPoints} fill={`url(#${gradientId})`} />
-            
+
             {/* Render Hover Indicator Lines Below the Main Stroke */}
             {hoveredIdx !== null && (
               <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
             )}
 
             <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            
+
             {/* Default end dot if no hover */}
             {hoveredIdx === null && (
               <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
@@ -141,7 +141,7 @@ const Sparkline = ({ song, color }) => {
               />
             ))}
           </svg>
-          
+
           {/* Dynamic Popover Overlay */}
           {hoveredIdx !== null && (
             <div style={{
@@ -182,7 +182,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
   // Generate deterministic "historical" trend data for demonstration purposes
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
-    
+
     return songs.map((s, idx) => {
       let val = 100 - (s.rk * 0.3);
       const trend = [];
@@ -369,8 +369,8 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
 
           <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
             <h3 className="chart-title" style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: 700 }}>{song.song}</h3>
-            <p 
-              className="chart-artist" 
+            <p
+              className="chart-artist"
               style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'inline-block' }}
               onMouseEnter={(e) => e.target.style.color = '#8c52ff'}
               onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.6)'}
@@ -424,7 +424,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
           <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
             Score <Info size={11} style={{ opacity: 0.7 }} />
           </span>
-          
+
           <div className="score-tooltip">
             El <strong style={{ color: '#fff' }}>Score Digital</strong> es una métrica del 1 al 100 que evalúa el nivel de exposición de una canción basado en streams, playlists, engagement social y distribución geográfica.
           </div>
@@ -528,13 +528,13 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
         ) : (
           <>
             {enrichedSongs.slice(0, 20).map((song, index) => renderRow(song, index, false))}
-            
+
             {enrichedSongs.length > 20 && (
               <div style={{ position: 'relative', marginTop: '1rem' }} className="glass-panel">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem' }}>
                   {enrichedSongs.slice(20, 23).map((song, index) => renderRow(song, 20 + index, true))}
                 </div>
-                
+
                 {/* Overlay CTA */}
                 <div style={{
                   position: 'absolute',
@@ -548,12 +548,12 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
                   borderRadius: 'inherit',
                   padding: '1.5rem'
                 }}>
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, #ff3366, #c193ff)', 
-                    padding: '0.8rem', 
-                    borderRadius: '50%', 
-                    marginBottom: '0.8rem', 
-                    boxShadow: '0 0 15px rgba(255, 51, 102, 0.4)' 
+                  <div style={{
+                    background: 'linear-gradient(135deg, #ff3366, #c193ff)',
+                    padding: '0.8rem',
+                    borderRadius: '50%',
+                    marginBottom: '0.8rem',
+                    boxShadow: '0 0 15px rgba(255, 51, 102, 0.4)'
                   }}>
                     <Lock size={22} color="white" />
                   </div>
@@ -563,7 +563,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
                   <p style={{ color: '#d1d5db', fontSize: '0.9rem', marginBottom: '1.2rem', textAlign: 'center', maxWidth: '350px' }}>
                     Accede a rankings completos y métricas avanzadas
                   </p>
-                  <button 
+                  <button
                     onClick={onLoginClick}
                     style={{
                       background: 'linear-gradient(135deg, #ff3366, #c193ff)',

@@ -53,6 +53,7 @@ import SearchableSelect from "./SearchableSelect";
 import RecommendationsModal, {
   RecommendationsBanner,
 } from "./RecommendationsModal";
+import ArtistContextModal from "./ArtistContextModal";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview";
 
@@ -318,6 +319,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showTopArtistReport, setShowTopArtistReport] = useState(false);
   const scrollRef = useRef(null);
   const tabsRef = useRef(null);
 
@@ -657,17 +659,48 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
               }}
             />
             <div>
-              <h1
-                className="modal-hero-title"
-                style={{
-                  fontSize: "3rem",
-                  fontWeight: 800,
-                  margin: 0,
-                  lineHeight: 1,
-                }}
-              >
-                {artist.name}
-              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                <h1
+                  className="modal-hero-title"
+                  style={{
+                    fontSize: "3rem",
+                    fontWeight: 800,
+                    margin: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  {artist.name}
+                </h1>
+                <button
+                  onClick={() => setShowTopArtistReport(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    background: "linear-gradient(135deg, #8a88ff 0%, #ff3366 100%)",
+                    color: "white",
+                    border: "none",
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: "20px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    height: "fit-content",
+                    boxShadow: "0 4px 15px rgba(255, 51, 102, 0.4)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05) translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 8px 25px rgba(255, 51, 102, 0.6)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1) translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(255, 51, 102, 0.4)";
+                  }}
+                >
+                  <Activity size={16} color="white" /> Resumen IA
+                </button>
+              </div>
               <p
                 className="modal-hero-monthly"
                 style={{
@@ -717,12 +750,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
             { id: "mapa", label: "Mapa", icon: Map },
             ...(artist?.songName
               ? [
-                  {
-                    id: "detalles_cancion",
-                    label: `Detalles de ${artist.songName}`,
-                    icon: Music,
-                  },
-                ]
+                {
+                  id: "detalles_cancion",
+                  label: `Alcance de ${artist.songName}`,
+                  icon: Music,
+                },
+              ]
               : []),
             { id: "playlists", label: "Playlists Recomendadas", icon: Music },
             { id: "tiktok", label: "TikTokers", icon: Users },
@@ -819,7 +852,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                     >
                       {formatNumber(
                         artistData?.monthly_listeners ||
-                          artist.monthlyListeners,
+                        artist.monthlyListeners,
                       )}
                     </p>
                   </div>
@@ -1422,12 +1455,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                             transition: "all 0.2s",
                           }}
                           onMouseEnter={(e) =>
-                            (e.currentTarget.style.background =
-                              "rgba(255,255,255,0.1)")
+                          (e.currentTarget.style.background =
+                            "rgba(255,255,255,0.1)")
                           }
                           onMouseLeave={(e) =>
-                            (e.currentTarget.style.background =
-                              "rgba(255,255,255,0.05)")
+                          (e.currentTarget.style.background =
+                            "rgba(255,255,255,0.05)")
                           }
                         >
                           <TrendingUp
@@ -1489,10 +1522,10 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                           data={(isHistoricalChronological
                             ? songHistoricalData
                             : [...songHistoricalData].sort(
-                                (a, b) =>
-                                  (a.spotify_streams || 0) -
-                                  (b.spotify_streams || 0),
-                              )
+                              (a, b) =>
+                                (a.spotify_streams || 0) -
+                                (b.spotify_streams || 0),
+                            )
                           ).map((d) => ({
                             name: d.date_week?.slice(5),
                             val: d.spotify_streams,
@@ -1535,7 +1568,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: "#555", fontSize: 10 }}
-                            tickFormatter={(v) => formatNumber(v)}
+                            tickFormatter={(v) => v.toLocaleString()}
                           />
                           <Tooltip
                             contentStyle={{
@@ -1545,7 +1578,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                               fontSize: "0.8rem",
                             }}
                             itemStyle={{ color: "#1DB954" }}
-                            formatter={(v) => [formatNumber(v), "Streams"]}
+                            formatter={(v) => [v.toLocaleString(), "Streams"]}
                           />
                           <Area
                             type="monotone"
@@ -1993,8 +2026,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                     const cty = countries[sim.label.length % countries.length];
                     const gen =
                       genres[
-                        sim.label.charCodeAt(sim.label.length - 1) %
-                          genres.length
+                      sim.label.charCodeAt(sim.label.length - 1) %
+                      genres.length
                       ];
 
                     return (
@@ -2290,8 +2323,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                         .flatMap((pl) =>
                           pl.related_artists_names
                             ? pl.related_artists_names
-                                .split(",")
-                                .map((s) => s.trim())
+                              .split(",")
+                              .map((s) => s.trim())
                             : [],
                         )
                         .filter(Boolean);
@@ -2385,9 +2418,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
                   {playlistsData.map((pl, i) => {
                     const artistsList = pl.related_artists_names
                       ? pl.related_artists_names
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean)
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
                       : [];
                     const top5 = artistsList.slice(0, 5).join(", ");
                     const hasMore = artistsList.length > 5;
@@ -3475,6 +3508,19 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
         csSong={artist?.cs_song || artist?.csSong}
         spotifyId={artist?.spotifyid}
       />
+
+      {/* Top Artist Report Modal */}
+      {showTopArtistReport && (
+        <ArtistContextModal
+          artist={{
+            ...artist,
+            name: artist.name,
+            image_url: artist.imageUrl,
+            spotify_id: artist.spotifyid || artist.id,
+          }}
+          onClose={() => setShowTopArtistReport(false)}
+        />
+      )}
     </div>
   );
 };

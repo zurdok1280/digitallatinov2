@@ -364,6 +364,7 @@ function Dashboard() {
             user={user}
             onLoginClick={() => setIsLoginModalOpen(true)}
             onLogoutClick={logout}
+            isLoading={isLoading}
           />
 
           <Routes>
