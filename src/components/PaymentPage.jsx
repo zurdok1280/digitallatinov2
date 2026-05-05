@@ -137,13 +137,13 @@ const PaymentPage = ({ onClose }) => {
               plan={PLANS.ARTIST_ANNUAL}
               onSelect={() => setSelectedPlan(PLANS.ARTIST_ANNUAL)}
               formatPrice={formatPrice}
+              isPopular={true}
             />
             {/* 3. Plan Premium Mensual (popular) */}
             <PlanCard
               plan={PLANS.PREMIUM_MONTHLY}
               onSelect={() => setSelectedPlan(PLANS.PREMIUM_MONTHLY)}
               formatPrice={formatPrice}
-              isPopular={true}
             />
           </div>
         </div>
