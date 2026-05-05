@@ -14,7 +14,8 @@ import {
   Loader2,
   Users
 } from "lucide-react";
-import { getArtistContext } from "../services/api";
+import { getArtistContext, setLogSong } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
@@ -61,7 +62,8 @@ const CircularProgress = ({ value }) => {
   );
 };
 
-export default function ArtistContextModal({ artist, onClose }) {
+export default function ArtistContextModal({ artist, onClose, setUnavailableItem }) {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingText, setLoadingText] = useState("Recopilando información del artista...");
@@ -118,9 +120,21 @@ export default function ArtistContextModal({ artist, onClose }) {
       
       try {
         const result = await fetchPromise;
-        if (!result || result.error) {
-          // It failed or timed out (returned null from api.js or error from backend)
+        const isEmptyContext = !result || 
+                               result.error || 
+                               Object.keys(result).length === 0 || 
+                               (result.artist_name === '' && result.opportunity_score === 0 && !result.main_opportunity);
+        
+        if (isEmptyContext) {
+          // It failed or timed out or returned empty (returned null from api.js or error from backend)
           delete contextCache[spotifyId];
+          if (isMounted) {
+            setIsLoading(false);
+            setLogSong({ userid: user?.id, spotifyid: spotifyId, isartist: true });
+            if (setUnavailableItem) setUnavailableItem(artist);
+            if (onClose) onClose();
+          }
+          return;
         } else {
           contextCache[spotifyId] = result; // Replace promise with actual data
         }
@@ -131,7 +145,12 @@ export default function ArtistContextModal({ artist, onClose }) {
         }
       } catch (error) {
         delete contextCache[spotifyId]; // Remove from cache on error
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setLogSong({ userid: user?.id, spotifyid: spotifyId, isartist: true });
+          if (setUnavailableItem) setUnavailableItem(artist);
+          if (onClose) onClose();
+        }
       }
     };
     fetchContext();

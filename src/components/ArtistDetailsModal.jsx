@@ -48,6 +48,7 @@ import {
   getSongHistoricalStreamsWeek,
   getSongById,
   getCitiesGapData,
+  setLogSong,
 } from "../services/api";
 import SearchableSelect from "./SearchableSelect";
 import RecommendationsModal, {
@@ -271,7 +272,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
-const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true }) => {
+const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, setUnavailableItem }) => {
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
@@ -362,11 +363,36 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true })
       setIsLoading(true);
       const data = await getArtistData(artist.id);
       if (isMounted) {
+        // Handle null / undefined
+        if (!data) {
+          setIsLoading(false);
+          setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
+          if (setUnavailableItem) setUnavailableItem(artist);
+          if (onClose) onClose();
+          return;
+        }
+
         // Enforce object extraction if array is returned
         const artistObject = Array.isArray(data)
           ? data[0]
           : data?.data?.[0] || data;
-        setArtistData(artistObject || {});
+
+        // Handle empty array, empty object, undefined extracted value, or error response
+        const isEmpty =
+          !artistObject ||
+          (Array.isArray(artistObject) && artistObject.length === 0) ||
+          (typeof artistObject === 'object' && Object.keys(artistObject).length === 0) ||
+          artistObject.error;
+
+        if (isEmpty) {
+          setIsLoading(false);
+          setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
+          if (setUnavailableItem) setUnavailableItem(artist);
+          if (onClose) onClose();
+          return;
+        }
+
+        setArtistData(artistObject);
         setIsLoading(false);
       }
     };

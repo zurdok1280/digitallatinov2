@@ -146,15 +146,17 @@ export const searchSpotify = async (query) => {
  */
 export const getArtistData = async (spotifyId) => {
   if (!spotifyId) return null;
-  try {
-    const response = await fetch(`${API_BASE_URL}/report/getDataArtist/${encodeURIComponent(spotifyId)}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("API Error fetching artist data:", error);
-    return null;
-  }
+  return withCache(`artist_data_${spotifyId}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getDataArtist/${encodeURIComponent(spotifyId)}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("API Error fetching artist data:", error);
+      return null;
+    }
+  });
 };
 
 /**
@@ -597,13 +599,47 @@ export const getSongBySpotifyId = async (id) => {
  */
 export const getArtistContext = async (spotifyId) => {
   if (!spotifyId) return null;
+  return withCache(`artist_context_${spotifyId}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getArtistContext/${encodeURIComponent(spotifyId)}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("API Error fetching artist context:", error);
+      return null;
+    }
+  });
+};
+
+/**
+ * Registra una búsqueda de canción o artista que no se encontró en la base de datos (Bad Path).
+ * Implementa protección contra spam usando sessionStorage.
+ */
+export const setLogSong = async ({ userid, spotifyid, isartist }) => {
+  // 1. Verificar prevención de spam en sessionStorage
+  const cacheKey = `logged_missing_${spotifyid}`;
+  if (sessionStorage.getItem(cacheKey)) {
+    console.log("Ya se registró esta solicitud en la sesión actual.");
+    return { status: 'already_logged' };
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistContext/${encodeURIComponent(spotifyId)}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data;
+    const response = await fetch(`${API_BASE_URL}/report/setLogSong`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userid, spotifyid, isartist })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // 2. Guardar en cache para evitar spam en esta sesión
+    sessionStorage.setItem(cacheKey, 'true');
+    return await response.json();
   } catch (error) {
-    console.error("API Error fetching artist context:", error);
+    console.error("Error en setLogSong:", error);
     return null;
   }
 };
@@ -614,7 +650,8 @@ export const digitalLatinoApi = {
   getSongById,
   getSongBySpotifyId,
   getArtistData,
-  getArtistContext
+  getArtistContext,
+  setLogSong
 };
 
 

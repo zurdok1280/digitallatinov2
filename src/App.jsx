@@ -48,6 +48,7 @@ import SongDetailsModal from './components/SongDetailsModal';
 import AudioPlayer from './components/AudioPlayer';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import DataUnavailableModal from './components/DataUnavailableModal';
 
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 
@@ -105,6 +106,9 @@ function Dashboard() {
   const [selectedSongs, setSelectedSongs] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [songForComparison, setSongForComparison] = useState({ s1: null, s2: null });
+
+  // Data Unavailable Modal
+  const [unavailableItem, setUnavailableItem] = useState(null);
 
   // Reset comparison on view change
   useEffect(() => {
@@ -537,6 +541,7 @@ function Dashboard() {
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
+        setUnavailableItem={setUnavailableItem}
         onArtistClick={(artist) => {
           if (!user) {
             setIsLoginModalOpen(true);
@@ -577,6 +582,7 @@ function Dashboard() {
         <ArtistContextModal
           artist={selectedArtistContext}
           onClose={() => setSelectedArtistContext(null)}
+          setUnavailableItem={setUnavailableItem}
         />
       )}
 
@@ -590,6 +596,8 @@ function Dashboard() {
           setSelectedCountry={setSelectedCountry}
           selectedGenre={selectedGenre}
           setSelectedGenre={setSelectedGenre}
+          selectedPlatform={selectedPlatform}
+          setUnavailableItem={setUnavailableItem}
           selectedCity={selectedCity}
           setSelectedCity={setSelectedCity}
           onToggleSidebar={() => setIsSidebarOpen(true)}
@@ -638,6 +646,7 @@ function Dashboard() {
         <SongDetailsModal
           song={selectedSong}
           onClose={() => setSelectedSong(null)}
+          setUnavailableItem={setUnavailableItem}
         />
       )}
 
@@ -678,6 +687,7 @@ function Dashboard() {
 
       <AudioPlayer />
       <Toaster />
+      <DataUnavailableModal item={unavailableItem} onClose={() => setUnavailableItem(null)} />
     </>
   );
 }
