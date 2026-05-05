@@ -30,8 +30,8 @@ const Sparkline = ({ data, color }) => {
   const colWidth = width / data.length;
 
   return (
-    <div 
-      className="sparkline-wrapper" 
+    <div
+      className="sparkline-wrapper"
       onClick={(e) => e.stopPropagation()}
       style={{ width: `${width}px`, height: `${height}px`, opacity: 0.8, position: 'relative' }}
       onMouseLeave={() => setHoveredIdx(null)}
@@ -44,13 +44,13 @@ const Sparkline = ({ data, color }) => {
           </linearGradient>
         </defs>
         <polyline points={fillPoints} fill={`url(#${gradientId})`} />
-        
+
         {hoveredIdx !== null && (
           <line x1={points[hoveredIdx].x} y1="-5" x2={points[hoveredIdx].x} y2={height} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="2,2" />
         )}
 
         <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-        
+
         {hoveredIdx === null && (
           <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
         )}
@@ -72,7 +72,7 @@ const Sparkline = ({ data, color }) => {
           />
         ))}
       </svg>
-      
+
       {hoveredIdx !== null && (
         <div style={{
           position: 'absolute',
@@ -238,7 +238,7 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
           const rowColor = rankColors[index % rankColors.length];
           // Determine rank: use s.rk_trending or fall back to index + 1
           const rank = song.rk_trending || song.rk || index + 1;
-          
+
           return (
             <div
               key={index}
@@ -354,16 +354,16 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
                 </div>
               </div>
 
-              <Sparkline data={song.trend} color={rowColor} />
+              {/*<Sparkline data={song.trend} color={rowColor} />*/}
 
               <div className="score-info-container" style={{ textAlign: 'right', minWidth: '80px' }}>
                 <div className="text-gradient chart-score" style={{ fontSize: '1.4rem' }}>
                   {song.tw_score != null ? Number(song.tw_score).toFixed(1) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
                 </div>
                 <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
-                   Score <Info size={10} style={{ opacity: 0.6 }} />
+                  Score <Info size={10} style={{ opacity: 0.6 }} />
                 </span>
-                
+
                 <div className="score-tooltip">
                   El <strong style={{ color: '#fff' }}>Score</strong> de Heavy Hitters representa el impacto de debut y la velocidad de crecimiento de la canción.
                 </div>

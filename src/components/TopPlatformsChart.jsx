@@ -30,8 +30,8 @@ const Sparkline = ({ data, color }) => {
   const colWidth = width / data.length;
 
   return (
-    <div 
-      className="sparkline-wrapper" 
+    <div
+      className="sparkline-wrapper"
       onClick={(e) => e.stopPropagation()}
       style={{ width: `${width}px`, height: `${height}px`, opacity: 0.8, position: 'relative' }}
       onMouseLeave={() => setHoveredIdx(null)}
@@ -44,7 +44,7 @@ const Sparkline = ({ data, color }) => {
           </linearGradient>
         </defs>
         <polyline points={fillPoints} fill={`url(#${gradientId})`} />
-        
+
         {/* Render Hover Indicator Lines Below the Main Stroke */}
         {hoveredIdx !== null && (
           <>
@@ -53,7 +53,7 @@ const Sparkline = ({ data, color }) => {
         )}
 
         <polyline points={pointsString} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-        
+
         {/* Default end dot if no hover */}
         {hoveredIdx === null && (
           <circle cx={width} cy={points[points.length - 1].y} r="3.5" fill={color} stroke="#050508" strokeWidth="1.5" />
@@ -78,7 +78,7 @@ const Sparkline = ({ data, color }) => {
           />
         ))}
       </svg>
-      
+
       {/* Dynamic Popover Overlay */}
       {hoveredIdx !== null && (
         <div style={{
@@ -118,7 +118,7 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
     let isMounted = true;
     const fetchPlatforms = async () => {
       setIsLoading(true);
-      
+
       // Enforce default values if they are 'All' or 0, as Platforms API strictly requires valid IDs
       const safeFormat = (selectedGenre === 'All' || selectedGenre === 0 || selectedGenre === '0') ? 1 : selectedGenre;
       const safeCountry = (selectedCountry === 'All' || selectedCountry === 0 || selectedCountry === '0') ? 1 : selectedCountry;
@@ -317,16 +317,16 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
               </div>
 
               {/* Responsive Trend Sparkline */}
-              <Sparkline data={song.trend} color={rowColor} />
+              {/*<Sparkline data={song.trend} color={rowColor} />*/}
 
               <div className="score-info-container" style={{ textAlign: 'right', minWidth: '60px' }}>
                 <div className="text-gradient chart-score">
-                  {song.data_res ? (song.data_res >= 1000000 ? (song.data_res/1000000).toFixed(1) + 'M' : song.data_res.toLocaleString()) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
+                  {song.data_res ? (song.data_res >= 1000000 ? (song.data_res / 1000000).toFixed(1) + 'M' : song.data_res.toLocaleString()) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
                 </div>
                 <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
                   Reproducciones <Info size={11} style={{ opacity: 0.7 }} />
                 </span>
-                
+
                 {/* Score Disclaimer Tooltip */}
                 <div className="score-tooltip">
                   El número de <strong style={{ color: '#fff' }}>Reproducciones</strong> indica el rendimiento principal o acumulado de la canción en la plataforma seleccionada.

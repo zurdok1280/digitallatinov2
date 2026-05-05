@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, X, Volume2, VolumeX } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
+import { useSearchParams } from 'react-router-dom';
 
 const AudioPlayer = () => {
   const {
@@ -14,7 +15,17 @@ const AudioPlayer = () => {
     changeVolume,
     seekTo,
     closePlayer,
+    isPreviewLimitReached,
   } = useAudioPreview();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const handleLoginClick = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('login', 'true');
+    setSearchParams(newParams);
+    closePlayer();
+  };
 
   const [showVolume, setShowVolume] = useState(false);
   const progressBarRef = useRef(null);
@@ -129,6 +140,22 @@ const AudioPlayer = () => {
           left: calc(24px * var(--scale)); /* Changed to left align */
           z-index: 9000;
           animation: playerSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .ap-limit-message {
+          background: rgba(18, 18, 28, 0.95);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: calc(12px * var(--scale));
+          padding: calc(12px * var(--scale)) calc(16px * var(--scale));
+          color: #fff;
+          font-size: calc(0.85rem * var(--scale));
+          box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+          text-align: center;
+          animation: playerSlideUp 0.3s ease-out forwards;
         }
         .audio-player-card {
           display: flex;
@@ -366,6 +393,17 @@ const AudioPlayer = () => {
       `}</style>
 
       <div className="audio-player-root" style={{ '--scale': scale }}>
+        {isPreviewLimitReached && (
+          <div className="ap-limit-message">
+            Quiere escuchar más accede para esta y mas funcionalidades{' '}
+            <span 
+              onClick={handleLoginClick}
+              style={{ color: '#c193ff', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              iniciando sesión
+            </span>
+          </div>
+        )}
         <div 
           ref={playerRef}
           className="audio-player-card" 

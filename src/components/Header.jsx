@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User, LogOut } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
+import AccountModal from './AccountModal';
 
-const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, selectedCRG, setSelectedCRG, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick }) => {
+const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, selectedCRG, setSelectedCRG, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick, isLoading = false }) => {
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
   // Build option arrays for SearchableSelect
   const countryOptions = [
@@ -68,8 +70,15 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
           <div className="flex-center" style={{ gap: '1rem' }}>
             {user ? (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer' }}
+                  onClick={() => setIsAccountModalOpen(true)}
+                >
+                  <span
+                    style={{ fontSize: '0.9rem', fontWeight: 500, borderBottom: '1px solid transparent', transition: 'all 0.2s', paddingBottom: '2px' }}
+                    onMouseOver={(e) => e.target.style.borderBottom = '1px solid rgba(255,255,255,0.5)'}
+                    onMouseOut={(e) => e.target.style.borderBottom = '1px solid transparent'}
+                  >
                     <span style={{ opacity: 0.7 }}>Hola,</span> {user.name}
                   </span>
                 </div>
@@ -138,6 +147,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                   if (!user) { onLoginClick(); return; }
                   setSelectedCountry(e.target.value);
                 }}
+                disabled={isLoading}
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   color: 'var(--text-main)',
@@ -145,7 +155,8 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                   padding: '0.5rem 0.8rem',
                   borderRadius: 'var(--radius-sm)',
                   outline: 'none',
-                  cursor: 'pointer',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.5 : 1,
                   fontSize: '0.9rem',
                   width: '100%'
                 }}
@@ -168,7 +179,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 if (!user) { onLoginClick(); return; }
                 setSelectedGenre(e.target.value);
               }}
-              disabled={selectedCountry === 'All'}
+              disabled={selectedCountry === 'All' || isLoading}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-main)',
@@ -176,8 +187,8 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 padding: '0.5rem 0.8rem',
                 borderRadius: 'var(--radius-sm)',
                 outline: 'none',
-                cursor: selectedCountry === 'All' ? 'not-allowed' : 'pointer',
-                opacity: selectedCountry === 'All' ? 0.5 : 1,
+                cursor: selectedCountry === 'All' || isLoading ? 'not-allowed' : 'pointer',
+                opacity: selectedCountry === 'All' || isLoading ? 0.5 : 1,
                 fontSize: '0.9rem',
                 width: '100%'
               }}
@@ -207,6 +218,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                   setSelectedPlatform(val);
                 }}
                 searchable={false}
+                disabled={isLoading}
               />
             </div>
           ) : activeView === 'HeavyHitters' || activeView === 'TiktokerPicks' ? null : activeView === 'CuratorPicks' ? (
@@ -227,6 +239,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 }}
                 searchable={false}
                 placeholder="Todos los Tipos"
+                disabled={isLoading}
               />
             </div>
           ) : activeView === 'Charts' ? (
@@ -244,7 +257,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                     setSelectedCity(val);
                   }}
                   placeholder="Todas las ciudades"
-                  disabled={cities.length === 0}
+                  disabled={cities.length === 0 || isLoading}
                 />
               </div>
               <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
@@ -258,6 +271,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                     if (!user) { onLoginClick(); return; }
                     setSelectedCRG(e.target.value);
                   }}
+                  disabled={isLoading}
                   style={{
                     background: 'rgba(255,255,255,0.05)',
                     color: 'var(--text-main)',
@@ -265,7 +279,8 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                     padding: '0.5rem 0.8rem',
                     borderRadius: 'var(--radius-sm)',
                     outline: 'none',
-                    cursor: 'pointer',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    opacity: isLoading ? 0.5 : 1,
                     fontSize: '0.9rem',
                     width: '100%'
                   }}
@@ -290,15 +305,15 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                   setSelectedCity(val);
                 }}
                 placeholder="Todas las ciudades"
-                disabled={cities.length === 0}
+                disabled={cities.length === 0 || isLoading}
               />
             </div>
           )}
         </div>
       )}
+      {isAccountModalOpen && <AccountModal onClose={() => setIsAccountModalOpen(false)} />}
     </header>
   );
 };
-
 
 export default Header;

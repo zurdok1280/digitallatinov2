@@ -1,5 +1,5 @@
-import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music } from 'lucide-react';
-import { searchSpotify } from '../services/api';
+import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music, FileText } from 'lucide-react';
+import { searchSpotify, setLogSong, getArtistData, getArtistContext } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
 
@@ -12,17 +12,20 @@ const formatFollowers = (n) => {
 };
 
 // ─── Song Result Row ─────────────────────────────────────────────────────────
-const SongRow = ({ track, onMetricsClick, onLoginClick, user }) => {
+const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
   const hasMetrics = !!track.my_song_id;
+  const isChecking = checkingId === track.spotify_id;
 
   return (
     <div
+      onClick={() => onMetricsClick(track)}
       style={{
         display: 'flex', alignItems: 'center', gap: '0.9rem',
         padding: '0.6rem 0.8rem', borderRadius: '10px',
         transition: 'background 0.15s',
+        cursor: 'pointer',
       }}
-      className="glass-panel-interactive"
+      className="glass-panel-interactive group"
     >
       {/* Artwork */}
       <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.07)' }}>
@@ -57,25 +60,29 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user }) => {
       <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
         {/* Métricas */}
         <button
-          onClick={(e) => { e.stopPropagation(); if (hasMetrics) onMetricsClick(track); }}
-          disabled={!hasMetrics}
-          title={hasMetrics ? 'Ver métricas de la canción' : 'Sin métricas en DB todavía'}
+          onClick={(e) => { e.stopPropagation(); onMetricsClick(track); }}
+          title={hasMetrics ? 'Ver métricas de la canción' : 'Información no disponible aún'}
           style={{
             display: 'flex', alignItems: 'center', gap: '5px',
             padding: '5px 11px', borderRadius: '6px', border: 'none',
             background: hasMetrics
               ? 'linear-gradient(135deg, #1DB954 0%, #17a74a 100%)'
-              : 'rgba(255,255,255,0.06)',
-            color: hasMetrics ? 'white' : 'var(--text-dim)',
+              : 'rgba(255,255,255,0.1)',
+            color: 'white',
             fontSize: '0.75rem', fontWeight: 600,
-            cursor: hasMetrics ? 'pointer' : 'not-allowed',
-            opacity: hasMetrics ? 1 : 0.45,
-            transition: 'transform 0.15s, opacity 0.2s',
+            cursor: 'pointer',
+            transition: 'transform 0.15s, background 0.2s',
           }}
-          onMouseEnter={e => { if (hasMetrics) e.currentTarget.style.transform = 'scale(1.05)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseEnter={e => { 
+            e.currentTarget.style.transform = 'scale(1.05)'; 
+            if (!hasMetrics) e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+          }}
+          onMouseLeave={e => { 
+            e.currentTarget.style.transform = 'scale(1)'; 
+            if (!hasMetrics) e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+          }}
         >
-          <BarChart2 size={12} />
+          {isChecking ? <Loader2 size={12} className="animate-spin" /> : <BarChart2 size={12} />}
           Métricas
         </button>
 
@@ -122,8 +129,9 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user }) => {
 };
 
 // ─── Artist Result Card (Horizontal Carousel) ────────────────────────────────
-const ArtistCard = ({ artist, onMetricsClick }) => {
+const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
   const followers = formatFollowers(artist.followers);
+  const isChecking = checkingId === artist.spotify_id;
 
   return (
     <div
@@ -147,21 +155,34 @@ const ArtistCard = ({ artist, onMetricsClick }) => {
           className="flex-center"
           style={{
             position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', opacity: 0,
-            transition: 'opacity 0.2s',
+            transition: 'opacity 0.2s', gap: '8px'
           }}
           onMouseEnter={e => e.currentTarget.style.opacity = 1}
           onMouseLeave={e => e.currentTarget.style.opacity = 0}
         >
           <button
             onClick={(e) => { e.stopPropagation(); onMetricsClick(artist); }}
+            title="Ver métricas"
             style={{
-              width: '36px', height: '36px', borderRadius: '50%', border: 'none',
+              width: '32px', height: '32px', borderRadius: '50%', border: 'none',
               background: 'var(--accent-primary)', color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-              cursor: 'pointer', boxShadow: '0 4px 10px rgba(108, 99, 255, 0.4)'
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: '0 4px 10px rgba(108, 99, 255, 0.4)', flexShrink: 0
             }}
           >
-            <BarChart size={16} />
+            {isChecking ? <Loader2 size={14} className="animate-spin" /> : <BarChart size={14} />}
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onContextClick(artist); }}
+            title="Resumen Estratégico"
+            style={{
+              width: '32px', height: '32px', borderRadius: '50%', border: 'none',
+              background: '#ff0050', color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: '0 4px 10px rgba(255, 0, 80, 0.4)', flexShrink: 0
+            }}
+          >
+            {isChecking ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
           </button>
         </div>
       </div>
@@ -182,10 +203,11 @@ const ArtistCard = ({ artist, onMetricsClick }) => {
 };
 
 // ─── Main SearchModal ─────────────────────────────────────────────────────────
-const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick }) => {
+const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextClick, onLoginClick, setUnavailableItem }) => {
   const [query, setQuery]         = useState('');
   const [results, setResults]     = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingId, setCheckingId] = useState(null);
   const { user } = useAuth();
 
   // Debounced search
@@ -233,14 +255,37 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
   if (!isOpen) return null;
 
   // ---- handlers ----
-  const handleArtistMetrics = (artist) => {
+  const handleArtistMetrics = async (artist) => {
     if (!user) {
       onLoginClick();
       return;
     }
+    
+    const spotifyId = artist.spotify_id;
+    const isCached = sessionStorage.getItem(`logged_missing_${spotifyId}`);
+    
+    if (isCached) {
+      setUnavailableItem(artist);
+      onClose();
+      return;
+    }
+
+    setCheckingId(spotifyId);
+    const data = await getArtistData(spotifyId);
+    setCheckingId(null);
+
+    const artistObject = Array.isArray(data) ? data[0] : data?.data?.[0] || data;
+    const isEmpty = !artistObject || (Array.isArray(artistObject) && artistObject.length === 0) || (typeof artistObject === 'object' && Object.keys(artistObject).length === 0) || artistObject.error;
+
+    if (isEmpty) {
+      setLogSong({ userid: user.id, spotifyid: spotifyId, isartist: true });
+      setUnavailableItem(artist);
+      onClose();
+      return;
+    }
+
     if (onArtistClick) {
       onClose(); // Dismiss search so ArtistDetailsModal isn't behind the overlay
-      // Use setTimeout to ensure the modal unmounts visually before triggering the heavy render
       setTimeout(() => {
         onArtistClick({
           id:              artist.spotify_id,
@@ -256,11 +301,70 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
     }
   };
 
-  const handleSongMetrics = (track) => {
+  const handleContextClick = async (artist) => {
     if (!user) {
       onLoginClick();
       return;
     }
+
+    const spotifyId = artist.spotify_id;
+    const isCached = sessionStorage.getItem(`logged_missing_${spotifyId}`);
+    
+    if (isCached) {
+      setUnavailableItem(artist);
+      onClose();
+      return;
+    }
+
+    setCheckingId(spotifyId);
+    const result = await getArtistContext(spotifyId);
+    setCheckingId(null);
+
+    const isEmptyContext = !result || result.error || Object.keys(result).length === 0 || (result.artist_name === '' && result.opportunity_score === 0 && !result.main_opportunity);
+
+    if (isEmptyContext) {
+      setLogSong({ userid: user.id, spotifyid: spotifyId, isartist: true });
+      setUnavailableItem(artist);
+      onClose();
+      return;
+    }
+
+    if (onContextClick) {
+      onClose();
+      setTimeout(() => {
+        onContextClick({
+          id:              artist.spotify_id,
+          spotify_id:      artist.spotify_id,
+          name:            artist.artist_name,
+          artist_name:     artist.artist_name,
+          imageUrl:        artist.image_url,
+          image_url:       artist.image_url,
+          img:             artist.image_url,
+          followers:       artist.followers,
+        });
+      }, 10);
+    }
+  };
+
+  const handleSongMetrics = async (track) => {
+    if (!user) {
+      onLoginClick();
+      return;
+    }
+    
+    if (!track.my_song_id) {
+      const isCached = sessionStorage.getItem(`logged_missing_${track.spotify_id}`);
+      if (!isCached) {
+        setCheckingId(track.spotify_id);
+        await new Promise(resolve => setTimeout(resolve, 800)); // Delay artificial de loading
+        setCheckingId(null);
+      }
+      setLogSong({ userid: user.id, spotifyid: track.spotify_id, isartist: false });
+      setUnavailableItem(track);
+      onClose();
+      return;
+    }
+
     onClose();
     if (onSongClick) {
       setTimeout(() => {
@@ -390,6 +494,8 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
                           key={artist.spotify_id}
                           artist={artist}
                           onMetricsClick={handleArtistMetrics}
+                          onContextClick={handleContextClick}
+                          checkingId={checkingId}
                         />
                       ))}
                     </div>
@@ -411,6 +517,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onLoginClick
                           onMetricsClick={handleSongMetrics}
                           onLoginClick={onLoginClick}
                           user={user}
+                          checkingId={checkingId}
                         />
                       ))}
                     </div>

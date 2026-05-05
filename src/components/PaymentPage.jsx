@@ -6,41 +6,42 @@ import { Check, X } from "lucide-react";
 import "./PaymentPage.css";
 
 const stripePromise = loadStripe(
-  "pk_test_51SAtWhKFPi4gMQQnl5IahKw9gDsuSYHUGgs3cFuFasveKQIu7TMbIe4fkwOGwzAYovd2DXAuGebBF1qVze0LSPhp00QjNbOjEf"
+  //"pk_test_51SAtWhKFPi4gMQQnl5IahKw9gDsuSYHUGgs3cFuFasveKQIu7TMbIe4fkwOGwzAYovd2DXAuGebBF1qVze0LSPhp00QjNbOjEf" // key test
+  "pk_live_51SAtWhKFPi4gMQQnD1IAJpVSeEx9Hgzn0aslq1Q8IrXgtBkZMBx1Gki8ibAA5yMDJb81qc74jfcamZgNjDLKMIpG005doVUTWO" // key live
 );
 
 const PLANS = {
-  MONTHLY: {
-    id: "price_1STRTuKFPi4gMQQnEZL9oIYo",
-    name: "Plan Mensual",
+  ARTIST_MONTHLY: {
+    id: "price_1Sykf4KFPi4gMQQnG3Je9Z83", // ID Real Artist Monthly
+    name: "Plan Artista Mensual",
+    amount: 99,
+    interval: "/mes",
+    features: [
+      "Acceso único al Artista",
+      "Métricas exclusivas del Artista",
+      "Panel de control personalizado",
+    ],
+  },
+  ARTIST_ANNUAL: {
+    id: "price_1TRa9DKFPi4gMQQnESdHHgjy", // ID Real Artist Annual
+    name: "Plan Artista Anual",
+    amount: 999,
+    interval: "/año",
+    features: [
+      "Todo lo del plan mensual",
+      "Ahorro de 2 meses",
+      "Soporte prioritario",
+    ],
+  },
+  PREMIUM_MONTHLY: {
+    id: "price_1TRaBPKFPi4gMQQnU5Y8tSDu", // ID Real Premium Monthly
+    name: "Plan Premium Mensual",
     amount: 499,
     interval: "/mes",
     features: [
       "Información de todos los artistas",
       "Acceso completo a Charts",
-      "Métricas avanzadas",
-    ],
-  },
-  YEARLY: {
-    id: "price_1STRTuKFPi4gMQQnRrzC1aXX",
-    name: "Plan Anual",
-    amount: 999,
-    interval: "/año",
-    features: [
-      "Información de todos los artistas",
-      "Acceso completo a Charts",
-      "Métricas avanzadas",
-    ],
-  },
-  ARTIST: {
-    id: "price_1SXXeBKFPi4gMQQn2cx9SPB1",
-    name: "Plan Artista",
-    amount: 99,
-    interval: "/mes",
-    features: [
-      "Acceso único al Artista ",
-      "Metricas exclusivas del Artista",
-      "Sin acceso a comparativas",
+      "Métricas avanzadas y comparativas",
     ],
   },
 };
@@ -55,16 +56,10 @@ const PlanCard = ({
     className={`plan-card ${isPopular ? "plan-card-popular" : "plan-card-normal"}`}
     onClick={onSelect}
   >
-    {isPopular && (
-      <div className="plan-popular-tag">
-        MÁS POPULAR
-      </div>
-    )}
+    {isPopular && <div className="plan-popular-tag">MÁS POPULAR</div>}
     <div className="plan-card-header">
       <h3 className="plan-name">{plan.name}</h3>
-      <span className="plan-free-tag">
-        15 DÍAS GRATIS
-      </span>
+      {/*<span className="plan-free-tag">PRUEBA 24H GRATIS</span>*/}
     </div>
 
     <div className="plan-price-container">
@@ -131,21 +126,24 @@ const PaymentPage = ({ onClose }) => {
             </p>
           </div>
           <div className="payment-grid">
+            {/* 1. Plan Artista Mensual */}
             <PlanCard
-              plan={PLANS.MONTHLY}
-              onSelect={() => setSelectedPlan(PLANS.MONTHLY)}
+              plan={PLANS.ARTIST_MONTHLY}
+              onSelect={() => setSelectedPlan(PLANS.ARTIST_MONTHLY)}
               formatPrice={formatPrice}
             />
+            {/* 2. Plan Artista Anual (popular por el descuento) */}
             <PlanCard
-              plan={PLANS.YEARLY}
-              onSelect={() => setSelectedPlan(PLANS.YEARLY)}
-              formatPrice={formatPrice}
-            />
-            <PlanCard
-              plan={PLANS.ARTIST}
-              onSelect={() => setSelectedPlan(PLANS.ARTIST)}
+              plan={PLANS.ARTIST_ANNUAL}
+              onSelect={() => setSelectedPlan(PLANS.ARTIST_ANNUAL)}
               formatPrice={formatPrice}
               isPopular={true}
+            />
+            {/* 3. Plan Premium Mensual */}
+            <PlanCard
+              plan={PLANS.PREMIUM_MONTHLY}
+              onSelect={() => setSelectedPlan(PLANS.PREMIUM_MONTHLY)}
+              formatPrice={formatPrice}
             />
           </div>
         </div>
@@ -162,35 +160,24 @@ const PaymentPage = ({ onClose }) => {
           </button>
         )}
         <div className="payment-header">
-          <img
-            src="/logo.png"
-            alt="Digital Latino"
-            className="payment-logo"
-          />
-          <h1 className="checkout-title">
-            Completa tu Suscripción
-          </h1>
-          <p className="payment-subtitle">Estás a un paso de activar tu cuenta.</p>
+          <img src="/logo.png" alt="Digital Latino" className="payment-logo" />
+          <h1 className="checkout-title">Completa tu Suscripción</h1>
+          {/*<p className="payment-subtitle">Tu prueba gratuita termina en 24 horas.</p>*/}
         </div>
-        
+
         <div className="checkout-summary">
           <div className="checkout-summary-glow" />
-          
+
           <p className="checkout-summary-title">Total a pagar HOY:</p>
-          <p className="checkout-summary-total">$0.00 USD</p>
+          <p className="checkout-summary-total">{formatPrice(selectedPlan.amount)} USD</p>
 
           <div className="checkout-summary-desc">
-            <span className="checkout-summary-free">
-              ¡15 días de prueba gratis!
-            </span>
+            {/*<span className="checkout-summary-free">¡24 horas de acceso gratuito!</span>*/}
             <span>
               Después {formatPrice(selectedPlan.amount)} {selectedPlan.interval}
             </span>
           </div>
-          <button
-            onClick={() => setSelectedPlan(null)}
-            className="checkout-back-btn"
-          >
+          <button onClick={() => setSelectedPlan(null)} className="checkout-back-btn">
             ← Cambiar de plan
           </button>
         </div>

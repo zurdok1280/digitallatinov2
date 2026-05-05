@@ -1,0 +1,3 @@
+﻿D	src/assets/hero.png
+D	src/assets/react.svg
+D	src/assets/vite.svg

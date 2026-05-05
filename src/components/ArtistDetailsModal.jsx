@@ -48,11 +48,13 @@ import {
   getSongHistoricalStreamsWeek,
   getSongById,
   getCitiesGapData,
+  setLogSong,
 } from "../services/api";
 import SearchableSelect from "./SearchableSelect";
 import RecommendationsModal, {
   RecommendationsBanner,
 } from "./RecommendationsModal";
+import ArtistContextModal from "./ArtistContextModal";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 
@@ -270,7 +272,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
-const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
+const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, setUnavailableItem }) => {
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
@@ -318,6 +320,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showTopArtistReport, setShowTopArtistReport] = useState(false);
   const scrollRef = useRef(null);
   const tabsRef = useRef(null);
 
@@ -335,12 +338,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
   }, []);
 
   useEffect(() => {
-    // Bloquear el scroll de la página de fondo
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, []);
+    if (isModal) {
+      // Bloquear el scroll de la página de fondo
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "unset";
+      };
+    }
+  }, [isModal]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -358,11 +363,36 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
       setIsLoading(true);
       const data = await getArtistData(artist.id);
       if (isMounted) {
+        // Handle null / undefined
+        if (!data) {
+          setIsLoading(false);
+          setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
+          if (setUnavailableItem) setUnavailableItem(artist);
+          if (onClose) onClose();
+          return;
+        }
+
         // Enforce object extraction if array is returned
         const artistObject = Array.isArray(data)
           ? data[0]
           : data?.data?.[0] || data;
-        setArtistData(artistObject || {});
+
+        // Handle empty array, empty object, undefined extracted value, or error response
+        const isEmpty =
+          !artistObject ||
+          (Array.isArray(artistObject) && artistObject.length === 0) ||
+          (typeof artistObject === 'object' && Object.keys(artistObject).length === 0) ||
+          artistObject.error;
+
+        if (isEmpty) {
+          setIsLoading(false);
+          setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
+          if (setUnavailableItem) setUnavailableItem(artist);
+          if (onClose) onClose();
+          return;
+        }
+
+        setArtistData(artistObject);
         setIsLoading(false);
       }
     };
@@ -554,29 +584,43 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
 
   if (!artist) return null;
 
+  const containerStyle = isModal ? {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.8)",
+    zIndex: 1000,
+    padding: "2rem",
+    backdropFilter: "blur(8px)",
+  } : {
+    width: "100%",
+    padding: "0",
+  };
+
+  const modalContainerStyle = isModal ? {
+    width: "100%",
+    maxWidth: "min(1200px, 95vw)",
+    maxHeight: "92vh",
+    overflowY: "auto",
+    background: "var(--bg-dark)",
+    display: "flex",
+    flexDirection: "column",
+  } : {
+    width: "100%",
+    background: "var(--bg-dark)",
+    display: "flex",
+    flexDirection: "column",
+    borderRadius: "2rem",
+    overflow: "hidden",
+  };
+
   return (
     <div
-      className="flex-center modal-overlay-padding"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.8)",
-        zIndex: 1000,
-        padding: "2rem",
-        backdropFilter: "blur(8px)",
-      }}
+      className={isModal ? "flex-center modal-overlay-padding" : ""}
+      style={containerStyle}
     >
       <div
-        className="glass-panel animate-fade-in modal-container"
-        style={{
-          width: "100%",
-          maxWidth: "min(1200px, 95vw)",
-          maxHeight: "92vh",
-          overflowY: "auto",
-          background: "var(--bg-dark)",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        className={isModal ? "glass-panel animate-fade-in modal-container" : "glass-panel animate-fade-in"}
+        style={modalContainerStyle}
       >
         {/* Header */}
         <div
@@ -601,20 +645,22 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                 "linear-gradient(to top, var(--bg-dark), transparent)",
             }}
           />
-          <button
-            onClick={onClose}
-            style={{
-              position: "absolute",
-              top: "1rem",
-              right: "1rem",
-              background: "rgba(0,0,0,0.5)",
-              padding: "0.5rem",
-              borderRadius: "50%",
-              color: "white",
-            }}
-          >
-            <X size={24} />
-          </button>
+          {isModal && onClose && (
+            <button
+              onClick={onClose}
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                background: "rgba(0,0,0,0.5)",
+                padding: "0.5rem",
+                borderRadius: "50%",
+                color: "white",
+              }}
+            >
+              <X size={24} />
+            </button>
+          )}
 
           <div
             className="modal-hero-info"
@@ -639,17 +685,48 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
               }}
             />
             <div>
-              <h1
-                className="modal-hero-title"
-                style={{
-                  fontSize: "3rem",
-                  fontWeight: 800,
-                  margin: 0,
-                  lineHeight: 1,
-                }}
-              >
-                {artist.name}
-              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                <h1
+                  className="modal-hero-title"
+                  style={{
+                    fontSize: "3rem",
+                    fontWeight: 800,
+                    margin: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  {artist.name}
+                </h1>
+                <button
+                  onClick={() => setShowTopArtistReport(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    background: "linear-gradient(135deg, #8a88ff 0%, #ff3366 100%)",
+                    color: "white",
+                    border: "none",
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: "20px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    height: "fit-content",
+                    boxShadow: "0 4px 15px rgba(255, 51, 102, 0.4)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05) translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 8px 25px rgba(255, 51, 102, 0.6)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1) translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(255, 51, 102, 0.4)";
+                  }}
+                >
+                  <Activity size={16} color="white" /> Resumen IA
+                </button>
+              </div>
               <p
                 className="modal-hero-monthly"
                 style={{
@@ -699,12 +776,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
             { id: "mapa", label: "Mapa", icon: Map },
             ...(artist?.songName
               ? [
-                  {
-                    id: "detalles_cancion",
-                    label: `Detalles de ${artist.songName}`,
-                    icon: Music,
-                  },
-                ]
+                {
+                  id: "detalles_cancion",
+                  label: `Alcance de ${artist.songName}`,
+                  icon: Music,
+                },
+              ]
               : []),
             { id: "playlists", label: "Playlists Recomendadas", icon: Music },
             { id: "tiktok", label: "TikTokers", icon: Users },
@@ -801,7 +878,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     >
                       {formatNumber(
                         artistData?.monthly_listeners ||
-                          artist.monthlyListeners,
+                        artist.monthlyListeners,
                       )}
                     </p>
                   </div>
@@ -1404,12 +1481,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                             transition: "all 0.2s",
                           }}
                           onMouseEnter={(e) =>
-                            (e.currentTarget.style.background =
-                              "rgba(255,255,255,0.1)")
+                          (e.currentTarget.style.background =
+                            "rgba(255,255,255,0.1)")
                           }
                           onMouseLeave={(e) =>
-                            (e.currentTarget.style.background =
-                              "rgba(255,255,255,0.05)")
+                          (e.currentTarget.style.background =
+                            "rgba(255,255,255,0.05)")
                           }
                         >
                           <TrendingUp
@@ -1471,10 +1548,10 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                           data={(isHistoricalChronological
                             ? songHistoricalData
                             : [...songHistoricalData].sort(
-                                (a, b) =>
-                                  (a.spotify_streams || 0) -
-                                  (b.spotify_streams || 0),
-                              )
+                              (a, b) =>
+                                (a.spotify_streams || 0) -
+                                (b.spotify_streams || 0),
+                            )
                           ).map((d) => ({
                             name: d.date_week?.slice(5),
                             val: d.spotify_streams,
@@ -1517,7 +1594,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: "#555", fontSize: 10 }}
-                            tickFormatter={(v) => formatNumber(v)}
+                            tickFormatter={(v) => v.toLocaleString()}
                           />
                           <Tooltip
                             contentStyle={{
@@ -1527,7 +1604,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                               fontSize: "0.8rem",
                             }}
                             itemStyle={{ color: "#1DB954" }}
-                            formatter={(v) => [formatNumber(v), "Streams"]}
+                            formatter={(v) => [v.toLocaleString(), "Streams"]}
                           />
                           <Area
                             type="monotone"
@@ -1975,8 +2052,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                     const cty = countries[sim.label.length % countries.length];
                     const gen =
                       genres[
-                        sim.label.charCodeAt(sim.label.length - 1) %
-                          genres.length
+                      sim.label.charCodeAt(sim.label.length - 1) %
+                      genres.length
                       ];
 
                     return (
@@ -2272,8 +2349,8 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                         .flatMap((pl) =>
                           pl.related_artists_names
                             ? pl.related_artists_names
-                                .split(",")
-                                .map((s) => s.trim())
+                              .split(",")
+                              .map((s) => s.trim())
                             : [],
                         )
                         .filter(Boolean);
@@ -2367,9 +2444,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
                   {playlistsData.map((pl, i) => {
                     const artistsList = pl.related_artists_names
                       ? pl.related_artists_names
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean)
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
                       : [];
                     const top5 = artistsList.slice(0, 5).join(", ");
                     const hasMore = artistsList.length > 5;
@@ -3457,6 +3534,19 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose }) => {
         csSong={artist?.cs_song || artist?.csSong}
         spotifyId={artist?.spotifyid}
       />
+
+      {/* Top Artist Report Modal */}
+      {showTopArtistReport && (
+        <ArtistContextModal
+          artist={{
+            ...artist,
+            name: artist.name,
+            image_url: artist.imageUrl,
+            spotify_id: artist.spotifyid || artist.id,
+          }}
+          onClose={() => setShowTopArtistReport(false)}
+        />
+      )}
     </div>
   );
 };

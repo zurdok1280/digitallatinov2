@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Play, Music, Headphones, TrendingUp, BarChart2, Loader2, Calendar, Disc, Globe, Heart, ExternalLink, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getSongBySpotifyId } from '../services/api';
+import { getSongBySpotifyId, setLogSong } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 import SongPlatformsMetrics from './SongPlatformsMetrics';
 
-const SongDetailsModal = ({ song, onClose }) => {
+const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
+  const { user } = useAuth();
   const [songData, setSongData] = useState(null);
   const [historicalData, setHistoricalData] = useState(null);
   const [songPlatformData, setSongPlatformData] = useState(null);
@@ -45,6 +47,14 @@ const SongDetailsModal = ({ song, onClose }) => {
         if ((!res || !res.data || Object.keys(res.data).length === 0) && internalId) {
            const { getSongById } = await import('../services/api');
            res = await getSongById(internalId);
+        }
+
+        if (!res || !res.data || Object.keys(res.data).length === 0) {
+           if (isMounted) setIsLoading(false);
+           setLogSong({ userid: user?.id, spotifyid: spotifyId || internalId, isartist: false });
+           if (setUnavailableItem) setUnavailableItem(song);
+           if (onClose) onClose();
+           return;
         }
 
         if (isMounted && res && res.data && Object.keys(res.data).length > 0) {
