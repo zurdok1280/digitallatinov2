@@ -59,7 +59,7 @@ const PlanCard = ({
     {isPopular && <div className="plan-popular-tag">MÁS POPULAR</div>}
     <div className="plan-card-header">
       <h3 className="plan-name">{plan.name}</h3>
-      <span className="plan-free-tag">PRUEBA 24H GRATIS</span>
+      {/*<span className="plan-free-tag">PRUEBA 24H GRATIS</span>*/}
     </div>
 
     <div className="plan-price-container">
@@ -132,14 +132,14 @@ const PaymentPage = ({ onClose }) => {
               onSelect={() => setSelectedPlan(PLANS.ARTIST_MONTHLY)}
               formatPrice={formatPrice}
             />
-            {/* 2. Plan Artista Anual (popular por el descuento) */}
+            {/* 2. Plan Artista Anual */}
             <PlanCard
               plan={PLANS.ARTIST_ANNUAL}
               onSelect={() => setSelectedPlan(PLANS.ARTIST_ANNUAL)}
               formatPrice={formatPrice}
               isPopular={true}
             />
-            {/* 3. Plan Premium Mensual */}
+            {/* 3. Plan Premium Mensual (popular) */}
             <PlanCard
               plan={PLANS.PREMIUM_MONTHLY}
               onSelect={() => setSelectedPlan(PLANS.PREMIUM_MONTHLY)}
@@ -162,17 +162,17 @@ const PaymentPage = ({ onClose }) => {
         <div className="payment-header">
           <img src="/logo.png" alt="Digital Latino" className="payment-logo" />
           <h1 className="checkout-title">Completa tu Suscripción</h1>
-          <p className="payment-subtitle">Tu prueba gratuita termina en 24 horas.</p>
+          {/*<p className="payment-subtitle">Tu prueba gratuita termina en 24 horas.</p>*/}
         </div>
-        
+
         <div className="checkout-summary">
           <div className="checkout-summary-glow" />
-          
+
           <p className="checkout-summary-title">Total a pagar HOY:</p>
-          <p className="checkout-summary-total">$0.00 USD</p>
+          <p className="checkout-summary-total">{formatPrice(selectedPlan.amount)} USD</p>
 
           <div className="checkout-summary-desc">
-            <span className="checkout-summary-free">¡24 horas de acceso gratuito!</span>
+            {/*<span className="checkout-summary-free">¡24 horas de acceso gratuito!</span>*/}
             <span>
               Después {formatPrice(selectedPlan.amount)} {selectedPlan.interval}
             </span>

@@ -29,7 +29,7 @@ export const CheckoutForm = ({ priceId }) => {
 
     try {
       const createSubResponse = await fetch('https://security.digital-latino.com/api/subscriptions/create-subscription-trial', {
-      // const createSubResponse = await fetch('http://localhost:8085/api/subscriptions/create-subscription-trial', {
+        // const createSubResponse = await fetch('http://localhost:8085/api/subscriptions/create-subscription-trial', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,14 +76,14 @@ export const CheckoutForm = ({ priceId }) => {
         (paymentIntent && paymentIntent.status === "succeeded")
       ) {
         toast({
-          title: "¡Pago exitoso!",
-          description: "Tu prueba gratis ha comenzado. Redirigiendo...",
+          title: "¡Suscripción exitosa!",
+          description: "Tu suscripción está activa. Redirigiendo...",
         });
 
         //Get new token with updated user info
         try {
           const refreshResponse = await fetch('https://security.digital-latino.com/api/auth/refresh-token', {
-          // const refreshResponse = await fetch('http://localhost:8085/api/auth/refresh-token', {
+            // const refreshResponse = await fetch('http://localhost:8085/api/auth/refresh-token', {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -140,7 +140,7 @@ export const CheckoutForm = ({ priceId }) => {
       </div>
 
       <p className="checkout-form-note">
-        Se validará tu tarjeta pero no se cobrará nada hoy.
+        Tu pago se procesará de forma segura.
       </p>
 
       <button
@@ -148,7 +148,7 @@ export const CheckoutForm = ({ priceId }) => {
         disabled={!stripe || loading}
         className="btn-gradient"
       >
-        {loading ? "Procesando..." : "Iniciar Prueba Gratis"}
+        {loading ? "Procesando..." : "Pagar Ahora"}
       </button>
     </form>
   );
