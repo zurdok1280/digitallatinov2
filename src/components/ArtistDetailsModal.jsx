@@ -402,7 +402,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist]);
+  }, [artist?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -425,7 +425,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist]);
+  }, [artist?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -443,7 +443,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist, selectedMapCountry]);
+  }, [artist?.id, selectedMapCountry]);
 
   useEffect(() => {
     let isMounted = true;
@@ -475,7 +475,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist, selectedPlaylistType]);
+  }, [artist?.id, selectedPlaylistType]);
 
   useEffect(() => {
     let isMounted = true;
@@ -495,7 +495,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist, activeTab, topSongsData.length]);
+  }, [artist?.id, activeTab, topSongsData.length]);
 
   // Fetch platform data + historical streams when the song details tab opens
   useEffect(() => {
@@ -526,7 +526,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [activeTab, artist]);
+  }, [activeTab, artist?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -544,7 +544,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist]);
+  }, [artist?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -562,7 +562,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist, selectedRadioCountry]);
+  }, [artist?.id, selectedRadioCountry]);
 
   useEffect(() => {
     let isMounted = true;
@@ -580,7 +580,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     return () => {
       isMounted = false;
     };
-  }, [artist, selectedCitiesGapCountry]);
+  }, [artist?.id, selectedCitiesGapCountry]);
 
   if (!artist) return null;
 
