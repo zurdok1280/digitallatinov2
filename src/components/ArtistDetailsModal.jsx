@@ -295,9 +295,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
 
   const [radioData, setRadioData] = useState([]);
   const [isRadioLoading, setIsRadioLoading] = useState(false);
-  const [selectedRadioCountry, setSelectedRadioCountry] = useState(
-    artist?.countryId ?? 1,
-  );
+  const [selectedRadioCountry, setSelectedRadioCountry] = useState(1);
 
   const [topSongsData, setTopSongsData] = useState([]);
   const [isTopSongsLoading, setIsTopSongsLoading] = useState(false);
@@ -366,9 +364,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
         // Handle null / undefined
         if (!data) {
           setIsLoading(false);
-          setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
-          if (setUnavailableItem) setUnavailableItem(artist);
-          if (onClose) onClose();
+          if (!artist?.songName) {
+            setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
+            if (setUnavailableItem) setUnavailableItem(artist);
+            if (onClose) onClose();
+          }
           return;
         }
 
@@ -386,9 +386,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
 
         if (isEmpty) {
           setIsLoading(false);
-          setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
-          if (setUnavailableItem) setUnavailableItem(artist);
-          if (onClose) onClose();
+          if (!artist?.songName) {
+            setLogSong({ userid: user?.id, spotifyid: artist.id, isartist: true });
+            if (setUnavailableItem) setUnavailableItem(artist);
+            if (onClose) onClose();
+          }
           return;
         }
 

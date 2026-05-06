@@ -562,7 +562,16 @@ function Dashboard() {
             showRestrictedToast();
             return;
           }
-          setSelectedSongPlatform(song);
+          setSelectedArtist({
+            id: song.artist_id || song.spotifyid,
+            spotifyid: song.artist_id || song.spotifyid,
+            name: song.artists,
+            songName: song.song,
+            imageUrl: song.image_url,
+            cs_song: song.cs_song,
+            initialTab: "detalles_cancion",
+            countryId: 0
+          });
         }}
         onContextClick={(artist) => {
           if (!user) {
