@@ -250,7 +250,7 @@ export default function MyArtist() {
                     {songs.length > 0 ? (
                         <>
                             <div 
-                                className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 max-w-7xl mx-auto" 
+                                className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 max-w-7xl mx-auto mobile-card-carousel" 
                                 style={{ gap: '48px 24px' }}
                             >
                                 {songs.map((song, index) => {

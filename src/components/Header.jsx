@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User, LogOut } from 'lucide-react';
+import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User, LogOut, CircleUser } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
 import AccountModal from './AccountModal';
@@ -23,12 +23,12 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
 
   return (
     <header className="header-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'transparent', padding: '0.5rem 0' }}>
-      <div className="flex-center" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between', padding: '0 1rem' }}>
+      <div className="flex-center header-top-row" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between', padding: '0 1rem' }}>
         <div className="flex-center" style={{ gap: '1rem' }}>
-          <button onClick={onToggleSidebar} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+          <button className="header-menu-btn" onClick={onToggleSidebar} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
             <Menu size={28} />
           </button>
-          <img src="/logo.png" alt="DigitalLatino Logo" style={{ height: '35px', objectFit: 'contain' }} />
+          <img className="header-logo" src="/logo.png" alt="DigitalLatino Logo" style={{ height: '35px', objectFit: 'contain' }} />
           {location.pathname !== '/my-artist' && (
             <button onClick={onOpenSearch} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', marginLeft: '0.5rem', padding: '0.2rem' }}>
               <Search size={24} />
@@ -40,7 +40,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
         <div className="flex-center" style={{ gap: '1.2rem' }}>
           {/* View Indicator */}
           <div
-            className="animate-fade-in hidden sm:flex"
+            className="animate-fade-in header-view-indicator"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -71,22 +71,28 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
             {user ? (
               <>
                 <div
-                  style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer', minHeight: '44px' }}
                   onClick={() => setIsAccountModalOpen(true)}
                 >
+                  {/* User icon always visible on mobile */}
+                  <CircleUser size={22} style={{ flexShrink: 0 }} />
+                  {/* Text hidden on mobile via CSS class */}
                   <span
-                    style={{ fontSize: '0.9rem', fontWeight: 500, borderBottom: '1px solid transparent', transition: 'all 0.2s', paddingBottom: '2px' }}
+                    className="header-auth-text"
+                    style={{ fontSize: '0.9rem', fontWeight: 500, borderBottom: '1px solid transparent', transition: 'all 0.2s', paddingBottom: '2px', marginLeft: '0.4rem' }}
                     onMouseOver={(e) => e.target.style.borderBottom = '1px solid rgba(255,255,255,0.5)'}
                     onMouseOut={(e) => e.target.style.borderBottom = '1px solid transparent'}
                   >
-                    <span style={{ opacity: 0.7 }}>Hola,</span> {user.name}
+                    Hola, {user.name}
                   </span>
                 </div>
                 <button
                   onClick={onLogoutClick}
+                  className="btn-touch-safe"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '0.5rem',
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid var(--glass-border)',
@@ -101,15 +107,17 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                   onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                 >
                   <LogOut size={16} />
-                  <span className="hidden md:inline">Cerrar sesión</span>
+                  <span className="header-auth-text">Cerrar sesión</span>
                 </button>
               </>
             ) : (
               <button
                 onClick={onLoginClick}
+                className="btn-touch-safe"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.5rem',
                   background: '#8c52ff',
                   border: '1px solid var(--glass-border)',
@@ -124,7 +132,7 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                 onMouseOut={(e) => e.currentTarget.style.background = '#8c52ff'}
               >
                 <User size={16} />
-                <span>Log in / Sign in</span>
+                <span className="header-auth-text">Log in / Sign in</span>
               </button>
             )}
           </div>

@@ -3549,6 +3549,17 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
           onClose={() => setShowTopArtistReport(false)}
         />
       )}
+
+      {/* Mobile-only FAB close button — sibling to modal-container so it's truly viewport-fixed */}
+      {isModal && onClose && (
+        <button
+          className="modal-mobile-close"
+          onClick={onClose}
+          aria-label="Cerrar modal"
+        >
+          <X size={22} />
+        </button>
+      )}
     </div>
   );
 };

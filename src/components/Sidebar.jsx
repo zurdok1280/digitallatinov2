@@ -52,6 +52,7 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) =
 
       {/* Sidebar Panel */}
       <aside
+        className="sidebar-drawer"
         style={{
           position: 'fixed',
           top: 0,
