@@ -1,5 +1,14 @@
 const API_BASE_URL = 'https://backend.digital-latino.com/api';
 
+const authFetch = async (url, options = {}) => {
+  const token = localStorage.getItem('authToken');
+  const headers = {
+    ...options.headers,
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+  return fetch(url, { ...options, headers });
+};
+
 // ─── In-Memory Request Cache ────────────────────────────────────────────────
 // Caches responses for static/rarely-changing endpoints (countries, genres, cities).
 // TTL = 5 minutes — safe for a dashboard session. Does NOT cache report data.
@@ -42,7 +51,7 @@ const deduplicateSongs = (songs) => {
 export const getCountries = async () => {
   return withCache('countries', async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getCountries`);
+      const response = await authFetch(`${API_BASE_URL}/report/getCountries`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return Array.isArray(data) ? data : (data?.data || []);
@@ -56,7 +65,7 @@ export const getCountries = async () => {
 export const getFormatsByCountry = async (country) => {
   return withCache(`formats_${country}`, async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountry/${encodeURIComponent(country)}`);
+      const response = await authFetch(`${API_BASE_URL}/report/getFormatbyCountry/${encodeURIComponent(country)}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return Array.isArray(data) ? data : (data?.data || []);
@@ -70,7 +79,7 @@ export const getFormatsByCountry = async (country) => {
 export const getCitiesByCountry = async (countryId) => {
   return withCache(`cities_${countryId}`, async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getCities/${encodeURIComponent(countryId)}/C`);
+      const response = await authFetch(`${API_BASE_URL}/report/getCities/${encodeURIComponent(countryId)}/C`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return Array.isArray(data) ? data : (data?.data || []);
@@ -90,7 +99,7 @@ export const getChartDigital = async (genreId, countryId, cityId, crg = 'C') => 
   const ctyId = cityId === 'All' ? 0 : cityId;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/${crg}/${ctyId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/${crg}/${ctyId}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -112,7 +121,7 @@ export const getChartDigitalHitsRadio = async (genreId, countryId, cityId) => {
   const ctyId = cityId === 'All' ? 0 : cityId;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/C/${ctyId}?radiooff=1`);
+    const response = await authFetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/C/${ctyId}?radiooff=1`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -131,7 +140,7 @@ export const getChartDigitalHitsRadio = async (genreId, countryId, cityId) => {
 export const searchSpotify = async (query) => {
   if (!query) return null;
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSearchSpotify?query=${encodeURIComponent(query)}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSearchSpotify?query=${encodeURIComponent(query)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -148,7 +157,7 @@ export const getArtistData = async (spotifyId) => {
   if (!spotifyId) return null;
   return withCache(`artist_data_${spotifyId}`, async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getDataArtist/${encodeURIComponent(spotifyId)}`);
+      const response = await authFetch(`${API_BASE_URL}/report/getDataArtist/${encodeURIComponent(spotifyId)}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return data;
@@ -165,7 +174,7 @@ export const getArtistData = async (spotifyId) => {
 export const getMapData = async (countryId, spotifyId) => {
   if (!spotifyId) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getDataArtistCountry/${countryId}/${encodeURIComponent(spotifyId)}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getDataArtistCountry/${countryId}/${encodeURIComponent(spotifyId)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -180,7 +189,7 @@ export const getMapData = async (countryId, spotifyId) => {
  */
 export const getPlaylistTypes = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getPlaylistType`);
+    const response = await authFetch(`${API_BASE_URL}/report/getPlaylistType`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -196,7 +205,7 @@ export const getPlaylistTypes = async () => {
 export const getArtistPlaylists = async (spotifyId, playlistType = 0) => {
   if (!spotifyId) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistPlaylistRelated/${encodeURIComponent(spotifyId)}/${playlistType}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getArtistPlaylistRelated/${encodeURIComponent(spotifyId)}/${playlistType}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -212,7 +221,7 @@ export const getArtistPlaylists = async (spotifyId, playlistType = 0) => {
 export const getArtistTiktokers = async (spotifyId) => {
   if (!spotifyId) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistTiktokersRelated/${encodeURIComponent(spotifyId)}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getArtistTiktokersRelated/${encodeURIComponent(spotifyId)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -228,7 +237,7 @@ export const getArtistTiktokers = async (spotifyId) => {
 export const getArtistRadioRelated = async (spotifyId, countryId = 0) => {
   if (!spotifyId) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistRadioRelated/${encodeURIComponent(spotifyId)}/${countryId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getArtistRadioRelated/${encodeURIComponent(spotifyId)}/${countryId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -244,7 +253,7 @@ export const getArtistRadioRelated = async (spotifyId, countryId = 0) => {
 export const getArtistGraph = async (spotifyId) => {
   if (!spotifyId) return null;
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistRelatedGraphv2/${encodeURIComponent(spotifyId)}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getArtistRelatedGraphv2/${encodeURIComponent(spotifyId)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -260,7 +269,7 @@ export const getArtistGraph = async (spotifyId) => {
 export const getCitiesGapData = async (countryId, spotifyId) => {
   if (!spotifyId) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getDataArtistCountryRelated/${countryId}/${encodeURIComponent(spotifyId)}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getDataArtistCountryRelated/${countryId}/${encodeURIComponent(spotifyId)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -276,7 +285,7 @@ export const getCitiesGapData = async (countryId, spotifyId) => {
 export const getSongPlatformData = async (csSong, formatId = 0, countryId = 0) => {
   if (!csSong) return null;
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSongDigital/${csSong}/${formatId}/${countryId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongDigital/${csSong}/${formatId}/${countryId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -294,7 +303,7 @@ export const getSongPlatformData = async (csSong, formatId = 0, countryId = 0) =
 export const getCityDataForSong = async (csSong, countryId = 0) => {
   if (!csSong) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getCityData/${csSong}/${countryId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getCityData/${csSong}/${countryId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -310,7 +319,7 @@ export const getCityDataForSong = async (csSong, countryId = 0) => {
 export const getSongTopPlaylists = async (csSong, typePlaylist = 0) => {
   if (!csSong) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getTopPlaylists/${csSong}/${typePlaylist}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getTopPlaylists/${csSong}/${typePlaylist}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -329,7 +338,7 @@ export const getTrendingTopPlatforms = async (platform, formatId = 0, countryId 
   const cId = countryId === 'All' ? 0 : countryId;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getTopPlatform/${encodeURIComponent(pId)}/${fId}/${cId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getTopPlatform/${encodeURIComponent(pId)}/${fId}/${cId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     // Many endpoints return { data: [...] }, ensure we return an array
@@ -349,7 +358,7 @@ export const getTrendingTopArtists = async (formatId = 0, countryId = 0, cityId 
   const ctyId = cityId === 'All' ? 0 : cityId;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getTopArtist/${fId}/${cId}/${ctyId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getTopArtist/${fId}/${cId}/${ctyId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -366,7 +375,7 @@ export const getFormatsByCountryArtist = async (countryId) => {
   if (!countryId || countryId === 'All') return [];
   return withCache(`formats_artist_${countryId}`, async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getFormatbyCountryArtist/${encodeURIComponent(countryId)}`);
+      const response = await authFetch(`${API_BASE_URL}/report/getFormatbyCountryArtist/${encodeURIComponent(countryId)}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return Array.isArray(data) ? data : (data?.data || []);
@@ -383,7 +392,7 @@ export const getFormatsByCountryArtist = async (countryId) => {
 export const getArtistSongs = async (spotifyId) => {
   if (!spotifyId) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getArtistSongs/${encodeURIComponent(spotifyId)}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getArtistSongs/${encodeURIComponent(spotifyId)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -400,7 +409,7 @@ export const getSongsArtistBySpotifyId = async (spotifyId, countryId = 1) => {
   if (!spotifyId) return [];
   const cId = countryId === 'All' ? 1 : countryId;
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSongsArtist/${encodeURIComponent(spotifyId)}/${cId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongsArtist/${encodeURIComponent(spotifyId)}/${cId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -417,7 +426,7 @@ export const getSongsArtistBySpotifyId = async (spotifyId, countryId = 1) => {
 export const getSongById = async (csSong) => {
   if (!csSong) return null;
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSongbyId/${csSong}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongbyId/${csSong}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return data;
@@ -433,7 +442,7 @@ export const getSongById = async (csSong) => {
 export const getSongHistoricalStreams = async (csSong) => {
   if (!csSong) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSongHistoricalStreams/${csSong}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongHistoricalStreams/${csSong}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -449,7 +458,7 @@ export const getSongHistoricalStreams = async (csSong) => {
 export const getSongHistoricalStreamsWeek = async (csSong, countryId = 0, formatId = 0) => {
   if (!csSong) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSongHistoricalStreamsWeek/${csSong}/${countryId}/${formatId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongHistoricalStreamsWeek/${csSong}/${countryId}/${formatId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -467,7 +476,7 @@ export const getDebutSongs = async (formatId = 0, countryId = 0) => {
   const cId = countryId === 'All' ? 0 : countryId;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
+    const response = await authFetch(`${API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rawArray = Array.isArray(data) ? data : (data?.data || []);
@@ -486,7 +495,7 @@ export const getCuratorPics = async (formatId = 0, typeId = 0) => {
   const tId = typeId === 'All' ? 0 : typeId;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getCuratorPics/${fId}/${tId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getCuratorPics/${fId}/${tId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rawArray = Array.isArray(data) ? data : (data?.data || []);
@@ -503,7 +512,7 @@ export const getCuratorPics = async (formatId = 0, typeId = 0) => {
 export const getPlaylistType = async () => {
   return withCache('playlist_types', async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getPlaylistType`);
+      const response = await authFetch(`${API_BASE_URL}/report/getPlaylistType`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return Array.isArray(data) ? data : (data?.data || []);
@@ -522,7 +531,7 @@ export const getTiktokPics = async (formatId = 0) => {
 
   try {
 
-    const response = await fetch(`${API_BASE_URL}/report/getTiktokPics/${fId}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getTiktokPics/${fId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rawArray = Array.isArray(data) ? data : (data?.data || []);
@@ -539,7 +548,7 @@ export const getTiktokPics = async (formatId = 0) => {
 export const getVsSongs = async (csSong1, csSong2) => {
   if (!csSong1 || !csSong2) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getVsSong/${csSong1}/${csSong2}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getVsSong/${csSong1}/${csSong2}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -555,7 +564,7 @@ export const getVsSongs = async (csSong1, csSong2) => {
 export const getVsSongPlaylists = async (csSong1, csSong2) => {
   if (!csSong1 || !csSong2) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getVsSongPlaylists/${csSong1}/${csSong2}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getVsSongPlaylists/${csSong1}/${csSong2}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -571,7 +580,7 @@ export const getVsSongPlaylists = async (csSong1, csSong2) => {
 export const getVsSongTiktoks = async (csSong1, csSong2) => {
   if (!csSong1 || !csSong2) return [];
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getVsSongTiktoks/${csSong1}/${csSong2}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getVsSongTiktoks/${csSong1}/${csSong2}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -584,7 +593,7 @@ export const getVsSongTiktoks = async (csSong1, csSong2) => {
 export const getSongBySpotifyId = async (id) => {
   if (!id) return { data: {} };
   try {
-    const response = await fetch(`${API_BASE_URL}/report/getSongBySpotifyId/${id}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongBySpotifyId/${id}`);
     if (response.status === 404) return { data: {} };
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
@@ -601,7 +610,7 @@ export const getArtistContext = async (spotifyId) => {
   if (!spotifyId) return null;
   return withCache(`artist_context_${spotifyId}`, async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/report/getArtistContext/${encodeURIComponent(spotifyId)}`);
+      const response = await authFetch(`${API_BASE_URL}/report/getArtistContext/${encodeURIComponent(spotifyId)}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       return data;
@@ -625,7 +634,7 @@ export const setLogSong = async ({ userid, spotifyid, isartist }) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/report/setLogSong`, {
+    const response = await authFetch(`${API_BASE_URL}/report/setLogSong`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userid, spotifyid, isartist })

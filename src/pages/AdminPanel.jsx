@@ -69,7 +69,7 @@ const AdminPanel = () => {
     const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
     const LOCAL_API_URL = "https://security.digital-latino.com/admin/users";
-    const getToken = () => localStorage.getItem("token") || localStorage.getItem("authToken");
+    const getToken = () => localStorage.getItem("authToken");
 
     const filteredAndSortedUsers = useMemo(() => {
         let result = users;
