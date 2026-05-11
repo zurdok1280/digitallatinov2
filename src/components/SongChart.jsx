@@ -302,9 +302,16 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
 
         <div className="chart-left" style={{ flex: 1, overflow: 'hidden' }}>
           <div className="chart-rank">
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
-              {song.rk}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.8rem', fontWeight: 800, color: rowColor, lineHeight: 1 }}>
+                {song.rk}
+              </span>
+              {song.rk_lw && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '2px', fontWeight: 600 }} title="Rango de la semana pasada">
+                  {song.rk_lw}
+                </span>
+              )}
+            </div>
             <div style={{ marginTop: '0.15rem' }}>
               {renderMovement(song.movement)}
             </div>
