@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
         if (decoded.role === 'ARTIST') {
           const stId = localStorage.getItem(`artistId_${decoded.email}`);
           const stName = localStorage.getItem(`artistName_${decoded.email}`);
-          if (stId) {
+          if (stId && !decoded.allowedArtistId) {
             decoded.allowedArtistId = stId;
             decoded.allowedArtistName = stName;
           }
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
       if (decoded.role === 'ARTIST') {
         const stId = localStorage.getItem(`artistId_${decoded.email}`);
         const stName = localStorage.getItem(`artistName_${decoded.email}`);
-        if (stId) {
+        if (stId && !decoded.allowedArtistId) {
           decoded.allowedArtistId = stId;
           decoded.allowedArtistName = stName;
         }
