@@ -9,7 +9,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const PLANS = {
   ARTIST_MONTHLY: {
-    id: "price_1Sykf4KFPi4gMQQnG3Je9Z83", // ID Real Artist Monthly
+    id: "price_1TW1u7KFPi4gMQQn97Z4yQc1", // ID Real Artist Monthly
     name: "Plan Artista Mensual",
     amount: 99,
     interval: "/mes",
