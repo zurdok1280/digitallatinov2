@@ -661,11 +661,11 @@ function Dashboard() {
 
       {isLoginModalOpen && (
         <div
-          className="flex-center"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, padding: '1rem' }}
+          className="flex-center modal-overlay-anim"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', zIndex: 9999, padding: '1rem' }}
           onClick={(e) => e.target === e.currentTarget && setIsLoginModalOpen(false)}
         >
-          <div style={{ width: '100%', maxWidth: '700px', margin: 'auto' }}>
+          <div className="modal-panel-anim" style={{ width: '100%', maxWidth: '700px', margin: 'auto' }}>
             <LoginForm onClose={() => setIsLoginModalOpen(false)} />
           </div>
         </div>

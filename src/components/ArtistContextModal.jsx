@@ -18,6 +18,7 @@ import { getArtistContext, setLogSong } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { useModalClose } from "../hooks/useModalClose";
 
 // Global cache to prevent duplicate fetches (especially in React StrictMode) 
 // and to make reopening the modal instantaneous.
@@ -63,6 +64,7 @@ const CircularProgress = ({ value }) => {
 };
 
 export default function ArtistContextModal({ artist, onClose, setUnavailableItem }) {
+  const { isClosing, handleClose } = useModalClose(onClose, 240);
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -251,21 +253,21 @@ export default function ArtistContextModal({ artist, onClose, setUnavailableItem
 
   return (
     <div
-      className="flex-center modal-overlay-padding"
+      className={`flex-center modal-overlay-padding modal-overlay-anim${isClosing ? ' closing' : ''}`}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.8)",
+        background: "rgba(0,0,0,0.82)",
         zIndex: 2500,
         padding: "1rem",
-        backdropFilter: "blur(8px)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onClick={handleClose}
     >
       <div
-        className="glass-panel animate-fade-in modal-container"
+        className={`glass-panel modal-panel-anim modal-container${isClosing ? ' closing' : ''}`}
+        onClick={e => e.stopPropagation()}
         style={{
           width: "100%",
           maxWidth: "1000px",
@@ -283,7 +285,7 @@ export default function ArtistContextModal({ artist, onClose, setUnavailableItem
         {/* HEADER */}
         <div style={{ position: "relative", padding: "2rem", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               position: "absolute",
               top: "1.5rem",

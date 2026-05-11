@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables — nunca subir al repo
+.env
+.env.local
+.env.*.local
+# .env.example sí se sube (es solo una plantilla sin valores reales)
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

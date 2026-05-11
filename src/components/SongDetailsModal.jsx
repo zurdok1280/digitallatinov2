@@ -5,8 +5,10 @@ import { getSongBySpotifyId, setLogSong } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 import SongPlatformsMetrics from './SongPlatformsMetrics';
+import { useModalClose } from '../hooks/useModalClose';
 
 const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
+  const { isClosing, handleClose } = useModalClose(onClose, 240);
   const { user } = useAuth();
   const [songData, setSongData] = useState(null);
   const [historicalData, setHistoricalData] = useState(null);
@@ -132,21 +134,23 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
   const hasNoData = !isLoading && totalStreams === 0 && popularity === 0 && !currentScore && currentRank === "--";
 
   return (
-    <div 
-      className="flex-center" 
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10001, padding: '1rem', backdropFilter: 'blur(10px)' }}
+    <div
+      className={`flex-center modal-overlay-anim${isClosing ? ' closing' : ''}`}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 10001, padding: '1rem', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+      onClick={handleClose}
     >
-      <div 
-        className="glass-panel animate-fade-in" 
-        style={{ width: '100%', maxWidth: 'min(1000px, 95vw)', maxHeight: '95vh', overflowY: 'auto', background: '#0a0a0c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', display: 'flex', flexDirection: 'column' }}
+      <div
+        className={`glass-panel modal-panel-anim${isClosing ? ' closing' : ''}`}
+        style={{ width: '100%', maxWidth: 'min(1000px, 95vw)', maxHeight: '95vh', overflowY: 'auto', background: 'rgba(10,10,18,0.98)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header with Cover Blur Background */}
         <div style={{ position: 'relative', minHeight: '280px', width: '100%', overflow: 'hidden' }}>
           <img src={displayImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(40px)', opacity: 0.3 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0a0a0c, transparent)' }} />
           
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={handleClose}
             style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.6rem', borderRadius: '50%', color: 'white', zIndex: 10 }}
           >
             <X size={20} />

@@ -20,6 +20,7 @@ import {
   BarChart2,
   Play,
   Pause,
+  Calendar,
 } from "lucide-react";
 import {
   AreaChart,
@@ -55,8 +56,10 @@ import RecommendationsModal, {
   RecommendationsBanner,
 } from "./RecommendationsModal";
 import ArtistContextModal from "./ArtistContextModal";
+import ArtistContextPhasesModal from "./ArtistContextPhasesModal";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
+import { useModalClose } from "../hooks/useModalClose";
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [
@@ -273,6 +276,7 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
 );
 
 const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, setUnavailableItem }) => {
+  const { isClosing, handleClose } = useModalClose(onClose, 240);
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
@@ -319,6 +323,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showTopArtistReport, setShowTopArtistReport] = useState(false);
+  const [showPhasesModal, setShowPhasesModal] = useState(false);
   const scrollRef = useRef(null);
   const tabsRef = useRef(null);
 
@@ -589,10 +594,11 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
   const containerStyle = isModal ? {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.8)",
+    background: "rgba(0,0,0,0.82)",
     zIndex: 1000,
     padding: "2rem",
-    backdropFilter: "blur(8px)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
   } : {
     width: "100%",
     padding: "0",
@@ -603,12 +609,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     maxWidth: "min(1200px, 95vw)",
     maxHeight: "92vh",
     overflowY: "auto",
-    background: "var(--bg-dark)",
+    background: "rgba(10,10,18,0.98)",
     display: "flex",
     flexDirection: "column",
+    boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+    border: "1px solid rgba(255,255,255,0.08)",
   } : {
     width: "100%",
-    background: "var(--bg-dark)",
+    background: "rgba(10,10,18,0.98)",
     display: "flex",
     flexDirection: "column",
     borderRadius: "2rem",
@@ -617,12 +625,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
 
   return (
     <div
-      className={isModal ? "flex-center modal-overlay-padding" : ""}
+      className={isModal ? `flex-center modal-overlay-padding modal-overlay-anim${isClosing ? ' closing' : ''}` : ''}
       style={containerStyle}
+      onClick={isModal ? handleClose : undefined}
     >
       <div
-        className={isModal ? "glass-panel animate-fade-in modal-container" : "glass-panel animate-fade-in"}
+        className={isModal ? `glass-panel modal-panel-anim modal-container${isClosing ? ' closing' : ''}` : 'glass-panel animate-fade-in'}
         style={modalContainerStyle}
+        onClick={isModal ? (e => e.stopPropagation()) : undefined}
       >
         {/* Header */}
         <div
@@ -649,7 +659,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
           />
           {isModal && onClose && (
             <button
-              onClick={onClose}
+              onClick={handleClose}
               style={{
                 position: "absolute",
                 top: "1rem",
@@ -700,12 +710,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                   {artist.name}
                 </h1>
                 <button
-                  onClick={() => setShowTopArtistReport(true)}
+                  onClick={() => setShowPhasesModal(true)}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    background: "linear-gradient(135deg, #8a88ff 0%, #ff3366 100%)",
+                    background: "linear-gradient(135deg, #00e5ff 0%, #1db954 100%)",
                     color: "white",
                     border: "none",
                     padding: "0.5rem 1.2rem",
@@ -714,19 +724,19 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                     cursor: "pointer",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     height: "fit-content",
-                    boxShadow: "0 4px 15px rgba(255, 51, 102, 0.4)",
+                    boxShadow: "0 4px 15px rgba(0, 229, 255, 0.4)",
                     textShadow: "0 1px 2px rgba(0,0,0,0.2)",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "scale(1.05) translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 8px 25px rgba(255, 51, 102, 0.6)";
+                    e.currentTarget.style.boxShadow = "0 8px 25px rgba(0, 229, 255, 0.6)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "scale(1) translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(255, 51, 102, 0.4)";
+                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 229, 255, 0.4)";
                   }}
                 >
-                  <Activity size={16} color="white" /> Resumen IA
+                  <Calendar size={16} color="white" /> Recomendaciones
                 </button>
               </div>
               <p
@@ -3550,11 +3560,24 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
         />
       )}
 
+      {/* Action Plan Phases Modal */}
+      {showPhasesModal && (
+        <ArtistContextPhasesModal
+          artist={{
+            ...artist,
+            name: artist.name,
+            image_url: artist.imageUrl,
+            spotify_id: artist.spotifyid || artist.id,
+          }}
+          onClose={() => setShowPhasesModal(false)}
+        />
+      )}
+
       {/* Mobile-only FAB close button — sibling to modal-container so it's truly viewport-fixed */}
       {isModal && onClose && (
         <button
           className="modal-mobile-close"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Cerrar modal"
         >
           <X size={22} />

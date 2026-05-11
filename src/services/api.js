@@ -4,17 +4,31 @@ const API_BASE_URL = 'https://backend.digital-latino.com/api';
 // Caches responses for static/rarely-changing endpoints (countries, genres, cities).
 // TTL = 5 minutes — safe for a dashboard session. Does NOT cache report data.
 const _cache = new Map();
+const _inflight = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const withCache = async (key, fetcher) => {
   const hit = _cache.get(key);
   if (hit && Date.now() - hit.ts < CACHE_TTL_MS) return hit.data;
-  const data = await fetcher();
-  // Only cache successful (non-empty) responses
-  if (data !== null && data !== undefined && !(Array.isArray(data) && data.length === 0)) {
-    _cache.set(key, { data, ts: Date.now() });
+
+  if (_inflight.has(key)) {
+    return _inflight.get(key);
   }
-  return data;
+
+  const promise = fetcher().then(data => {
+    // Only cache successful (non-empty) responses
+    if (data !== null && data !== undefined && !(Array.isArray(data) && data.length === 0)) {
+      _cache.set(key, { data, ts: Date.now() });
+    }
+    _inflight.delete(key);
+    return data;
+  }).catch(error => {
+    _inflight.delete(key);
+    throw error;
+  });
+
+  _inflight.set(key, promise);
+  return promise;
 };
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -613,6 +627,24 @@ export const getArtistContext = async (spotifyId) => {
 };
 
 /**
+ * Fetches the 90-day context phases report for a specific artist by Spotify ID
+ */
+export const getArtistContextPhases = async (spotifyId) => {
+  if (!spotifyId) return null;
+  return withCache(`artist_context_phases_${spotifyId}`, async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/getArtistContextPhases/${encodeURIComponent(spotifyId)}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("API Error fetching artist context phases:", error);
+      return null;
+    }
+  });
+};
+
+/**
  * Registra una búsqueda de canción o artista que no se encontró en la base de datos (Bad Path).
  * Implementa protección contra spam usando sessionStorage.
  */
@@ -651,6 +683,7 @@ export const digitalLatinoApi = {
   getSongBySpotifyId,
   getArtistData,
   getArtistContext,
+  getArtistContextPhases,
   setLogSong
 };
 

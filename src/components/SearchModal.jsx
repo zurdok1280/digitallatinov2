@@ -2,6 +2,7 @@ import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Musi
 import { searchSpotify, setLogSong, getArtistData, getArtistContext } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
+import { useModalClose } from '../hooks/useModalClose';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const formatFollowers = (n) => {
@@ -172,18 +173,6 @@ const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
           >
             {isChecking ? <Loader2 size={14} className="animate-spin" /> : <BarChart size={14} />}
           </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onContextClick(artist); }}
-            title="Resumen Estratégico"
-            style={{
-              width: '32px', height: '32px', borderRadius: '50%', border: 'none',
-              background: '#ff0050', color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: '0 4px 10px rgba(255, 0, 80, 0.4)', flexShrink: 0
-            }}
-          >
-            {isChecking ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
-          </button>
         </div>
       </div>
 
@@ -204,6 +193,7 @@ const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
 
 // ─── Main SearchModal ─────────────────────────────────────────────────────────
 const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextClick, onLoginClick, setUnavailableItem }) => {
+  const { isClosing, handleClose } = useModalClose(onClose, 240);
   const [query, setQuery]         = useState('');
   const [results, setResults]     = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -252,7 +242,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !isClosing) return null;
 
   // ---- handlers ----
   const handleArtistMetrics = async (artist) => {
@@ -404,26 +394,30 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     <>
       {/* ── Overlay ── */}
       <div
+        className={`modal-overlay-anim${isClosing ? ' closing' : ''}`}
         style={{
           position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.85)',
-          zIndex: 2000, backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.82)',
+          zIndex: 2000, backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           display: 'flex', alignItems: 'flex-start',
           justifyContent: 'center',
           padding: '8vh 1rem 2rem',
         }}
-        onClick={onClose}
+        onClick={handleClose}
       >
         {/* ── Panel ── */}
         <div
-          className="glass-panel animate-fade-in"
+          className={`glass-panel modal-drop-anim${isClosing ? ' closing' : ''}`}
           style={{
             width: '100%', maxWidth: '860px',
             maxHeight: '82vh',
-            background: 'var(--bg-dark)',
+            background: 'rgba(10,10,18,0.98)',
             display: 'flex', flexDirection: 'column',
-            borderRadius: '16px',
+            borderRadius: '18px',
             overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(138,136,255,0.08)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -454,7 +448,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
               )}
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.07)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             >
               <X size={18} />

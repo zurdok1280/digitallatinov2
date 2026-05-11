@@ -1,113 +1,240 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User, LogOut, CircleUser } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
 import AccountModal from './AccountModal';
 
-const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], selectedCountry, setSelectedCountry, selectedGenre, setSelectedGenre, selectedCity, setSelectedCity, activeView, selectedPlatform, setSelectedPlatform, selectedPlaylistType, setSelectedPlaylistType, selectedCRG, setSelectedCRG, onToggleSidebar, onOpenSearch, user, onLoginClick, onLogoutClick, isLoading = false }) => {
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+/* View accent colors map */
+const VIEW_CONFIG = {
+  Artists:            { color: '#8a88ff', label: 'Artist Analytics' },
+  Platforms:          { color: '#1DB954', label: 'Platforms' },
+  HeavyHitters:       { color: '#aa63ff', label: 'Heavy Hitters' },
+  CuratorPicks:       { color: '#ff3366', label: 'Curator Picks' },
+  TiktokerPicks:      { color: '#ff0050', label: 'Tiktoker Picks' },
+  DigitalHitsForRadio:{ color: '#00e5ff', label: 'Digital Hits for Radio' },
+  Charts:             { color: '#ffd166', label: 'Charts' },
+};
 
-  // Build option arrays for SearchableSelect
+const Header = ({
+  countries = [], genres = [], cities = [], playlistTypes = [],
+  selectedCountry, setSelectedCountry,
+  selectedGenre,   setSelectedGenre,
+  selectedCity,    setSelectedCity,
+  activeView,
+  selectedPlatform, setSelectedPlatform,
+  selectedPlaylistType, setSelectedPlaylistType,
+  selectedCRG,     setSelectedCRG,
+  onToggleSidebar, onOpenSearch,
+  user, onLoginClick, onLogoutClick,
+  isLoading = false
+}) => {
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef(null);
+  const location = useLocation();
+  const showFilters = location.pathname === '/';
+
+  const viewCfg = VIEW_CONFIG[activeView] || VIEW_CONFIG.Charts;
+
+  /* Detect scroll for sticky glassmorphism intensification */
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const countryOptions = [
     { value: '0', label: 'Global' },
     ...countries.map(c => ({ value: String(c.id), label: c.country_name }))
   ];
-
   const cityOptions = [
     { value: '0', label: cities.length === 0 ? '-' : 'Todas las ciudades' },
     ...cities.filter(c => c.id !== 0).map(c => ({ value: String(c.id), label: c.city_name }))
   ];
 
-  const location = useLocation();
-  const showFilters = location.pathname === '/';
-
   return (
-    <header className="header-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'transparent', padding: '0.5rem 0' }}>
-      <div className="flex-center header-top-row" style={{ gap: '1rem', width: '100%', justifyContent: 'space-between', padding: '0 1rem' }}>
-        <div className="flex-center" style={{ gap: '1rem' }}>
-          <button className="header-menu-btn" onClick={onToggleSidebar} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
-            <Menu size={28} />
+    <header
+      ref={headerRef}
+      className="header-container"
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 90,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0',
+        background: scrolled
+          ? 'rgba(7, 8, 13, 0.88)'
+          : 'transparent',
+        backdropFilter: scrolled ? 'blur(24px) saturate(180%)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(24px) saturate(180%)' : 'none',
+        borderBottom: scrolled
+          ? '1px solid rgba(255,255,255,0.06)'
+          : '1px solid transparent',
+        boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.4)' : 'none',
+        padding: '0',
+        transition: 'background 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
+      }}
+    >
+      {/* ─── TOP ROW ─────────────────────────────────────────── */}
+      <div
+        className="header-top-row"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          padding: '0.65rem 1.25rem',
+          width: '100%',
+        }}
+      >
+        {/* Left: menu + logo + search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <button
+            className="header-menu-btn btn-touch-safe"
+            onClick={onToggleSidebar}
+            title="Menú"
+            style={{
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.35rem',
+              borderRadius: '8px',
+              transition: 'color 0.2s ease, background 0.2s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+          >
+            <Menu size={26} strokeWidth={1.75} />
           </button>
-          <img className="header-logo" src="/logo.png" alt="DigitalLatino Logo" style={{ height: '35px', objectFit: 'contain' }} />
+
+          <img
+            className="header-logo"
+            src="/logo.png"
+            alt="DigitalLatino"
+            style={{ height: '34px', objectFit: 'contain' }}
+          />
+
           {location.pathname !== '/my-artist' && (
-            <button onClick={onOpenSearch} style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', marginLeft: '0.5rem', padding: '0.2rem' }}>
-              <Search size={24} />
+            <button
+              onClick={onOpenSearch}
+              title="Buscar"
+              style={{
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.35rem',
+                borderRadius: '8px',
+                marginLeft: '0.1rem',
+                transition: 'color 0.2s ease, background 0.2s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+            >
+              <Search size={20} strokeWidth={1.75} />
             </button>
           )}
         </div>
 
-        {/* Right Section: View Indicator + Auth */}
-        <div className="flex-center" style={{ gap: '1.2rem' }}>
-          {/* View Indicator */}
+        {/* Right: view indicator + auth */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* View Indicator Pill */}
           <div
-            className="animate-fade-in header-view-indicator"
+            className="header-view-indicator animate-fade-in"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.6rem',
-              color: 'var(--text-muted)',
-              fontSize: '0.75rem',
+              gap: '0.55rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: 'var(--radius-full)',
+              background: `${viewCfg.color}14`,
+              border: `1px solid ${viewCfg.color}30`,
+              color: viewCfg.color,
+              fontSize: '0.7rem',
               fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '1.5px',
-              background: 'rgba(255,255,255,0.03)',
-              padding: '0.4rem 0.8rem',
-              borderRadius: '20px',
-              border: '1px solid var(--glass-border)'
+              letterSpacing: '1.2px',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.3s ease',
             }}
           >
-            <div style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700',
-              boxShadow: `0 0 8px ${activeView === 'Artists' ? '#8a88ff' : activeView === 'Platforms' ? '#1DB954' : activeView === 'HeavyHitters' ? '#aa63ff' : activeView === 'CuratorPicks' ? '#ff3366' : activeView === 'TiktokerPicks' ? '#ff0050' : activeView === 'DigitalHitsForRadio' ? '#00e5ff' : '#ffb700'}`
-            }} />
-            {activeView === 'Artists' ? 'Artist Analytics' : activeView === 'Platforms' ? 'Platforms' : activeView === 'HeavyHitters' ? 'Heavy Hitters' : activeView === 'CuratorPicks' ? 'Curator Picks' : activeView === 'TiktokerPicks' ? 'Tiktoker Picks' : activeView === 'DigitalHitsForRadio' ? 'Digital Hits for Radio' : 'Charts'}
+            {/* Animated dot */}
+            <span
+              className="glow-pulse"
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: viewCfg.color,
+                color: viewCfg.color,
+                flexShrink: 0,
+                display: 'block',
+              }}
+            />
+            {viewCfg.label}
           </div>
 
-          {/* Auth Section */}
-          <div className="flex-center" style={{ gap: '1rem' }}>
+          {/* Auth */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             {user ? (
               <>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer', minHeight: '44px' }}
+                <button
+                  className="btn-touch-safe"
                   onClick={() => setIsAccountModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    color: 'var(--text-main)',
+                    padding: '0.3rem 0.6rem',
+                    borderRadius: '8px',
+                    transition: 'background 0.2s ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  {/* User icon always visible on mobile */}
-                  <CircleUser size={22} style={{ flexShrink: 0 }} />
-                  {/* Text hidden on mobile via CSS class */}
+                  <CircleUser size={20} strokeWidth={1.75} style={{ flexShrink: 0 }} />
                   <span
                     className="header-auth-text"
-                    style={{ fontSize: '0.9rem', fontWeight: 500, borderBottom: '1px solid transparent', transition: 'all 0.2s', paddingBottom: '2px', marginLeft: '0.4rem' }}
-                    onMouseOver={(e) => e.target.style.borderBottom = '1px solid rgba(255,255,255,0.5)'}
-                    onMouseOut={(e) => e.target.style.borderBottom = '1px solid transparent'}
+                    style={{ fontSize: '0.85rem', fontWeight: 500 }}
                   >
-                    Hola, {user.name}
+                    {user.name}
                   </span>
-                </div>
+                </button>
+
                 <button
                   onClick={onLogoutClick}
                   className="btn-touch-safe"
+                  title="Cerrar sesión"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.5rem',
-                    background: 'rgba(255,255,255,0.05)',
+                    gap: '0.4rem',
+                    background: 'rgba(255,255,255,0.04)',
                     border: '1px solid var(--glass-border)',
-                    color: '#8c52ff',
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
+                    color: 'var(--text-muted)',
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 500,
                     transition: 'all 0.2s ease',
                   }}
-                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(255,80,80,0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(255,80,80,0.25)';
+                    e.currentTarget.style.color = '#ff6b6b';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                    e.currentTarget.style.borderColor = 'var(--glass-border)';
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                  }}
                 >
-                  <LogOut size={16} />
-                  <span className="header-auth-text">Cerrar sesión</span>
+                  <LogOut size={15} strokeWidth={1.75} />
+                  <span className="header-auth-text">Salir</span>
                 </button>
               </>
             ) : (
@@ -119,209 +246,211 @@ const Header = ({ countries = [], genres = [], cities = [], playlistTypes = [], 
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  background: '#8c52ff',
-                  border: '1px solid var(--glass-border)',
+                  background: 'linear-gradient(135deg, #8a88ff, #aa63ff)',
+                  border: 'none',
                   color: '#fff',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
+                  padding: '0.42rem 1rem',
+                  borderRadius: '8px',
                   fontSize: '0.85rem',
-                  transition: 'all 0.2s ease',
+                  fontWeight: 600,
+                  transition: 'all 0.25s ease',
+                  boxShadow: '0 2px 12px rgba(138,136,255,0.35)',
+                  letterSpacing: '0.01em',
                 }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#7c42df'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#8c52ff'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(138,136,255,0.5)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 12px rgba(138,136,255,0.35)';
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'translateY(-1px)'}
               >
-                <User size={16} />
-                <span className="header-auth-text">Log in / Sign in</span>
+                <User size={15} strokeWidth={2} />
+                <span className="header-auth-text">Ingresar</span>
               </button>
             )}
           </div>
         </div>
-
       </div>
+
+      {/* ─── FILTER BAR ──────────────────────────────────────── */}
       {showFilters && (
-        <div className="glass-panel header-filters" style={{ alignSelf: 'center', margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
-          {/* Country Filter */}
-          {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
-            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#e62479' }}>
-                <Globe size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>PAÍS</span>
-              </div>
+        <div
+          className="animate-slide-down"
+          style={{
+            borderTop: '1px solid rgba(255,255,255,0.04)',
+            padding: '0.6rem 1.25rem',
+          }}
+        >
+          <div
+            className="header-filters"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              justifyContent: 'flex-start',
+              width: '100%',
+            }}
+          >
+            {/* ── Country ── */}
+            {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
+              <FilterGroup icon={<Globe size={13} strokeWidth={2} />} label="País" color="#e62479">
+                <select
+                  value={selectedCountry}
+                  onChange={e => {
+                    if (!user) { onLoginClick(); return; }
+                    setSelectedCountry(e.target.value);
+                  }}
+                  disabled={isLoading}
+                  style={selectStyle(isLoading)}
+                >
+                  <option value="All">País...</option>
+                  {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
+                </select>
+              </FilterGroup>
+            )}
 
+            {/* ── Genre ── */}
+            <FilterGroup icon={<ListMusic size={13} strokeWidth={2} />} label="Género" color="var(--text-dim)">
               <select
-                value={selectedCountry}
-                onChange={(e) => {
+                value={selectedGenre}
+                onChange={e => {
                   if (!user) { onLoginClick(); return; }
-                  setSelectedCountry(e.target.value);
+                  setSelectedGenre(e.target.value);
                 }}
-                disabled={isLoading}
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--glass-border)',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: 'var(--radius-sm)',
-                  outline: 'none',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  opacity: isLoading ? 0.5 : 1,
-                  fontSize: '0.9rem',
-                  width: '100%'
-                }}
+                disabled={selectedCountry === 'All' || isLoading}
+                style={selectStyle(selectedCountry === 'All' || isLoading)}
               >
-                <option value="All">País...</option>
-                {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
+                <option value="All">{selectedCountry === 'All' ? '-' : 'Formato...'}</option>
+                {genres.map(g => <option key={g.id} value={g.id}>{g.format}</option>)}
               </select>
-            </div>
-          )}
+            </FilterGroup>
 
-          {/* Genre Filter */}
-          <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#5b6c8d' }}>
-              <ListMusic size={16} />
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>GÉNERO</span>
-            </div>
-            <select
-              value={selectedGenre}
-              onChange={(e) => {
-                if (!user) { onLoginClick(); return; }
-                setSelectedGenre(e.target.value);
-              }}
-              disabled={selectedCountry === 'All' || isLoading}
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                color: 'var(--text-main)',
-                border: '1px solid var(--glass-border)',
-                padding: '0.5rem 0.8rem',
-                borderRadius: 'var(--radius-sm)',
-                outline: 'none',
-                cursor: selectedCountry === 'All' || isLoading ? 'not-allowed' : 'pointer',
-                opacity: selectedCountry === 'All' || isLoading ? 0.5 : 1,
-                fontSize: '0.9rem',
-                width: '100%'
-              }}
-            >
-              <option value="All">{selectedCountry === 'All' ? '-' : 'Formato...'}</option>
-              {genres.map(g => <option key={g.id} value={g.id}>{g.format}</option>)}
-            </select>
-          </div>
-
-          {/* Dynamic Third Filter */}
-          {activeView === 'Platforms' ? (
-            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#1DB954' }}>
-                <AudioLines size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>PLATAFORMA</span>
-              </div>
-              <SearchableSelect
-                options={[
-                  { value: 'spotify', label: 'Spotify' },
-                  { value: 'tiktok', label: 'TikTok' },
-                  { value: 'youtube', label: 'YouTube' },
-                  { value: 'shazam', label: 'Shazam' }
-                ]}
-                value={selectedPlatform}
-                onChange={(val) => {
-                  if (!user) { onLoginClick(); return; }
-                  setSelectedPlatform(val);
-                }}
-                searchable={false}
-                disabled={isLoading}
-              />
-            </div>
-          ) : activeView === 'HeavyHitters' || activeView === 'TiktokerPicks' ? null : activeView === 'CuratorPicks' ? (
-            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ff3366' }}>
-                <AudioWaveform size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>TIPO DE PLAYLIST</span>
-              </div>
-              <SearchableSelect
-                options={[
-                  { value: '0', label: 'Todos los Tipos' },
-                  ...playlistTypes.map(t => ({ value: String(t.id), label: t.name }))
-                ]}
-                value={String(selectedPlaylistType)}
-                onChange={(val) => {
-                  if (!user) { onLoginClick(); return; }
-                  setSelectedPlaylistType(val);
-                }}
-                searchable={false}
-                placeholder="Todos los Tipos"
-                disabled={isLoading}
-              />
-            </div>
-          ) : activeView === 'Charts' ? (
-            <>
-              <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f15b29' }}>
-                  <MapPin size={16} />
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>CIUDAD</span>
-                </div>
+            {/* ── Dynamic 3rd filter ── */}
+            {activeView === 'Platforms' ? (
+              <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label="Plataforma" color="#1DB954">
+                <SearchableSelect
+                  options={[
+                    { value: 'spotify', label: 'Spotify' },
+                    { value: 'tiktok', label: 'TikTok' },
+                    { value: 'youtube', label: 'YouTube' },
+                    { value: 'shazam', label: 'Shazam' }
+                  ]}
+                  value={selectedPlatform}
+                  onChange={val => { if (!user) { onLoginClick(); return; } setSelectedPlatform(val); }}
+                  searchable={false}
+                  disabled={isLoading}
+                />
+              </FilterGroup>
+            ) : activeView === 'HeavyHitters' || activeView === 'TiktokerPicks' ? null
+              : activeView === 'CuratorPicks' ? (
+              <FilterGroup icon={<AudioWaveform size={13} strokeWidth={2} />} label="Tipo de Playlist" color="#ff3366">
+                <SearchableSelect
+                  options={[
+                    { value: '0', label: 'Todos los Tipos' },
+                    ...playlistTypes.map(t => ({ value: String(t.id), label: t.name }))
+                  ]}
+                  value={String(selectedPlaylistType)}
+                  onChange={val => { if (!user) { onLoginClick(); return; } setSelectedPlaylistType(val); }}
+                  searchable={false}
+                  placeholder="Todos los Tipos"
+                  disabled={isLoading}
+                />
+              </FilterGroup>
+            ) : activeView === 'Charts' ? (
+              <>
+                <FilterGroup icon={<MapPin size={13} strokeWidth={2} />} label="Ciudad" color="#f15b29">
+                  <SearchableSelect
+                    options={cityOptions}
+                    value={String(selectedCity)}
+                    onChange={val => { if (!user) { onLoginClick(); return; } setSelectedCity(val); }}
+                    placeholder="Todas las ciudades"
+                    disabled={cities.length === 0 || isLoading}
+                  />
+                </FilterGroup>
+                <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label="Vigencia" color="#ffd166">
+                  <select
+                    value={selectedCRG}
+                    onChange={e => { if (!user) { onLoginClick(); return; } setSelectedCRG(e.target.value); }}
+                    disabled={isLoading}
+                    style={selectStyle(isLoading)}
+                  >
+                    <option value="C">Current</option>
+                    <option value="N">Todos</option>
+                  </select>
+                </FilterGroup>
+              </>
+            ) : (
+              <FilterGroup icon={<MapPin size={13} strokeWidth={2} />} label="Ciudad Target" color="#f15b29">
                 <SearchableSelect
                   options={cityOptions}
                   value={String(selectedCity)}
-                  onChange={(val) => {
-                    if (!user) { onLoginClick(); return; }
-                    setSelectedCity(val);
-                  }}
+                  onChange={val => { if (!user) { onLoginClick(); return; } setSelectedCity(val); }}
                   placeholder="Todas las ciudades"
                   disabled={cities.length === 0 || isLoading}
                 />
-              </div>
-              <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffb700' }}>
-                  <AudioLines size={16} />
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>VIGENCIA</span>
-                </div>
-                <select
-                  value={selectedCRG}
-                  onChange={(e) => {
-                    if (!user) { onLoginClick(); return; }
-                    setSelectedCRG(e.target.value);
-                  }}
-                  disabled={isLoading}
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    color: 'var(--text-main)',
-                    border: '1px solid var(--glass-border)',
-                    padding: '0.5rem 0.8rem',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    opacity: isLoading ? 0.5 : 1,
-                    fontSize: '0.9rem',
-                    width: '100%'
-                  }}
-                >
-                  <option value="C">Current</option>
-                  <option value="N">Todos</option>
-                </select>
-              </div>
-            </>
-          ) : (
-            // Ciudad Target with searchable select
-            <div className="filter-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f15b29' }}>
-                <MapPin size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px' }}>CIUDAD TARGET</span>
-              </div>
-              <SearchableSelect
-                options={cityOptions}
-                value={String(selectedCity)}
-                onChange={(val) => {
-                  if (!user) { onLoginClick(); return; }
-                  setSelectedCity(val);
-                }}
-                placeholder="Todas las ciudades"
-                disabled={cities.length === 0 || isLoading}
-              />
-            </div>
-          )}
+              </FilterGroup>
+            )}
+          </div>
         </div>
       )}
+
       {isAccountModalOpen && <AccountModal onClose={() => setIsAccountModalOpen(false)} />}
     </header>
   );
 };
+
+/* ── Helpers ─────────────────────────────────────────────────── */
+
+const selectStyle = (disabled) => ({
+  background: 'rgba(255,255,255,0.04)',
+  color: disabled ? 'var(--text-dim)' : 'var(--text-main)',
+  border: '1px solid var(--glass-border)',
+  padding: '0.4rem 0.8rem',
+  borderRadius: 'var(--radius-sm)',
+  outline: 'none',
+  cursor: disabled ? 'not-allowed' : 'pointer',
+  opacity: disabled ? 0.5 : 1,
+  fontSize: '0.85rem',
+  width: '100%',
+  minWidth: '140px',
+  transition: 'all 0.2s ease',
+});
+
+const FilterGroup = ({ icon, label, color, children }) => (
+  <div
+    className="filter-group"
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: '0.3rem',
+      flex: 1,
+      minWidth: '150px',
+    }}
+  >
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.35rem',
+      color,
+    }}>
+      {icon}
+      <span style={{
+        fontSize: '0.65rem',
+        fontWeight: 700,
+        letterSpacing: '0.8px',
+        textTransform: 'uppercase',
+        opacity: 0.9,
+      }}>
+        {label}
+      </span>
+    </div>
+    {children}
+  </div>
+);
 
 export default Header;

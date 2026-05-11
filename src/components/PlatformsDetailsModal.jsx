@@ -5,6 +5,7 @@ import BoxDisplayInfoPlatform from './buttonSongInfo/BoxDisplayInfoPlatform';
 import { getSongPlatformData, getCityDataForSong, getSongTopPlaylists, getPlaylistTypes } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
+import { useModalClose } from '../hooks/useModalClose';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -35,6 +36,7 @@ const TiktokIcon = ({ size=16, color="#ff0050" }) => (
 );
 
 const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
+  const { isClosing, handleClose } = useModalClose(onClose, 240);
   const [activeTab, setActiveTab] = useState('overview');
   const [platformData, setPlatformData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -160,20 +162,22 @@ const PlatformsDetailsModal = ({ song, countries = [], onClose }) => {
   const imageUrl = song.image_url || song.img || song.avatar || 'https://via.placeholder.com/150';
 
   return (
-    <div 
-      className="flex-center modal-overlay-padding" 
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(8px)' }}
+    <div
+      className={`flex-center modal-overlay-padding modal-overlay-anim${isClosing ? ' closing' : ''}`}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 1000, padding: '2rem', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+      onClick={handleClose}
     >
-      <div 
-        className="glass-panel animate-fade-in modal-container" 
-        style={{ width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflowY: 'auto', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}
+      <div
+        className={`glass-panel modal-panel-anim modal-container${isClosing ? ' closing' : ''}`}
+        style={{ width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflowY: 'auto', background: 'rgba(10,10,18,0.98)', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
           <img src={imageUrl} alt={song.song} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg-dark), rgba(0,0,0,0.2))' }} />
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={handleClose}
             style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(0,0,0,0.5)', padding: '0.5rem', borderRadius: '50%', color: 'white', zIndex: 20, cursor: 'pointer', border: 'none' }}
           >
             <X size={24} />

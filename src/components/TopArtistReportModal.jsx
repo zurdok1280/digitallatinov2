@@ -3,6 +3,7 @@ import { X, Users, Music, Activity, TrendingUp, Heart, Map, Loader2, Share2, Mes
 import ArtistMap from './ArtistMap';
 import { getArtistData, getMapData, getSongsArtistBySpotifyId, getSongById } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+import { useModalClose } from '../hooks/useModalClose';
 
 const formatNumber = (num) => {
   if (!num) return '0';
@@ -41,6 +42,7 @@ const TiktokIcon = ({ size = 20, color = "currentColor" }) => (
 
 
 const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
+  const { isClosing, handleClose } = useModalClose(onClose, 240);
   const [activeTab, setActiveTab] = useState('panorama');
   const [songs, setSongs] = useState([]);
   const [songDetails, setSongDetails] = useState({}); // { [cs_song]: { song, label, ... } }
@@ -144,14 +146,25 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
     .slice(0, 10);
 
   return (
-    <div className="modal-overlay modal-overlay-padding animate-fade-in" style={{ 
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', 
-      zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' 
-    }}>
-      <div className="modal-content glass-panel animate-zoom-in modal-container" style={{ 
-        width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflow: 'hidden', 
-        display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid var(--glass-border)' 
-      }}>
+    <div
+      className={`modal-overlay modal-overlay-padding modal-overlay-anim${isClosing ? ' closing' : ''}`}
+      style={{
+        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+        zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+      }}
+      onClick={handleClose}
+    >
+      <div
+        className={`modal-content glass-panel modal-panel-anim modal-container${isClosing ? ' closing' : ''}`}
+        style={{
+          width: '100%', maxWidth: 'min(1200px, 95vw)', maxHeight: '92vh', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', position: 'relative',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(10,10,18,0.98)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
         
         {/* Header — cover image style */}
         <div className="modal-hero-header" style={{ position: 'relative', height: '200px', width: '100%', flexShrink: 0 }}>
@@ -162,7 +175,7 @@ const TopArtistReportModal = ({ artist, countries = [], onClose }) => {
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg-dark, #0a0b14), rgba(0,0,0,0.15))' }} />
           <button
-            onClick={onClose}
+            onClick={handleClose}
             style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(0,0,0,0.5)', padding: '0.5rem', borderRadius: '50%', color: 'white', zIndex: 20, cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <X size={20} />
