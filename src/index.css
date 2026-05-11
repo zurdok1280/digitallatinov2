@@ -296,6 +296,7 @@ select option {
   }
   .chart-left {
     gap: 0.65rem;
+    min-width: 0;
   }
   .chart-rank {
     min-width: 25px;
@@ -307,17 +308,27 @@ select option {
     width: 42px;
     height: 42px;
   }
+  /* Force truncation on title+artist so they never push the row wider than the screen */
+  .chart-title-wrapper {
+    min-width: 0;
+    max-width: calc(50vw - 80px); /* leaves room for rank + image + score */
+  }
   .chart-title {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
   .chart-artist {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
   .chart-score {
-    font-size: 1.2rem;
-  }
-  .chart-score-label {
-    display: none;
+    font-size: 1.1rem;
   }
 }
 
@@ -780,3 +791,142 @@ select option {
   transform: translateY(-1px);
 }
 
+
+/* ============================================================ */
+/* MOBILE CAROUSEL — Horizontal Scroll (Una Sola Línea)         */
+/* ============================================================ */
+.mobile-card-carousel {
+  display: grid;
+}
+
+@media (max-width: 768px) {
+  .mobile-card-carousel {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 16px !important;
+    padding-bottom: 12px !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .mobile-card-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  /* Each card locks to a comfortable mobile size (~2 cards visible) */
+  .mobile-card-carousel > * {
+    flex-shrink: 0 !important;
+    width: 46vw !important;
+    min-width: 140px !important;
+    max-width: 200px !important;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-card-carousel > * {
+    width: 52vw !important;
+    min-width: 130px !important;
+  }
+}
+
+/* ============================================================ */
+/* TOUCH TARGETS — Minimum 44px for comfortable mobile use      */
+/* ============================================================ */
+@media (max-width: 768px) {
+  /* Touch-safe min-size on key interactive elements */
+  .btn-touch-safe {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+}
+
+/* ============================================================ */
+/* HEADER — Mobile-specific class-based overrides               */
+/* ============================================================ */
+@media (max-width: 767px) {
+  /* Hides view name pill (e.g. "Charts", "Platforms") on small screens */
+  /* Using max-width:0 trick because inline style="display:flex" overrides display:none from CSS */
+  .header-view-indicator {
+    max-width: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    opacity: 0 !important;
+  }
+  /* Hides text labels inside auth buttons/sections, keeping only icons */
+  .header-auth-text {
+    max-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 0 !important;
+  }
+  /* Reduce header gap in mobile */
+  .header-top-row {
+    gap: 0.5rem !important;
+  }
+  /* Make logo slightly smaller on mobile */
+  .header-logo {
+    height: 28px !important;
+  }
+  /* Add padding to menu button so it's not glued to the edge */
+  .header-menu-btn {
+    padding-left: 0.5rem !important;
+  }
+}
+
+/* ============================================================ */
+/* SIDEBAR DRAWER — Full width on very small phones             */
+/* ============================================================ */
+@media (max-width: 480px) {
+  .sidebar-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+}
+
+/* ============================================================ */
+/* MODAL TAB BAR — Seamless scroll without visible scrollbar    */
+/* ============================================================ */
+@media (max-width: 768px) {
+  .modal-tab-bar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .modal-tab-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* ============================================================ */
+/* MODAL MOBILE CLOSE BUTTON — Only show on small screens       */
+/* ============================================================ */
+.modal-mobile-close {
+  display: none !important;
+}
+@media (max-width: 768px) {
+  .modal-mobile-close {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.25rem;
+    z-index: 1200;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #8a88ff, #ff3366);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(138, 136, 255, 0.5);
+  }
+}

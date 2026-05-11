@@ -95,7 +95,7 @@ const ArtistMap = ({ data }) => {
             
             return (
               <Marker 
-                key={cluster.city_name} 
+                key={`cluster-${index}-${cluster.city_name}`} 
                 coordinates={[cluster.city_lng, cluster.city_lat]}
                 onMouseEnter={() => setHoveredNode(cluster.city_name)}
                 onMouseLeave={() => setHoveredNode(null)}

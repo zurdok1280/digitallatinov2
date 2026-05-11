@@ -365,6 +365,20 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
       return;
     }
 
+    // Attempt to find the artist's Spotify ID to enable full ArtistDetailsModal tabs
+    setCheckingId(track.spotify_id);
+    let artistId = results?.artists?.find(a => a.artist_name === track.artist_name)?.spotify_id;
+    
+    if (!artistId) {
+      try {
+        const artistSearch = await searchSpotify(track.artist_name);
+        artistId = artistSearch?.artists?.[0]?.spotify_id;
+      } catch (err) {
+        console.error("Error fetching artist ID for song metrics:", err);
+      }
+    }
+    setCheckingId(null);
+
     onClose();
     if (onSongClick) {
       setTimeout(() => {
@@ -374,6 +388,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
           song:      track.song_name,
           artists:   track.artist_name,
           spotifyid: track.spotify_id,
+          artist_id: artistId, // Pass found artist ID
           image_url: track.image_url,
           avatar:    track.image_url,
           img:       track.image_url,

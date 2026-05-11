@@ -91,7 +91,6 @@ const Sparkline = ({ song, color }) => {
         height: `${height}px`,
         opacity: 0.8,
         position: 'relative',
-        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }}
@@ -429,7 +428,9 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
             {song.score != null ? Number(song.score).toFixed(1) : '0.0'}
           </div>
           <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-            Score <Info size={11} style={{ opacity: 0.7 }} />
+            <span className="score-label-full">Score</span>
+            <span className="score-label-short">SCR</span>
+            <Info size={11} style={{ opacity: 0.7 }} />
           </span>
 
           <div className="score-tooltip">
@@ -443,9 +444,24 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
   return (
     <div className="glass-panel" style={{ padding: '1rem' }}>
       <style>{`
-        .sparkline-wrapper { display: none; margin: 0 3rem 0 auto; pointer-events: auto; flex-shrink: 0; }
+        .sparkline-wrapper { display: none; margin: 0 1.5rem 0 auto; pointer-events: auto; flex-shrink: 0; }
         @media (min-width: 900px) {
           .sparkline-wrapper { display: block; }
+        }
+        @media (max-width: 768px) {
+          .score-info-container {
+            min-width: 48px !important;
+          }
+        }
+        
+        /* Score label toggle: base = show "Score", hide "SCR" */
+        .score-label-full  { display: inline !important; }
+        .score-label-short { display: none !important; }
+
+        /* On mobile: hide "Score", show "SCR" */
+        @media (max-width: 768px) {
+          .score-label-full  { display: none !important; }
+          .score-label-short { display: inline !important; }
         }
         
         /* Tooltip classes */
