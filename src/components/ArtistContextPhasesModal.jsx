@@ -69,12 +69,12 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
 
       // Create a clone to render off-screen
       const clone = originalElement.cloneNode(true);
-      
+
       // Force clone to be off-screen but rendered
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
       clone.style.top = '0';
-      clone.style.width = originalElement.offsetWidth + 'px'; // Maintain layout width
+      clone.style.width = originalElement.offsetWidth + 'px';
       clone.style.height = 'auto';
       clone.style.overflow = 'visible';
 
@@ -91,6 +91,13 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
         el.style.display = 'block';
       });
 
+      // Also expand the KPI pane if visible
+      const kpiPane = clone.querySelector('.plan90-kpi-pane');
+      if (kpiPane) {
+        kpiPane.style.maxHeight = 'none';
+        kpiPane.style.overflow = 'visible';
+      }
+
       // Hide close and download buttons in the clone
       const closeBtn = clone.querySelector('#pdf-close-btn');
       if (closeBtn) closeBtn.style.display = 'none';
@@ -100,12 +107,17 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
       // Append to body so html2canvas can compute styles
       document.body.appendChild(clone);
 
+      // Wait a tick to ensure styles are applied
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#06070b",
         scrollY: 0,
-        windowHeight: clone.scrollHeight
+        windowHeight: clone.scrollHeight,
+        allowTaint: true,
+        logging: false,
       });
 
       // Remove the clone after capture
@@ -117,9 +129,9 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
         unit: "px",
         format: [canvas.width, canvas.height]
       });
-      
+
       pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`Plan_90_Dias_${artist.name.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+      pdf.save(`Plan_90_Dias_${(artist.name || "artista").replace(/[^a-z0-9]/gi, '_')}.pdf`);
     } catch (err) {
       console.error("Error generating PDF", err);
     } finally {
@@ -273,10 +285,7 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
                 <div className="v">{data.priority_targets?.tiktokers?.length || 0} <span className="unit">creadores</span></div>
                 <div className="l">TikTok afines {data.priority_targets?.tiktokers?.length ? (expandedKpi === 'tiktokers' ? '▲' : '▼') : ''}</div>
               </div>
-              <div className="plan90-kpi">
-                <div className="v">{data.kpis?.projected_reach_millions || "0.0"} <span className="unit">M reach</span></div>
-                <div className="l">Proyección agregada</div>
-              </div>
+            
             </div>
             {renderKpiExpandedPane()}
 

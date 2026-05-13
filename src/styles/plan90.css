@@ -173,7 +173,7 @@
 /* ───── KPI STRIP ───── */
 .plan90-kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border-bottom: 1px solid var(--border);
   align-items: start;
 }
