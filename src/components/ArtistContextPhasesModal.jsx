@@ -98,6 +98,17 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
         kpiPane.style.overflow = 'visible';
       }
 
+      // Hide sidebar and force single-column layout for PDF
+      const sidebar = clone.querySelector('.plan90-sidebar');
+      if (sidebar) sidebar.style.display = 'none';
+      const body = clone.querySelector('.plan90-body');
+      if (body) body.style.gridTemplateColumns = '1fr';
+
+      // Hide phase footers in PDF (they are contextual UI)
+      clone.querySelectorAll('.plan90-phase-footer').forEach(el => {
+        el.style.display = 'none';
+      });
+
       // Hide close and download buttons in the clone
       const closeBtn = clone.querySelector('#pdf-close-btn');
       if (closeBtn) closeBtn.style.display = 'none';
@@ -220,11 +231,33 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
             <h1>{renderItalicTitle(artist.name)}</h1>
             <div className="sub">Hoja de ruta para los próximos noventa días.</div>
           </div>
-          <button id="pdf-close-btn" className="plan90-close-btn" aria-label="Cerrar" onClick={onClose}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button 
+              className="plan90-cta plan90-cta-secondary" 
+              onClick={handleDownloadPDF}
+              disabled={isDownloading || loading || !data}
+              id="pdf-download-btn"
+              style={{ fontSize: '11px', padding: '7px 14px', gap: '6px' }}
+            >
+              {isDownloading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span className="plan90-btn-label">Exportar plan</span>
+                </>
+              )}
+            </button>
+            <button id="pdf-close-btn" className="plan90-close-btn" aria-label="Cerrar" onClick={onClose}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -250,7 +283,6 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
         ) : (
           <>
             {/* KPIs */}
-            {/* KPIs */}
             <div className="plan90-kpis">
               <div 
                 className={`plan90-kpi ${data.priority_targets?.playlists?.length ? 'clickable' : ''}`}
@@ -260,8 +292,16 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
                   }
                 }}
               >
-                <div className="v">{data.priority_targets?.playlists?.length || 0} <span className="unit">playlists</span></div>
-                <div className="l">Listados objetivo {data.priority_targets?.playlists?.length ? (expandedKpi === 'playlists' ? '▲' : '▼') : ''}</div>
+                <div>
+                  <div className="v">{data.priority_targets?.playlists?.length || 0} <span className="unit">playlists</span></div>
+                  <div className="l">Listados objetivo {data.priority_targets?.playlists?.length ? (expandedKpi === 'playlists' ? '▲' : '▼') : ''}</div>
+                </div>
+                <div className="plan90-kpi-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18V5l12-2v13"/>
+                    <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                  </svg>
+                </div>
               </div>
               <div 
                 className={`plan90-kpi ${data.priority_targets?.markets?.length ? 'clickable' : ''}`}
@@ -271,8 +311,15 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
                   }
                 }}
               >
-                <div className="v">{data.priority_targets?.markets?.length || 0} <span className="unit">emisoras</span></div>
-                <div className="l">Nacional + intl. {data.priority_targets?.markets?.length ? (expandedKpi === 'markets' ? '▲' : '▼') : ''}</div>
+                <div>
+                  <div className="v">{data.priority_targets?.markets?.length || 0} <span className="unit">emisoras</span></div>
+                  <div className="l">Nacional + intl. {data.priority_targets?.markets?.length ? (expandedKpi === 'markets' ? '▲' : '▼') : ''}</div>
+                </div>
+                <div className="plan90-kpi-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+                  </svg>
+                </div>
               </div>
               <div 
                 className={`plan90-kpi ${data.priority_targets?.tiktokers?.length ? 'clickable' : ''}`}
@@ -282,149 +329,189 @@ const ArtistContextPhasesModal = ({ artist, onClose }) => {
                   }
                 }}
               >
-                <div className="v">{data.priority_targets?.tiktokers?.length || 0} <span className="unit">creadores</span></div>
-                <div className="l">TikTok afines {data.priority_targets?.tiktokers?.length ? (expandedKpi === 'tiktokers' ? '▲' : '▼') : ''}</div>
+                <div>
+                  <div className="v">{data.priority_targets?.tiktokers?.length || 0} <span className="unit">creadores</span></div>
+                  <div className="l">TikTok afines {data.priority_targets?.tiktokers?.length ? (expandedKpi === 'tiktokers' ? '▲' : '▼') : ''}</div>
+                </div>
+                <div className="plan90-kpi-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </div>
               </div>
-            
             </div>
             {renderKpiExpandedPane()}
 
-            {/* TABS */}
-            <div className="plan90-tabs">
-              <button className={`plan90-tab ${activePhaseTab === 1 ? 'active' : ''}`} data-phase="1" onClick={() => setActivePhaseTab(1)}>
-                <span className="pip"></span> Impulso <span className="days">D1–30</span>
-              </button>
-              <button className={`plan90-tab ${activePhaseTab === 2 ? 'active' : ''}`} data-phase="2" onClick={() => setActivePhaseTab(2)}>
-                <span className="pip"></span> Escalar <span className="days">D31–60</span>
-              </button>
-              <button className={`plan90-tab ${activePhaseTab === 3 ? 'active' : ''}`} data-phase="3" onClick={() => setActivePhaseTab(3)}>
-                <span className="pip"></span> Expandir <span className="days">D61–90</span>
-              </button>
-              
-              <div className="plan90-progress">
-                <span className="lbl">Día <b style={{color:'var(--text)'}}>1</b> / 90</span>
-                <div className="plan90-bar">
-                  <div className="plan90-fill" style={{ width: activePhaseTab === 1 ? '33.3%' : activePhaseTab === 2 ? '66.6%' : '100%' }}></div>
-                </div>
-              </div>
-              
-              {/* Tab indicator logic handled slightly differently in React, but we can fake the animated line or skip it for simplicity, 
-                  let's use standard borders via active class or inline styling if needed. The CSS pip handles the color nicely. */}
-            </div>
-
-            {/* PHASE PANE */}
-            <div className="plan90-phase-pane">
-              {data.phases.map((phase, idx) => {
-                const phaseNum = idx + 1;
-                const isVisible = activePhaseTab === phaseNum;
-                const romanNum = phaseNum === 1 ? "I" : phaseNum === 2 ? "II" : "III";
-                
-                return (
-                  <div key={idx} className="plan90-phase-content" data-phase={phaseNum} style={{ display: isVisible ? 'block' : 'none' }}>
-                    <div className="plan90-phase-header">
-                      <div className="plan90-phase-num">{romanNum}</div>
-                      <div className="plan90-phase-meta">
-                        <div className="days">{phase.days}</div>
-                        <h2>{renderItalicTitle(phase.title)}</h2>
+            {/* BODY: Sidebar + Content */}
+            <div className="plan90-body">
+              {/* SIDEBAR */}
+              <div className="plan90-sidebar">
+                {data.phases.map((phase, idx) => {
+                  const phaseNum = idx + 1;
+                  const nums = ["01", "02", "03"];
+                  const fallbackTitles = ["Impulso Inicial", "Escalamiento", "Expansión"];
+                  const fallbackSubs = ["", "Con Artistas Similares", "Nodo B y Exploración Int."];
+                  const fallbackDays = ["Días 1–30", "Días 31–60", "Días 61–90"];
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`plan90-sidebar-item ${activePhaseTab === phaseNum ? 'active' : ''}`}
+                      data-phase={phaseNum}
+                      onClick={() => setActivePhaseTab(phaseNum)}
+                    >
+                      <span className="plan90-sidebar-num">{nums[idx]}</span>
+                      <div className="plan90-sidebar-info">
+                        <div className="plan90-sidebar-title">{phase.title || fallbackTitles[idx]}</div>
+                        {fallbackSubs[idx] && <div className="plan90-sidebar-subtitle">{fallbackSubs[idx]}</div>}
+                        <div className="plan90-sidebar-days">{phase.days || fallbackDays[idx]}</div>
                       </div>
                     </div>
-                    {/* If API doesn't provide tagline, use a default per phase based on the mockup */}
-                    <p className="plan90-phase-tagline">
-                      {phaseNum === 1 ? "Ganar momentum donde la puerta ya está entreabierta — playlists de baja barrera y Meta Ads sobre fans afines." :
-                       phaseNum === 2 ? "Aparecer donde los artistas similares ya viven — editoriales stretch, TikTokers y emisoras de afinidad." :
-                       "Cruzar al segundo grado del ecosistema — playlists Nodo B, creadores nuevos y radios internacionales."}
-                    </p>
+                  );
+                })}
+              </div>
 
-                    <div className="plan90-moves">
-                      {phase.actions && phase.actions.map((action, actionIdx) => {
-                        // Infer icon based on headline
-                        let ico = "◉";
-                        const hl = (action.headline || "").toLowerCase();
-                        if (hl.includes("playlist")) ico = "♫";
-                        else if (hl.includes("tiktok") || hl.includes("creadores")) ico = "▲";
-                        else if (hl.includes("radio") || hl.includes("emisoras")) ico = "◐";
-                        else if (hl.includes("ciudad") || hl.includes("plaza")) ico = "⬡";
-
-                        const hasLinks = action.targets && action.targets.some(t => getTargetLink(t, action.headline));
-                        const actionKey = `${phaseNum}-${actionIdx}`;
-                        const isExpanded = expandedActions[actionKey];
-
-                        return (
-                          <div 
-                            key={actionIdx} 
-                            className="plan90-move"
-                            onClick={() => {
-                              if (action.targets && action.targets.length > 0) {
-                                setExpandedActions(prev => ({...prev, [actionKey]: !prev[actionKey]}));
-                              }
-                            }}
-                            style={{ cursor: action.targets && action.targets.length > 0 ? "pointer" : "default", alignItems: isExpanded ? "flex-start" : "center" }}
-                          >
-                            <span className="plan90-move-tag" style={{ marginTop: isExpanded ? "2px" : "0" }}><span className="ico">{ico}</span> {hl.split(" ")[0] || "Acción"}</span>
-                            <div className="plan90-move-body">
-                              <div className="plan90-move-title">{action.headline}</div>
-                              <div className="plan90-move-targets" style={{ whiteSpace: isExpanded ? "normal" : "nowrap" }}>
-                                {!isExpanded ? (
-                                  action.targets && action.targets.map(t => getTargetName(t)).join(" · ") || action.description
-                                ) : (
-                                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.5rem" }}>
-                                    {action.targets && action.targets.map((t, tIdx) => {
-                                      const link = getTargetLink(t, action.headline);
-                                      const name = getTargetName(t);
-                                      if (link) {
-                                        return (
-                                          <a 
-                                            key={tIdx} 
-                                            href={link} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            onClick={(e) => e.stopPropagation()}
-                                            style={{ color: "var(--accent)", textDecoration: "none", fontSize: "12px", display: "inline-block", background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: "4px" }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
-                                          >
-                                            {name} <span style={{fontSize: "10px", opacity: 0.7, marginLeft: "4px"}}>↗</span>
-                                          </a>
-                                        );
-                                      }
-                                      return <span key={tIdx} style={{ color: "var(--text-2)", fontSize: "12px", background: "rgba(255,255,255,0.02)", padding: "4px 8px", borderRadius: "4px" }}>{name}</span>;
-                                    })}
-                                    {(!action.targets || action.targets.length === 0) && action.description}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {action.targets && action.targets.length > 0 && (
-                              <span className="plan90-move-arrow" style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s ease", marginTop: isExpanded ? "2px" : "0" }}>→</span>
-                            )}
+              {/* RIGHT CONTENT */}
+              <div className="plan90-phase-pane">
+                {data.phases.map((phase, idx) => {
+                  const phaseNum = idx + 1;
+                  const isVisible = activePhaseTab === phaseNum;
+                  const romanNum = phaseNum === 1 ? "I" : phaseNum === 2 ? "II" : "III";
+                  
+                  return (
+                    <div key={idx} className="plan90-phase-content" data-phase={phaseNum} style={{ display: isVisible ? 'block' : 'none' }}>
+                      {/* Phase header with progress */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '6px', transition: 'color 0.4s ease' }}>
+                            FASE {phaseNum}
                           </div>
-                        );
-                      })}
+                        </div>
+                        <div className="plan90-progress">
+                          <span className="lbl">Día <b style={{color:'var(--text)'}}>1</b> / 90</span>
+                          <div className="plan90-bar">
+                            <div className="plan90-fill" style={{ width: activePhaseTab === 1 ? '33.3%' : activePhaseTab === 2 ? '66.6%' : '100%' }}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="plan90-phase-header">
+                        <div className="plan90-phase-meta">
+                          <h2>{renderItalicTitle(phase.title)}</h2>
+                        </div>
+                      </div>
+
+                      <p className="plan90-phase-tagline">
+                        {phaseNum === 1 ? "Ganar momentum donde la puerta ya está entreabierta — playlists de baja barrera y Meta Ads sobre fans afines." :
+                         phaseNum === 2 ? "Aparecer donde los artistas similares ya viven — editoriales stretch, TikTokers y emisoras de afinidad." :
+                         "Cruzar al segundo grado del ecosistema — playlists Nodo B, creadores nuevos y radios internacionales."}
+                      </p>
+
+                      <div className="plan90-moves">
+                        {phase.actions && phase.actions.map((action, actionIdx) => {
+                          let ico = "◉";
+                          const hl = (action.headline || "").toLowerCase();
+                          if (hl.includes("playlist")) ico = "♫";
+                          else if (hl.includes("tiktok") || hl.includes("creadores")) ico = "▲";
+                          else if (hl.includes("radio") || hl.includes("emisoras")) ico = "◐";
+                          else if (hl.includes("ciudad") || hl.includes("plaza")) ico = "⬡";
+
+                          const hasLinks = action.targets && action.targets.some(t => getTargetLink(t, action.headline));
+                          const actionKey = `${phaseNum}-${actionIdx}`;
+                          const isExpanded = expandedActions[actionKey];
+
+                          return (
+                            <div 
+                              key={actionIdx} 
+                              className="plan90-move"
+                              onClick={() => {
+                                if (action.targets && action.targets.length > 0) {
+                                  setExpandedActions(prev => ({...prev, [actionKey]: !prev[actionKey]}));
+                                }
+                              }}
+                              style={{ cursor: action.targets && action.targets.length > 0 ? "pointer" : "default", alignItems: isExpanded ? "flex-start" : "center" }}
+                            >
+                              <span className="plan90-move-tag" style={{ marginTop: isExpanded ? "2px" : "0" }}><span className="ico">{ico}</span> {hl.split(" ")[0] || "Acción"}</span>
+                              <div className="plan90-move-body">
+                                <div className="plan90-move-title">{action.headline}</div>
+                                <div className="plan90-move-targets" style={{ whiteSpace: isExpanded ? "normal" : "nowrap" }}>
+                                  {!isExpanded ? (
+                                    action.targets && action.targets.map(t => getTargetName(t)).join(" · ") || action.description
+                                  ) : (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.5rem" }}>
+                                      {action.targets && action.targets.map((t, tIdx) => {
+                                        const link = getTargetLink(t, action.headline);
+                                        const name = getTargetName(t);
+                                        if (link) {
+                                          return (
+                                            <a 
+                                              key={tIdx} 
+                                              href={link} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              onClick={(e) => e.stopPropagation()}
+                                              style={{ color: "var(--accent)", textDecoration: "none", fontSize: "12px", display: "inline-block", background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: "4px" }}
+                                              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                                              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                                            >
+                                              {name} <span style={{fontSize: "10px", opacity: 0.7, marginLeft: "4px"}}>↗</span>
+                                            </a>
+                                          );
+                                        }
+                                        return <span key={tIdx} style={{ color: "var(--text-2)", fontSize: "12px", background: "rgba(255,255,255,0.02)", padding: "4px 8px", borderRadius: "4px" }}>{name}</span>;
+                                      })}
+                                      {(!action.targets || action.targets.length === 0) && action.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {action.targets && action.targets.length > 0 && (
+                                <span className="plan90-move-arrow" style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s ease", marginTop: isExpanded ? "2px" : "0" }}>→</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
-            {/* FOOTER */}
-            <div className="plan90-foot">
-              <div className="plan90-foot-meta">
-                <span>monitorLATINO</span>
-                <span className="div">/</span>
-                <span>music intelligence</span>
-                <span className="div">/</span>
-                <span>v.001</span>
+            {/* MODAL FOOTER: Enfoque + Impacto (reactive to active phase) */}
+            <div className="plan90-phase-footer">
+              <div>
+                <div className="plan90-pf-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+                  </svg>
+                </div>
+                <div className="plan90-pf-label">Enfoque</div>
+                <div className="plan90-pf-text">
+                  {activePhaseTab === 1 ? "Tracción rápida y primeros resultados" :
+                   activePhaseTab === 2 ? "Conectar con audiencias similares y editores" :
+                   "Diversificar canales y consolidar crecimiento"}
+                </div>
               </div>
-              <div style={{ display:"flex", gap:"8px" }}>
-                <button 
-                  className="plan90-cta plan90-cta-secondary" 
-                  onClick={handleDownloadPDF}
-                  disabled={isDownloading}
-                >
-                  {isDownloading ? <Loader2 size={14} className="animate-spin" /> : "Exportar PDF"}
-                </button>
+              <span className="plan90-pf-arrow">→</span>
+              <div>
+                <div className="plan90-pf-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                  </svg>
+                </div>
+                <div className="plan90-pf-label">Impacto Esperado</div>
+                <div className="plan90-pf-text">
+                  {activePhaseTab === 1 ? "Más visibilidad, primeras conexiones y crecimiento inicial." :
+                   activePhaseTab === 2 ? "Presencia editorial, alcance en TikTok y rotación en radio." :
+                   "Ecosistema completo, nuevos mercados y sustentabilidad."}
+                </div>
               </div>
             </div>
+
           </>
         )}
       </div>
