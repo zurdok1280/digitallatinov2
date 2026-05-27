@@ -6,7 +6,18 @@ import {
   useNavigate,
   useSearchParams,
   useLocation,
+  useParams,
 } from "react-router-dom";
+import {
+  VIEW_TO_SLUG,
+  VIEW_SLUG_MAP,
+  getCountrySlug,
+  getGenreSlug,
+  getCitySlug,
+  getCountryIdFromSlug,
+  getGenreIdFromSlug,
+  getCityIdFromSlug,
+} from "./utils/seoFilters";
 import { useAuth } from "./hooks/useAuth";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
@@ -75,6 +86,11 @@ const AdminPanelLazy = withLazy(AdminPanel);
 
 function Dashboard() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { viewSlug, countrySlug, genreSlug, citySlug } = useParams();
+  const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
+  const [loadedFiltersKey, setLoadedFiltersKey] = useState("");
+
   const [selectedCountry, setSelectedCountry] = useState('0');
   const [selectedGenre, setSelectedGenre] = useState('0');
   const [selectedCity, setSelectedCity] = useState('0');
@@ -116,9 +132,144 @@ function Dashboard() {
     setSelectedSongs([]);
     setShowCompareModal(false);
   }, [activeView]);
+
+  // ─── 1. INITIALIZATION SYNC FROM URL ───
+  useEffect(() => {
+    if (hasInitializedFromUrl) return;
+
+    if (viewSlug || countrySlug || genreSlug || citySlug) {
+      let isReady = true;
+
+      if (viewSlug) {
+        const targetView = VIEW_SLUG_MAP[viewSlug];
+        if (targetView && targetView !== activeView) {
+          setActiveView(targetView);
+          isReady = false;
+        }
+      }
+
+      if (countrySlug) {
+        if (countriesList.length > 0) {
+          const countryId = getCountryIdFromSlug(countrySlug, countriesList);
+          if (countryId !== undefined) {
+            if (countryId !== selectedCountry) {
+              setSelectedCountry(countryId);
+              isReady = false;
+            }
+          }
+        } else {
+          isReady = false;
+        }
+      }
+
+      if (genreSlug) {
+        if (genresList.length > 0) {
+          const genreId = getGenreIdFromSlug(genreSlug, genresList);
+          if (genreId !== undefined) {
+            if (genreId !== selectedGenre) {
+              setSelectedGenre(genreId);
+              isReady = false;
+            }
+          }
+        } else {
+          if (countrySlug && countrySlug !== 'global') isReady = false;
+        }
+      }
+
+      if (citySlug) {
+        if (citiesList.length > 0) {
+          const cityId = getCityIdFromSlug(citySlug, citiesList);
+          if (cityId !== undefined) {
+            if (cityId !== selectedCity) {
+              setSelectedCity(cityId);
+              isReady = false;
+            }
+          }
+        } else {
+          if (countrySlug && countrySlug !== 'global') isReady = false;
+        }
+      }
+
+      if (isReady) {
+        setHasInitializedFromUrl(true);
+      }
+    } else {
+      setHasInitializedFromUrl(true);
+    }
+  }, [viewSlug, countrySlug, genreSlug, citySlug, countriesList, genresList, citiesList, hasInitializedFromUrl, activeView, selectedCountry, selectedGenre, selectedCity]);
+
+  // ─── 2. ONE-WAY STATE TO URL SYNC ───
+  useEffect(() => {
+    if (!hasInitializedFromUrl) return;
+
+    const vSlug = VIEW_TO_SLUG[activeView] || 'charts';
+    const cSlug = getCountrySlug(selectedCountry, countriesList);
+    const gSlug = getGenreSlug(selectedGenre, genresList);
+    const ctSlug = getCitySlug(selectedCity, citiesList);
+
+    let path = `/${vSlug}`;
+    if (cSlug !== 'global' || gSlug !== 'todos' || ctSlug !== 'todas') {
+      path += `/${cSlug}`;
+      if (gSlug !== 'todos' || ctSlug !== 'todas') {
+        path += `/${gSlug}`;
+        if (ctSlug !== 'todas') {
+          path += `/${ctSlug}`;
+        }
+      }
+    }
+
+    const currentPath = location.pathname;
+    const isDefaultPath = path === '/charts';
+    const isCurrentPathDefault = currentPath === '/' || currentPath === '/charts';
+    
+    let shouldNavigate = false;
+    if (isDefaultPath) {
+      if (!isCurrentPathDefault) shouldNavigate = true;
+    } else {
+      if (currentPath !== path) shouldNavigate = true;
+    }
+
+    if (shouldNavigate && !['/my-artist', '/admin', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].includes(currentPath)) {
+      navigate(`${path}${location.search}`, { replace: true });
+    }
+  }, [activeView, selectedCountry, selectedGenre, selectedCity, countriesList, genresList, citiesList, hasInitializedFromUrl, location.search, location.pathname, navigate]);
+
+  // ─── 3. DYNAMIC DOCUMENT TITLE FOR SEO ───
+  useEffect(() => {
+    const VIEW_CONFIG_LOCAL = {
+      Artists:            'Artist Analytics',
+      Platforms:          'Platforms',
+      HeavyHitters:       'Heavy Hitters',
+      CuratorPicks:       'Curator Picks',
+      TiktokerPicks:      'Tiktoker Picks',
+      DigitalHitsForRadio:'Digital Hits for Radio',
+      Charts:             'Charts',
+    };
+    
+    const viewLabel = VIEW_CONFIG_LOCAL[activeView] || 'Charts';
+    
+    let countryLabel = 'Global';
+    if (selectedCountry !== '0' && selectedCountry !== 'All') {
+      const cObj = countriesList.find(c => String(c.id) === String(selectedCountry));
+      if (cObj) countryLabel = cObj.country_name;
+    }
+    
+    let genreLabel = '';
+    if (selectedGenre !== '0' && selectedGenre !== 'All') {
+      const gObj = genresList.find(g => String(g.id) === String(selectedGenre));
+      if (gObj) genreLabel = ` - ${gObj.format}`;
+    }
+    
+    let cityLabel = '';
+    if (selectedCity !== '0' && selectedCity !== 'All') {
+      const cObj = citiesList.find(c => String(c.id) === String(selectedCity));
+      if (cObj) cityLabel = ` (${cObj.city_name})`;
+    }
+    
+    document.title = `${viewLabel} ${countryLabel}${cityLabel}${genreLabel} | DigitalLatino`;
+  }, [activeView, selectedCountry, selectedGenre, selectedCity, countriesList, genresList, citiesList]);
   const { user, logout, updateUser } = useAuth();
   const [showArtistSelection, setShowArtistSelection] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.role === 'ARTIST') {
@@ -174,6 +325,7 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     const fetchFormatsAndCities = async () => {
       // If we switched to HeavyHitters, reset to its defaults immediately
       if (activeView === 'HeavyHitters' && selectedCountry === '0') {
@@ -184,8 +336,16 @@ function Dashboard() {
       }
 
       if (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') {
-        if (selectedCountry !== '0') setSelectedCountry('0');
-        if (selectedGenre === 'All') setSelectedGenre(0);
+        let redirectNeeded = false;
+        if (selectedCountry !== '0') {
+          setSelectedCountry('0');
+          redirectNeeded = true;
+        }
+        if (selectedGenre === 'All') {
+          setSelectedGenre(0);
+          redirectNeeded = true;
+        }
+        if (redirectNeeded) return;
       }
 
       // Use Country 0 (Global/All) for Format fetching if in CuratorPicks or TiktokerPicks
@@ -196,6 +356,7 @@ function Dashboard() {
           activeView === 'Artists' ? getFormatsByCountryArtist(targetCountry) : getFormatsByCountry(targetCountry),
           getCitiesByCountry(targetCountry)
         ]);
+        if (!active) return;
         setGenresList(formatsData);
         setCitiesList(citiesData);
 
@@ -207,13 +368,21 @@ function Dashboard() {
           setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts and DigitalHitsForRadio
         }
       } else {
+        if (!active) return;
         setGenresList([]);
         setCitiesList([]);
         if (activeView !== 'HeavyHitters' && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedGenre('0');
       }
       if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedCity('0');  // Reset city on country change
+
+      if (active) {
+        setLoadedFiltersKey(`${selectedCountry}_${activeView}`);
+      }
     };
     fetchFormatsAndCities();
+    return () => {
+      active = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry, activeView]);
 
@@ -230,6 +399,13 @@ function Dashboard() {
   }, [activeView, genresList, selectedGenre]);
 
   useEffect(() => {
+    // Only fetch data after we have finished initializing from the URL!
+    if (!hasInitializedFromUrl) return;
+
+    // Only fetch once the loaded formats/cities key matches the current country and activeView.
+    // This prevents intermediate race conditions and double fetches on load.
+    if (loadedFiltersKey !== `${selectedCountry}_${activeView}`) return;
+
     // AbortController cancels any in-flight request when filters change before it resolves.
     // This prevents stale data from a slow request overwriting a faster newer one.
     const controller = new AbortController();
@@ -268,7 +444,7 @@ function Dashboard() {
     fetchChartData();
     // Cleanup: abort the pending request when the effect re-runs
     return () => controller.abort();
-  }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, selectedCRG, activeView]);
+  }, [selectedCountry, selectedGenre, selectedCity, selectedPlaylistType, selectedCRG, activeView, hasInitializedFromUrl, loadedFiltersKey]);
 
   // Comparison Handlers
   const handleToggleComparisonMode = () => {
@@ -334,6 +510,164 @@ function Dashboard() {
     });
   };
 
+  const mainDashboardContent = (
+    <>
+      <div className="filter-header" style={{ justifyContent: 'flex-start', marginBottom: '0.5rem' }}>
+        <div className="filter-controls">
+          {/* Comparison Toggle Button */}
+          {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
+            <button
+              className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
+              onClick={handleToggleComparisonMode}
+              title="Modo Comparación"
+            >
+              <BarChart3 size={18} />
+              <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {activeView === 'Charts' && (
+        <SongChart
+          songs={songs}
+          isLoading={isLoading}
+          comparisonMode={comparisonMode}
+          onSongSelect={handleSongSelect}
+          selectedSongs={selectedSongs}
+          onArtistClick={(artist) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
+            setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
+          }}
+          onSongClick={(song) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+            setSelectedArtist({
+              id: song.spotifyartistid || song.cs_song,
+              spotifyid: song.spotifyartistid || song.cs_song,
+              name: song.artists,
+              imageUrl: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || song.url,
+              monthlyListeners: song.spotify_streams_total || 0,
+              followers: song.audience_total || 0,
+              artist: song.artists,
+              img: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.url || song.avatar || '/logo.png',
+              songName: song.song,
+              cs_song: song.cs_song,
+              initialTab: 'detalles_cancion'
+            });
+          }}
+          onLoginClick={() => setIsLoginModalOpen(true)}
+        />
+      )}
+
+      {activeView === 'DigitalHitsForRadio' && (
+        <SongChart
+          songs={songs}
+          isLoading={isLoading}
+          comparisonMode={comparisonMode}
+          onSongSelect={handleSongSelect}
+          selectedSongs={selectedSongs}
+          onArtistClick={(artist) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
+            setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
+          }}
+          onSongClick={(song) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+            setSelectedArtist({
+              id: song.spotifyartistid || song.cs_song,
+              spotifyid: song.spotifyartistid || song.cs_song,
+              name: song.artists,
+              imageUrl: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || song.url,
+              monthlyListeners: song.spotify_streams_total || 0,
+              followers: song.audience_total || 0,
+              artist: song.artists,
+              img: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.url || song.avatar || '/logo.png',
+              songName: song.song,
+              cs_song: song.cs_song,
+              initialTab: 'detalles_cancion'
+            });
+          }}
+          onLoginClick={() => setIsLoginModalOpen(true)}
+        />
+      )}
+
+      {activeView === 'Platforms' && (
+        <TopPlatformsChart
+          selectedCountry={selectedCountry}
+          selectedGenre={selectedGenre}
+          selectedPlatform={selectedPlatform}
+          onSongClick={(song) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+            setSelectedSongPlatform(song);
+          }}
+        />
+      )}
+
+      {activeView === 'Artists' && (
+        <TopArtistsChart
+          selectedCountry={selectedCountry}
+          selectedGenre={selectedGenre}
+          onArtistClick={(artist) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
+            setSelectedArtistReport(artist);
+          }}
+        />
+      )}
+
+      {activeView === 'HeavyHitters' && (
+        <HeavyHittersChart
+          songs={songs}
+          isLoading={isLoading}
+          comparisonMode={comparisonMode}
+          onSongSelect={handleSongSelect}
+          selectedSongs={selectedSongs}
+          onSongClick={(song) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+            setSelectedSongPlatform(song);
+          }}
+        />
+      )}
+
+      {activeView === 'CuratorPicks' && (
+        <CuratorPicksChart
+          songs={songs}
+          isLoading={isLoading}
+          comparisonMode={comparisonMode}
+          onSongSelect={handleSongSelect}
+          selectedSongs={selectedSongs}
+          onSongClick={(song) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+            setSelectedSongPlatform(song);
+          }}
+        />
+      )}
+
+      {activeView === 'TiktokerPicks' && (
+        <TiktokerPicksChart
+          songs={songs}
+          isLoading={isLoading}
+          comparisonMode={comparisonMode}
+          onSongSelect={handleSongSelect}
+          selectedSongs={selectedSongs}
+          onSongClick={(song) => {
+            if (!user) { setIsLoginModalOpen(true); return; }
+            if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
+            setSelectedSongPlatform(song);
+          }}
+        />
+      )}
+
+      <FloatingScrollButtons />
+    </>
+  );
+
   return (
     <>
       <div className="app-container">
@@ -372,167 +706,19 @@ function Dashboard() {
           />
 
           <Routes>
-            <Route path="/" element={
-              <>
-                <div className="filter-header" style={{ justifyContent: 'flex-start', marginBottom: '0.5rem' }}>
-                  <div className="filter-controls">
-                    {/* Comparison Toggle Button */}
-                    {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
-                      <button
-                        className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
-                        onClick={handleToggleComparisonMode}
-                        title="Modo Comparación"
-                      >
-                        <BarChart3 size={18} />
-                        <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {activeView === 'Charts' && (
-                  <SongChart
-                    songs={songs}
-                    isLoading={isLoading}
-                    comparisonMode={comparisonMode}
-                    onSongSelect={handleSongSelect}
-                    selectedSongs={selectedSongs}
-                    onArtistClick={(artist) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
-                      setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
-                    }}
-                    onSongClick={(song) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-                      setSelectedArtist({
-                        id: song.spotifyartistid || song.cs_song,
-                        spotifyid: song.spotifyartistid || song.cs_song,
-                        name: song.artists,
-                        imageUrl: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || song.url,
-                        monthlyListeners: song.spotify_streams_total || 0,
-                        followers: song.audience_total || 0,
-                        artist: song.artists,
-                        img: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.url || song.avatar || '/logo.png',
-                        songName: song.song,
-                        cs_song: song.cs_song,
-                        initialTab: 'detalles_cancion'
-                      });
-                    }}
-                    onLoginClick={() => setIsLoginModalOpen(true)}
-                  />
-                )}
-
-                {activeView === 'DigitalHitsForRadio' && (
-                  <SongChart
-                    songs={songs}
-                    isLoading={isLoading}
-                    comparisonMode={comparisonMode}
-                    onSongSelect={handleSongSelect}
-                    selectedSongs={selectedSongs}
-                    onArtistClick={(artist) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
-                      setSelectedArtist({ ...artist, countryId: selectedCountry === '0' ? 0 : selectedCountry });
-                    }}
-                    onSongClick={(song) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-                      setSelectedArtist({
-                        id: song.spotifyartistid || song.cs_song,
-                        spotifyid: song.spotifyartistid || song.cs_song,
-                        name: song.artists,
-                        imageUrl: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.avatar || song.url,
-                        monthlyListeners: song.spotify_streams_total || 0,
-                        followers: song.audience_total || 0,
-                        artist: song.artists,
-                        img: (song.spotifyid && song.spotifyid.startsWith('http') ? song.spotifyid : null) || song.url || song.avatar || '/logo.png',
-                        songName: song.song,
-                        cs_song: song.cs_song,
-                        initialTab: 'detalles_cancion'
-                      });
-                    }}
-                    onLoginClick={() => setIsLoginModalOpen(true)}
-                  />
-                )}
-
-                {activeView === 'Platforms' && (
-                  <TopPlatformsChart
-                    selectedCountry={selectedCountry}
-                    selectedGenre={selectedGenre}
-                    selectedPlatform={selectedPlatform}
-                    onSongClick={(song) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-                      setSelectedSongPlatform(song);
-                    }}
-                  />
-                )}
-
-                {activeView === 'Artists' && (
-                  <TopArtistsChart
-                    selectedCountry={selectedCountry}
-                    selectedGenre={selectedGenre}
-                    onArtistClick={(artist) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
-                      setSelectedArtistReport(artist);
-                    }}
-                  />
-                )}
-
-                {activeView === 'HeavyHitters' && (
-                  <HeavyHittersChart
-                    songs={songs}
-                    isLoading={isLoading}
-                    comparisonMode={comparisonMode}
-                    onSongSelect={handleSongSelect}
-                    selectedSongs={selectedSongs}
-                    onSongClick={(song) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-                      setSelectedSongPlatform(song);
-                    }}
-                  />
-                )}
-
-                {activeView === 'CuratorPicks' && (
-                  <CuratorPicksChart
-                    songs={songs}
-                    isLoading={isLoading}
-                    comparisonMode={comparisonMode}
-                    onSongSelect={handleSongSelect}
-                    selectedSongs={selectedSongs}
-                    onSongClick={(song) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-                      setSelectedSongPlatform(song);
-                    }}
-                  />
-                )}
-
-                {activeView === 'TiktokerPicks' && (
-                  <TiktokerPicksChart
-                    songs={songs}
-                    isLoading={isLoading}
-                    comparisonMode={comparisonMode}
-                    onSongSelect={handleSongSelect}
-                    selectedSongs={selectedSongs}
-                    onSongClick={(song) => {
-                      if (!user) { setIsLoginModalOpen(true); return; }
-                      if (!isAllowedForArtist(song)) { showRestrictedToast(); return; }
-                      setSelectedSongPlatform(song);
-                    }}
-                  />
-                )}
-
-                <FloatingScrollButtons />
-              </>
-            } />
-
             <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
             <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/:viewSlug/:countrySlug?/:genreSlug?/:citySlug?" element={
+              !hasInitializedFromUrl ? (
+                <div className="min-h-[80vh] flex items-center justify-center text-[#c193ff] animate-pulse font-bold">Cargando panel...</div>
+              ) : mainDashboardContent
+            } />
+            <Route path="/" element={
+              !hasInitializedFromUrl ? (
+                <div className="min-h-[80vh] flex items-center justify-center text-[#c193ff] animate-pulse font-bold">Cargando panel...</div>
+              ) : mainDashboardContent
+            } />
           </Routes>
         </main>
       </div>
