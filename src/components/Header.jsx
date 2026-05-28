@@ -303,7 +303,6 @@ const Header = ({
                 <select
                   value={selectedCountry}
                   onChange={e => {
-                    if (!user) { onLoginClick(); return; }
                     setSelectedCountry(e.target.value);
                   }}
                   disabled={isLoading}
@@ -320,7 +319,6 @@ const Header = ({
               <select
                 value={selectedGenre}
                 onChange={e => {
-                  if (!user) { onLoginClick(); return; }
                   setSelectedGenre(e.target.value);
                 }}
                 disabled={selectedCountry === 'All' || isLoading}
@@ -342,7 +340,7 @@ const Header = ({
                     { value: 'shazam', label: 'Shazam' }
                   ]}
                   value={selectedPlatform}
-                  onChange={val => { if (!user) { onLoginClick(); return; } setSelectedPlatform(val); }}
+                  onChange={val => { setSelectedPlatform(val); }}
                   searchable={false}
                   disabled={isLoading}
                 />
@@ -356,7 +354,7 @@ const Header = ({
                     ...playlistTypes.map(t => ({ value: String(t.id), label: t.name }))
                   ]}
                   value={String(selectedPlaylistType)}
-                  onChange={val => { if (!user) { onLoginClick(); return; } setSelectedPlaylistType(val); }}
+                  onChange={val => { setSelectedPlaylistType(val); }}
                   searchable={false}
                   placeholder="Todos los Tipos"
                   disabled={isLoading}
@@ -368,7 +366,7 @@ const Header = ({
                   <SearchableSelect
                     options={cityOptions}
                     value={String(selectedCity)}
-                    onChange={val => { if (!user) { onLoginClick(); return; } setSelectedCity(val); }}
+                    onChange={val => { setSelectedCity(val); }}
                     placeholder="Todas las ciudades"
                     disabled={cities.length === 0 || isLoading}
                   />
@@ -376,7 +374,7 @@ const Header = ({
                 <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label="Vigencia" color="#ffd166">
                   <select
                     value={selectedCRG}
-                    onChange={e => { if (!user) { onLoginClick(); return; } setSelectedCRG(e.target.value); }}
+                    onChange={e => { setSelectedCRG(e.target.value); }}
                     disabled={isLoading}
                     style={selectStyle(isLoading)}
                   >
@@ -390,7 +388,7 @@ const Header = ({
                 <SearchableSelect
                   options={cityOptions}
                   value={String(selectedCity)}
-                  onChange={val => { if (!user) { onLoginClick(); return; } setSelectedCity(val); }}
+                  onChange={val => { setSelectedCity(val); }}
                   placeholder="Todas las ciudades"
                   disabled={cities.length === 0 || isLoading}
                 />

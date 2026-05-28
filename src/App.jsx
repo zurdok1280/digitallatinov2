@@ -87,7 +87,17 @@ const AdminPanelLazy = withLazy(AdminPanel);
 function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { viewSlug, countrySlug, genreSlug, citySlug } = useParams();
+  
+  // Parse dynamic parameters manually from location.pathname because useParams() returns empty {}
+  // when called in a parent component rendered outside the nested <Routes> block.
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const isDashboardRoute = pathParts.length === 0 || !['my-artist', 'admin', 'auth', 'campaign', 'payment', 'forgot-password', 'reset-password'].includes(pathParts[0]);
+
+  const viewSlug = isDashboardRoute ? pathParts[0] : undefined;
+  const countrySlug = isDashboardRoute ? pathParts[1] : undefined;
+  const genreSlug = isDashboardRoute ? pathParts[2] : undefined;
+  const citySlug = isDashboardRoute ? pathParts[3] : undefined;
+
   const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
   const [loadedFiltersKey, setLoadedFiltersKey] = useState("");
 
@@ -135,6 +145,15 @@ function Dashboard() {
 
   // ─── 1. INITIALIZATION SYNC FROM URL ───
   useEffect(() => {
+    console.log("SEO INITIALIZER: hasInitializedFromUrl =", hasInitializedFromUrl, {
+      viewSlug,
+      countrySlug,
+      genreSlug,
+      citySlug,
+      countriesList: countriesList.map(c => ({ id: c.id, name: c.country_name })),
+      loadedFiltersKey
+    });
+
     if (hasInitializedFromUrl) return;
 
     if (viewSlug || countrySlug || genreSlug || citySlug) {
@@ -142,6 +161,7 @@ function Dashboard() {
 
       if (viewSlug) {
         const targetView = VIEW_SLUG_MAP[viewSlug];
+        console.log("SEO INITIALIZER: viewSlug =", viewSlug, "-> targetView =", targetView);
         if (targetView && targetView !== activeView) {
           setActiveView(targetView);
           isReady = false;
@@ -151,6 +171,7 @@ function Dashboard() {
       if (countrySlug) {
         if (countriesList.length > 0) {
           const countryId = getCountryIdFromSlug(countrySlug, countriesList);
+          console.log("SEO INITIALIZER: countrySlug =", countrySlug, "-> countryId =", countryId, "selectedCountry =", selectedCountry);
           if (countryId !== undefined) {
             if (countryId !== selectedCountry) {
               setSelectedCountry(countryId);
@@ -158,13 +179,36 @@ function Dashboard() {
             }
           }
         } else {
+          console.log("SEO INITIALIZER: countrySlug exists but countriesList is empty");
           isReady = false;
         }
+      }
+
+      // If a view or country change has been queued, stop immediately and wait for the state updates to apply.
+      // This prevents race conditions and matching slugs against obsolete list data.
+      if (!isReady) {
+        console.log("SEO INITIALIZER: isReady is false after view/country checks, returning early");
+        return;
+      }
+
+      // Ensure that the formats and cities list has been successfully fetched for the selected country and active view
+      // before we try to parse and match the genre/city slugs. Otherwise, we'll try to match slugs in the old country's list
+      // and fail, resetting them to defaults.
+      const targetCountry = (activeView === 'CuratorPicks' || activeView === 'TiktokerPicks') ? 0 : selectedCountry;
+      console.log("SEO INITIALIZER: Checking loadedFiltersKey:", {
+        loadedFiltersKey,
+        targetKey: `${targetCountry}_${activeView}`
+      });
+      if (loadedFiltersKey !== `${targetCountry}_${activeView}`) {
+        isReady = false;
+        console.log("SEO INITIALIZER: loadedFiltersKey mismatch, returning early");
+        return;
       }
 
       if (genreSlug) {
         if (genresList.length > 0) {
           const genreId = getGenreIdFromSlug(genreSlug, genresList);
+          console.log("SEO INITIALIZER: genreSlug =", genreSlug, "-> genreId =", genreId, "selectedGenre =", selectedGenre);
           if (genreId !== undefined) {
             if (genreId !== selectedGenre) {
               setSelectedGenre(genreId);
@@ -172,13 +216,17 @@ function Dashboard() {
             }
           }
         } else {
-          if (countrySlug && countrySlug !== 'global') isReady = false;
+          if (countrySlug && countrySlug !== 'global') {
+            console.log("SEO INITIALIZER: genreSlug exists but genresList is empty");
+            isReady = false;
+          }
         }
       }
 
       if (citySlug) {
         if (citiesList.length > 0) {
           const cityId = getCityIdFromSlug(citySlug, citiesList);
+          console.log("SEO INITIALIZER: citySlug =", citySlug, "-> cityId =", cityId, "selectedCity =", selectedCity);
           if (cityId !== undefined) {
             if (cityId !== selectedCity) {
               setSelectedCity(cityId);
@@ -186,17 +234,23 @@ function Dashboard() {
             }
           }
         } else {
-          if (countrySlug && countrySlug !== 'global') isReady = false;
+          if (countrySlug && countrySlug !== 'global') {
+            console.log("SEO INITIALIZER: citySlug exists but citiesList is empty");
+            isReady = false;
+          }
         }
       }
 
+      console.log("SEO INITIALIZER: Final evaluation -> isReady =", isReady);
       if (isReady) {
+        console.log("SEO INITIALIZER: Sincronización completa! hasInitializedFromUrl = true");
         setHasInitializedFromUrl(true);
       }
     } else {
+      console.log("SEO INITIALIZER: No slugs in URL, setting hasInitializedFromUrl = true");
       setHasInitializedFromUrl(true);
     }
-  }, [viewSlug, countrySlug, genreSlug, citySlug, countriesList, genresList, citiesList, hasInitializedFromUrl, activeView, selectedCountry, selectedGenre, selectedCity]);
+  }, [viewSlug, countrySlug, genreSlug, citySlug, countriesList, genresList, citiesList, hasInitializedFromUrl, activeView, selectedCountry, selectedGenre, selectedCity, loadedFiltersKey]);
 
   // ─── 2. ONE-WAY STATE TO URL SYNC ───
   useEffect(() => {
@@ -361,19 +415,25 @@ function Dashboard() {
         setCitiesList(citiesData);
 
         // Auto-select General (id 0) for genre on non-genre-focused views if we just arrived
-        if (activeView === 'Platforms' || activeView === 'Artists') {
-          const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
-          setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
-        } else if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') {
-          setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts and DigitalHitsForRadio
+        if (hasInitializedFromUrl) {
+          if (activeView === 'Platforms' || activeView === 'Artists') {
+            const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
+            setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
+          } else if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') {
+            setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts and DigitalHitsForRadio
+          }
         }
       } else {
         if (!active) return;
         setGenresList([]);
         setCitiesList([]);
-        if (activeView !== 'HeavyHitters' && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedGenre('0');
+        if (hasInitializedFromUrl) {
+          if (activeView !== 'HeavyHitters' && activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedGenre('0');
+        }
       }
-      if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedCity('0');  // Reset city on country change
+      if (hasInitializedFromUrl) {
+        if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') setSelectedCity('0');  // Reset city on country change
+      }
 
       if (active) {
         setLoadedFiltersKey(`${selectedCountry}_${activeView}`);

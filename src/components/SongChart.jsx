@@ -550,12 +550,12 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
           enrichedSongs.map((song, index) => renderRow(song, index, false))
         ) : (
           <>
-            {enrichedSongs.slice(0, 20).map((song, index) => renderRow(song, index, false))}
+            {enrichedSongs.slice(0, 5).map((song, index) => renderRow(song, index, false))}
 
-            {enrichedSongs.length > 20 && (
+            {enrichedSongs.length > 5 && (
               <div style={{ position: 'relative', marginTop: '1rem' }} className="glass-panel">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem' }}>
-                  {enrichedSongs.slice(20, 23).map((song, index) => renderRow(song, 20 + index, true))}
+                  {enrichedSongs.slice(5, 8).map((song, index) => renderRow(song, 5 + index, true))}
                 </div>
 
                 {/* Overlay CTA */}
@@ -581,7 +581,7 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
                     <Lock size={22} color="white" />
                   </div>
                   <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.3rem', textAlign: 'center', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                    ¿Quieres ver más allá del Top 20?
+                    ¿Quieres ver más allá del Top 5?
                   </h2>
                   <p style={{ color: '#d1d5db', fontSize: '0.9rem', marginBottom: '1.2rem', textAlign: 'center', maxWidth: '350px' }}>
                     Accede a rankings completos y métricas avanzadas
