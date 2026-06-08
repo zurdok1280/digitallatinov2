@@ -4,6 +4,13 @@ import { useAuth } from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { useModalClose } from '../hooks/useModalClose';
 
+// Helper to safely extract a user identifier for logging
+const getUserId = (user) => {
+  if (!user) return null;
+  // Usamos el campo 'userId' proporcionado por el backend, con fallbacks por seguridad.
+  return user.userId ?? user.id ?? user.sub ?? user.email ?? null;
+};
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const formatFollowers = (n) => {
   if (!n || n === 0) return null;
@@ -268,7 +275,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     const isEmpty = !artistObject || (Array.isArray(artistObject) && artistObject.length === 0) || (typeof artistObject === 'object' && Object.keys(artistObject).length === 0) || artistObject.error;
 
     if (isEmpty) {
-      setLogSong({ userid: user.id, spotifyid: spotifyId, isartist: true });
+      setLogSong({ userid: getUserId(user), spotifyid: spotifyId, isartist: true });
       setUnavailableItem(artist);
       onClose();
       return;
@@ -313,7 +320,8 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     const isEmptyContext = !result || result.error || Object.keys(result).length === 0 || (result.artist_name === '' && result.opportunity_score === 0 && !result.main_opportunity);
 
     if (isEmptyContext) {
-      setLogSong({ userid: user.id, spotifyid: spotifyId, isartist: true });
+      const userid = getUserId(user);
+      setLogSong({ userid, spotifyid: spotifyId, isartist: true });
       setUnavailableItem(artist);
       onClose();
       return;
@@ -349,7 +357,8 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
         await new Promise(resolve => setTimeout(resolve, 800)); // Delay artificial de loading
         setCheckingId(null);
       }
-      setLogSong({ userid: user.id, spotifyid: track.spotify_id, isartist: false });
+      const userid = getUserId(user);
+      setLogSong({ userid, spotifyid: track.spotify_id, isartist: false });
       setUnavailableItem(track);
       onClose();
       return;

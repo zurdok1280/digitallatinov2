@@ -678,7 +678,14 @@ export const setLogSong = async ({ userid, spotifyid, isartist }) => {
     
     // 2. Guardar en cache para evitar spam en esta sesión
     sessionStorage.setItem(cacheKey, 'true');
-    return await response.json();
+    
+    // Leer como texto primero porque el backend puede devolver "ok" en lugar de un JSON válido
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return { status: text };
+    }
   } catch (error) {
     console.error("Error en setLogSong:", error);
     return null;
