@@ -21,6 +21,7 @@ import {
   Play,
   Pause,
   Calendar,
+  FileText,
 } from "lucide-react";
 import {
   AreaChart,
@@ -57,6 +58,7 @@ import RecommendationsModal, {
 } from "./RecommendationsModal";
 import ArtistContextModal from "./ArtistContextModal";
 import ArtistContextPhasesModal from "./ArtistContextPhasesModal";
+import DiagnosticsReportModal from "./DiagnosticsReportModal";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 import { useModalClose } from "../hooks/useModalClose";
@@ -324,6 +326,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showTopArtistReport, setShowTopArtistReport] = useState(false);
   const [showPhasesModal, setShowPhasesModal] = useState(false);
+  const [showDiagnosticsReport, setShowDiagnosticsReport] = useState(false);
   const scrollRef = useRef(null);
   const tabsRef = useRef(null);
 
@@ -709,6 +712,37 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                 >
                   {artist.name}
                 </h1>
+                {user?.role === 'ADMIN' && (
+                  <button
+                    onClick={() => setShowDiagnosticsReport(true)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      background: "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)",
+                      color: "white",
+                      border: "none",
+                      padding: "0.5rem 1.2rem",
+                      borderRadius: "20px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      height: "fit-content",
+                      boxShadow: "0 4px 15px rgba(168, 85, 247, 0.4)",
+                      textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05) translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(168, 85, 247, 0.6)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1) translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 15px rgba(168, 85, 247, 0.4)";
+                    }}
+                  >
+                    <FileText size={16} color="white" /> Generar Reporte
+                  </button>
+                )}
                 <button
                   onClick={() => setShowPhasesModal(true)}
                   style={{
@@ -3570,6 +3604,16 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
             spotify_id: artist.spotifyid || artist.id,
           }}
           onClose={() => setShowPhasesModal(false)}
+        />
+      )}
+
+      {/* Diagnostics Report Modal */}
+      {showDiagnosticsReport && (
+        <DiagnosticsReportModal
+          artist={artist}
+          artistData={artistData}
+          citiesGapData={citiesGapData}
+          onClose={() => setShowDiagnosticsReport(false)}
         />
       )}
 

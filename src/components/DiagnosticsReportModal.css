@@ -1,0 +1,384 @@
+/* ─── Overlay ─────────────────────────────────────────────────────── */
+.report-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+/* ─── Close button ────────────────────────────────────────────────── */
+.report-close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  z-index: 3010;
+  transition: all 0.2s ease;
+}
+.report-close-btn:hover { background: rgba(255,255,255,0.2); color: white; transform: scale(1.05); }
+
+/* ─── Outer carousel container (positions arrows + wrapper) ──────── */
+.report-carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* account for arrow buttons on both sides */
+  width: calc(100% - 120px);
+  max-width: 500px;
+}
+
+/* ─── Scale wrapper: shrinks the fixed 390×844 card to fit screen ── */
+.report-scale-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* This element is sized by JS-computed scale via inline style */
+}
+
+/* ─── Card wrapper: ALWAYS 390×844 px – never changes ────────────── */
+.report-card-wrapper {
+  width: 390px;
+  height: 844px;
+  flex-shrink: 0;
+  background-color: #0a0a0e;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  transform-origin: top center;
+}
+
+/* ─── Slides track ────────────────────────────────────────────────── */
+.report-slides-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ─── Individual slide ────────────────────────────────────────────── */
+.report-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  /* Scrollable in interactive mode; overflow:hidden applied during PDF capture */
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: #0a0a0e;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+}
+.report-slide::-webkit-scrollbar { width: 3px; }
+.report-slide::-webkit-scrollbar-track { background: transparent; }
+.report-slide::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.35); border-radius: 2px; }
+
+/* ─── Nav arrows ──────────────────────────────────────────────────── */
+.report-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  z-index: 3010;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+.report-nav-arrow:hover:not(:disabled) { background: rgba(255,255,255,0.2); transform: translateY(-50%) scale(1.1); }
+.report-nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+.report-nav-arrow.prev { left: -54px; }
+.report-nav-arrow.next { right: -54px; }
+@media (max-width: 600px) {
+  .report-carousel-container { width: 100%; }
+  .report-nav-arrow.prev { left: 4px; }
+  .report-nav-arrow.next { right: 4px; }
+}
+
+/* ─── Download button ─────────────────────────────────────────────── */
+.report-download-container {
+  position: absolute;
+  bottom: -58px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: all 0.5s ease;
+  pointer-events: none;
+}
+.report-download-container.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.report-download-btn {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.4rem;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(236,72,153,0.4);
+  transition: all 0.2s ease;
+}
+.report-download-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236,72,153,0.6); }
+.report-download-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* ─── Page indicator ──────────────────────────────────────────────── */
+.report-page-indicator {
+  position: absolute;
+  bottom: -36px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARD CONTENT — compact sizing tuned for 390×844 px
+   ═══════════════════════════════════════════════════════════════════ */
+
+.report-content {
+  padding: 1.4rem 1.3rem 1rem;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+  color: white;
+}
+
+.report-logo-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+.report-logo-top img { height: 18px; }
+
+.report-title-small {
+  font-size: 0.55rem;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.report-title-main {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 0.5rem 0;
+}
+.report-title-main span { color: #a855f7; }
+
+/* ─── Editable fields ─────────────────────────────────────────────── */
+.report-editable { position: relative; transition: all 0.2s; border-radius: 4px; }
+.report-editable:hover { background: rgba(255,255,255,0.05); box-shadow: 0 0 0 2px rgba(255,255,255,0.2); cursor: text; }
+.report-editable-img:hover { cursor: pointer; opacity: 0.8; }
+.report-editable-img::after {
+  content: 'Cambiar imagen';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(0,0,0,0.7); color: white;
+  padding: 0.4rem 0.8rem; border-radius: 20px;
+  font-size: 0.75rem; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+}
+.report-editable-img:hover::after { opacity: 1; }
+
+.report-editable-input {
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.3);
+  color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit;
+  padding: 0; margin: 0; width: 100%; outline: none;
+}
+.report-editable-input:focus { border-color: #a855f7; background: rgba(0,0,0,0.2); }
+
+.report-editable-textarea {
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.3);
+  color: inherit; font-family: inherit; font-size: inherit;
+  padding: 0.4rem; margin: 0; width: 100%;
+  min-height: 60px; resize: vertical; outline: none; border-radius: 6px;
+}
+.report-editable-textarea:focus { border-color: #a855f7; background: rgba(0,0,0,0.2); }
+
+/* ─── Card 1 ──────────────────────────────────────────────────────── */
+.card-1-bg { position: absolute; inset: 0; z-index: 0; }
+.card-1-bg img { width: 100%; height: 100%; object-fit: cover; }
+.card-1-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(10,10,14,0.35) 0%, rgba(10,10,14,0.75) 45%, rgba(10,10,14,1) 100%);
+  z-index: 1;
+}
+.card-1-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  height: 100%; padding-bottom: 2.2rem;
+}
+
+/* ─── Info box ────────────────────────────────────────────────────── */
+.report-info-box {
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; padding: 0.3rem 0.7rem;
+  font-size: 0.7rem; color: rgba(255,255,255,0.75); font-family: monospace;
+}
+
+/* ─── Data grid ───────────────────────────────────────────────────── */
+.report-data-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.5rem; margin-top: 0.8rem;
+}
+.report-data-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; padding: 0.9rem 0.6rem;
+  text-align: center; display: flex;
+  flex-direction: column; align-items: center; justify-content: center;
+}
+.report-data-val { font-size: 1.25rem; font-weight: 800; color: #f472b6; line-height: 1; margin-bottom: 0.2rem; }
+.report-data-label { font-size: 0.6rem; letter-spacing: 1px; color: rgba(255,255,255,0.45); text-transform: uppercase; }
+
+/* ─── Service items ───────────────────────────────────────────────── */
+.report-service-item {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px; padding: 0.7rem 0.8rem;
+  margin-bottom: 0.55rem; display: flex; gap: 0.8rem; align-items: flex-start;
+}
+.report-service-icon {
+  width: 30px; height: 30px;
+  background: rgba(255,255,255,0.05); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.report-service-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.15rem; }
+.report-service-desc { font-size: 0.72rem; color: rgba(255,255,255,0.45); line-height: 1.35; }
+
+/* ─── Gap bar ─────────────────────────────────────────────────────── */
+.report-gap-bar {
+  height: 3px; width: 100%;
+  background: rgba(255,255,255,0.1); border-radius: 2px;
+  margin-top: 0.35rem; position: relative; overflow: hidden;
+}
+.report-gap-fill { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg,#a855f7,#f472b6); border-radius: 2px; }
+
+/* ─── Checklist ───────────────────────────────────────────────────── */
+.report-checklist-item {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px; margin-bottom: 0.35rem;
+}
+.report-check-icon {
+  width: 20px; height: 20px; flex-shrink: 0;
+  background: rgba(168,85,247,0.1); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center; color: #a855f7;
+}
+
+/* ─── Spinner ─────────────────────────────────────────────────────── */
+@keyframes report-spin { to { transform: rotate(360deg); } }
+
+/* ─── contentEditable & PDF Export enhancements ───────────────────── */
+.report-editable-span, .report-editable-div {
+  outline: none;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+/* Add dashed border in edit mode */
+.report-editable-span {
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+  padding-bottom: 1px;
+}
+
+.report-editable-div {
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  padding: 0.5rem;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.report-editable-span:hover, .report-editable-div:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.report-editable-span:focus, .report-editable-div:focus {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: #a855f7;
+  box-shadow: 0 0 0 1px #a855f7;
+}
+
+/* Upload overlay button on Card 1 background */
+.report-upload-btn-overlay {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(10, 10, 14, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.report-upload-btn-overlay:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.03);
+}
+
+/* PDF exporting styles to clean up elements */
+.report-pdf-exporting .report-editable-span,
+.report-pdf-exporting .report-editable-div,
+.report-pdf-exporting .report-editable {
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide upload buttons or helper elements in PDF */
+.report-pdf-exporting .report-upload-btn-overlay {
+  display: none !important;
+}
