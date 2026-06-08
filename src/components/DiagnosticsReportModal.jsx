@@ -248,6 +248,38 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
         if (!dataUrl) continue;
         if (i > 0) pdf.addPage([390, 844]);
         pdf.addImage(dataUrl, "PNG", 0, 0, 390, 844);
+
+        // --- MAP INTERACTIVE LINKS (Only on final slide: i === 8) ---
+        if (i === 8) {
+          const slideRect = slideEl.getBoundingClientRect();
+          const scaleX = 390 / slideRect.width;
+          const scaleY = 844 / slideRect.height;
+
+          // 1. CTA Button Link
+          const btn = slideEl.querySelector('#pdf-cta-btn');
+          if (btn && ctaLink) {
+            let validUrl = ctaLink.trim();
+            if (!/^https?:\/\//i.test(validUrl)) validUrl = 'https://' + validUrl;
+            
+            const btnRect = btn.getBoundingClientRect();
+            const relX = (btnRect.left - slideRect.left) * scaleX;
+            const relY = (btnRect.top - slideRect.top) * scaleY;
+            const relW = btnRect.width * scaleX;
+            const relH = btnRect.height * scaleY;
+            pdf.link(relX, relY, relW, relH, { url: validUrl });
+          }
+
+          // 2. Social Link
+          const social = slideEl.querySelector('#pdf-social-link');
+          if (social) {
+            const socialRect = social.getBoundingClientRect();
+            const relX = (socialRect.left - slideRect.left) * scaleX;
+            const relY = (socialRect.top - slideRect.top) * scaleY;
+            const relW = socialRect.width * scaleX;
+            const relH = socialRect.height * scaleY;
+            pdf.link(relX, relY, relW, relH, { url: 'https://www.instagram.com/digitallatino/' });
+          }
+        }
       }
 
       pdf.save(`Propuesta_ExpansionDigital_${artist?.name || "Artista"}.pdf`);
@@ -640,7 +672,7 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
                         Digital Strategy &amp; Music Intelligence
                       </div>
                       <div className="report-editable" style={{ display: "inline-block", position: "relative" }}>
-                        <a href={ctaLink} target="_blank" rel="noopener noreferrer" className="report-download-btn" style={{ textDecoration: "none", padding: "0.8rem 1.6rem", fontSize: "1rem" }}>
+                        <a id="pdf-cta-btn" href={ctaLink} target="_blank" rel="noopener noreferrer" className="report-download-btn" style={{ textDecoration: "none", padding: "0.8rem 1.6rem", fontSize: "1rem" }}>
                           Comencemos &rarr;
                         </a>
                         {!isGeneratingPDF && (
@@ -649,9 +681,9 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
                           </div>
                         )}
                       </div>
-                      <div style={{ marginTop: "2.5rem", fontSize: "0.75rem", letterSpacing: "2px", color: "rgba(255,255,255,0.3)" }}>
+                      <a id="pdf-social-link" href="https://www.instagram.com/digitallatino/" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: "2.5rem", fontSize: "0.75rem", letterSpacing: "2px", color: "rgba(255,255,255,0.3)", textDecoration: "none" }}>
                         @digitallatino
-                      </div>
+                      </a>
                     </div>
                   </div>
 
