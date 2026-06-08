@@ -26,12 +26,14 @@ const CitiesGapMap = ({ data }) => {
   };
 
   // Dynamic radius based on gap/score
-  const maxScore = Math.max(...sortedData.map(d => d.opportunity_score || 0));
-  const minScore = Math.min(...sortedData.map(d => d.opportunity_score || 0));
+  const maxScore = Math.max(...sortedData.map(d => d.opportunity_score ?? 0));
+  const minScore = Math.min(...sortedData.map(d => d.opportunity_score ?? 0));
 
   const calculateRadius = (val) => {
-    if (maxScore === minScore || !val) return 10;
-    return 6 + Math.sqrt((val - minScore) / (maxScore - minScore)) * 18;
+    const numericVal = Number(val);
+    if (maxScore === minScore || val === undefined || val === null || isNaN(numericVal)) return 10;
+    const ratio = Math.max(0, (numericVal - minScore) / (maxScore - minScore));
+    return 6 + Math.sqrt(ratio) * 18;
   };
 
   return (
@@ -76,7 +78,7 @@ const CitiesGapMap = ({ data }) => {
             }
           </Geographies>
 
-          {[...sortedData].reverse().map((city, index) => {
+          {sortedData.map((city, index) => {
             if (!city.city_lng || !city.city_lat) return null;
             const size = calculateRadius(city.opportunity_score);
             const dotColor = getMarkerColor(city);

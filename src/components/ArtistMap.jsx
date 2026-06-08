@@ -5,7 +5,13 @@ const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 // Extracted outside the component so it's a stable reference (no re-creation on every render)
 const clusterData = (dataset, distanceThreshold = 1.5) => {
-  const sorted = [...dataset].sort((a, b) => b.current_listeners - a.current_listeners);
+  // Sanitize input dataset to ensure all objects have numeric current_listeners values
+  const sanitized = dataset.map(item => ({
+    ...item,
+    current_listeners: Number(item.current_listeners ?? 0)
+  }));
+
+  const sorted = sanitized.sort((a, b) => b.current_listeners - a.current_listeners);
   const clusters = [];
   for (const city of sorted) {
     let merged = false;
@@ -28,6 +34,7 @@ const clusterData = (dataset, distanceThreshold = 1.5) => {
 const formatNumber = (num) => {
   if (!num) return '0';
   const n = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(n)) return '0';
   if (n >= 1000000000) return (n / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
@@ -51,8 +58,10 @@ const ArtistMap = ({ data }) => {
 
   // Dynamic radius using area density (Math.sqrt) to prevent massive blobs from swallowing the screen
   const calculateRadius = (val) => {
-    if (maxListeners === minListeners || maxListeners === 0) return 10;
-    return 6 + Math.sqrt((val - minListeners) / (maxListeners - minListeners)) * 24;
+    const numericVal = Number(val ?? 0);
+    if (maxListeners === minListeners || maxListeners === 0 || isNaN(numericVal)) return 10;
+    const ratio = Math.max(0, (numericVal - minListeners) / (maxListeners - minListeners));
+    return 6 + Math.sqrt(ratio) * 24;
   };
 
   const mapColors = [
