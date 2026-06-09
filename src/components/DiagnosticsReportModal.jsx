@@ -18,6 +18,10 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
 
   // Editable states
   const [coverImage, setCoverImage] = useState(artist?.imageUrl || "");
+  const [bgPos, setBgPos] = useState({ x: 0, y: 0 }); // Posición en píxeles
+  const [bgZoom, setBgZoom] = useState(100);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [daysText, setDaysText] = useState("45 días");
   const [card2Note, setCard2Note] = useState("En CDMX, artistas similares promedian oyentes superiores. La audiencia ya consume el género — solo falta llegarle.");
   const [card3Note, setCard3Note] = useState("Score = Gap × Afinidad de género. Ciudades donde tu audiencia potencial es mayor, con menor competencia directa.");
@@ -181,6 +185,32 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
     const reader = new FileReader();
     reader.onload = (ev) => setCoverImage(ev.target.result);
     reader.readAsDataURL(file);
+  };
+
+  const handlePointerDown = (e) => {
+    if (isGeneratingPDF) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    e.target.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    
+    // Mover 1:1 en píxeles
+    setBgPos(prev => ({
+      x: prev.x + dx,
+      y: prev.y + dy
+    }));
+    
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handlePointerUp = (e) => {
+    setIsDragging(false);
+    e.target.releasePointerCapture(e.pointerId);
   };
 
   const handleDownloadPDF = async () => {
@@ -365,16 +395,46 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
                   {/* ── Slide 1: Portada ──────────────────────────────────── */}
                   <div className="report-slide" ref={el => { cardRefs.current[0] = el; }}>
                     <div className="card-1-bg">
-                      <img src={coverImageBase64 || coverImage} alt="Cover" />
-                      {!isGeneratingPDF && (
+                      <img 
+                        src={coverImageBase64 || coverImage} 
+                        alt="Cover" 
+                        style={{ 
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain', // Mostrar completa sin recortes por defecto
+                          transform: `translate(${bgPos.x}px, ${bgPos.y}px) scale(${bgZoom / 100})`,
+                          transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                          pointerEvents: 'none' // Prevent default drag behavior on the image
+                        }} 
+                      />
+                    </div>
+                    <div 
+                      className="card-1-gradient" 
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
+                      style={{ cursor: isGeneratingPDF ? 'default' : (isDragging ? 'grabbing' : 'grab'), zIndex: 1 }}
+                    />
+                    {!isGeneratingPDF && (
+                      <div className="report-upload-container">
                         <label className="report-upload-btn-overlay">
                           <Download size={14} style={{ transform: "rotate(180deg)" }} />
                           Cambiar Fondo
                           <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageUpload} />
                         </label>
-                      )}
-                    </div>
-                    <div className="card-1-gradient" />
+                        <div className="report-slider-overlay">
+                          <span style={{ fontSize: '0.65rem', marginRight: '6px', color: 'rgba(255,255,255,0.8)' }}>Zoom</span>
+                          <input 
+                            type="range" 
+                            min="10" max="500" 
+                            value={bgZoom} 
+                            onChange={(e) => setBgZoom(e.target.value)} 
+                            title="Ajustar zoom"
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="report-content card-1-content">
                       <div className="report-logo-top" style={{ position: "absolute", top: "1.8rem", left: "1.5rem" }}>
                         <img src={logoBase64 || "/logo.png"} alt="DigitalLatino" />
@@ -672,8 +732,8 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
                         Digital Strategy &amp; Music Intelligence
                       </div>
                       <div className="report-editable" style={{ display: "inline-block", position: "relative" }}>
-                        <a id="pdf-cta-btn" href={ctaLink} target="_blank" rel="noopener noreferrer" className="report-download-btn" style={{ textDecoration: "none", padding: "0.8rem 1.6rem", fontSize: "1rem" }}>
-                          Comencemos &rarr;
+                        <a id="pdf-cta-btn" href={ctaLink} target="_blank" rel="noopener noreferrer" className="report-download-btn" style={{ textDecoration: "none", padding: "0.8rem 2rem", fontSize: "1rem" }}>
+                          Comencemos 
                         </a>
                         {!isGeneratingPDF && (
                           <div style={{ position: "absolute", top: "-28px", left: "50%", transform: "translateX(-50%)", width: "200px" }}>

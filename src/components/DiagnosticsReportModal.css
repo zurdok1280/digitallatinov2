@@ -245,6 +245,10 @@
   position: relative; z-index: 2;
   display: flex; flex-direction: column; justify-content: flex-end;
   height: 100%; padding-bottom: 2.2rem;
+  pointer-events: none; /* Allow drag events to pass through empty space */
+}
+.card-1-content > * {
+  pointer-events: auto; /* Re-enable clicks on actual content elements */
 }
 
 /* ─── Info box ────────────────────────────────────────────────────── */
@@ -341,10 +345,18 @@
 }
 
 /* Upload overlay button on Card 1 background */
-.report-upload-btn-overlay {
+.report-upload-container {
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.report-upload-btn-overlay {
   background: rgba(10, 10, 14, 0.6);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -356,7 +368,6 @@
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
-  z-index: 10;
   transition: all 0.2s ease;
   user-select: none;
 }
@@ -364,6 +375,22 @@
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
   transform: scale(1.03);
+}
+
+.report-slider-overlay {
+  background: rgba(10, 10, 14, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  display: flex;
+  align-items: center;
+}
+
+.report-slider-overlay input[type=range] {
+  width: 180px; /* Barra más larga para mayor accesibilidad */
+  accent-color: #a855f7;
+  cursor: pointer;
 }
 
 /* PDF exporting styles to clean up elements */
