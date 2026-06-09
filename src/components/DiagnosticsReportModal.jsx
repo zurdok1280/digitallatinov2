@@ -160,6 +160,7 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
   const formatNum = (num) => {
     if (!num) return "0";
     const n = Number(num);
+    if (n >= 1000000000) return (n / 1000000000).toFixed(1) + "B";
     if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
     if (n >= 1000) return (n / 1000).toFixed(1) + "K";
     return Math.round(n).toLocaleString();
