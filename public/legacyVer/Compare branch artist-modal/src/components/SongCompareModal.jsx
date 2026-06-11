@@ -8,12 +8,12 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
   const [vsData, setVsData] = useState([]);
   const [playlistsData, setPlaylistsData] = useState([]);
   const [tiktoksData, setTiktoksData] = useState([]);
-  
+
   // Sorting and Filtering states
   const [playlistSort, setPlaylistSort] = useState({ key: 'followers_count', direction: 'desc' });
   const [playlistFilter, setPlaylistFilter] = useState('all');
   const [tiktokSort, setTiktokSort] = useState({ key: 'tiktok_user_followers', direction: 'desc' });
-  
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
       setTimeout(() => setMounted(false), 300);
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -77,7 +77,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
     const s2Total = vsData.reduce((acc, item) => acc + (item.second_streams || 0), 0);
     const s1Wins = vsData.filter(item => item.first_streams > item.second_streams).length;
     const s2Wins = vsData.filter(item => item.second_streams > item.first_streams).length;
-    
+
     return {
       s1Total,
       s1Wins,
@@ -86,7 +86,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
       diff: s1Total - s2Total
     };
   }, [vsData]);
-  
+
   const playlistTypes = useMemo(() => {
     const types = new Set(playlistsData.map(p => p.playlist_type).filter(Boolean));
     return ['all', ...Array.from(types)];
@@ -123,7 +123,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
               <BarChart3 size={24} />
             </div>
             <div>
-              <h3>Comparación de Track</h3>
+              <h3>Comparación de Track por Streams</h3>
               <p>Analizando métricas cruzadas en tiempo real</p>
             </div>
           </div>
@@ -263,7 +263,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                       </select>
                     </div>
                     <div className="control-group">
-                      <button 
+                      <button
                         className={`sort-btn ${playlistSort.direction === 'asc' ? 'asc' : 'desc'}`}
                         onClick={() => setPlaylistSort(prev => ({ ...prev, direction: prev.direction === 'desc' ? 'asc' : 'desc' }))}
                       >
@@ -284,23 +284,23 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                     </thead>
                     <tbody>
                       {filteredSortedPlaylists.map((row, idx) => (
-                         <tr key={idx} style={{ animationDelay: `${idx * 0.02}s` }} className="animate-slide-up">
-                            <td>
-                              <div className="playlist-cell">
-                                <p className="p-name">{row.playlist_name}</p>
-                                <p className="p-owner">{row.owner_name}</p>
-                              </div>
-                            </td>
-                            <td>{formatNum(row.followers_count)}</td>
-                            <td className="bold song1-text">#{row.first_current_position || '-'}</td>
-                            <td className="bold song2-text">#{row.second_current_position || '-'}</td>
-                            <td><span className="type-badge">{row.playlist_type}</span></td>
-                            <td>
-                              <a href={row.external_url} target="_blank" rel="noreferrer" className="link-icon">
-                                <ExternalLink size={14} />
-                              </a>
-                            </td>
-                         </tr>
+                        <tr key={idx} style={{ animationDelay: `${idx * 0.02}s` }} className="animate-slide-up">
+                          <td>
+                            <div className="playlist-cell">
+                              <p className="p-name">{row.playlist_name}</p>
+                              <p className="p-owner">{row.owner_name}</p>
+                            </div>
+                          </td>
+                          <td>{formatNum(row.followers_count)}</td>
+                          <td className="bold song1-text">#{row.first_current_position || '-'}</td>
+                          <td className="bold song2-text">#{row.second_current_position || '-'}</td>
+                          <td><span className="type-badge">{row.playlist_type}</span></td>
+                          <td>
+                            <a href={row.external_url} target="_blank" rel="noreferrer" className="link-icon">
+                              <ExternalLink size={14} />
+                            </a>
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
@@ -311,7 +311,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                 <div className="tab-pane animate-fade-in">
                   <div className="tab-controls">
                     <div className="control-group">
-                      <button 
+                      <button
                         className={`sort-btn ${tiktokSort.direction === 'asc' ? 'asc' : 'desc'}`}
                         onClick={() => setTiktokSort(prev => ({ ...prev, direction: prev.direction === 'desc' ? 'asc' : 'desc' }))}
                       >
@@ -331,24 +331,24 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                     </thead>
                     <tbody>
                       {sortedTiktoks.map((row, idx) => (
-                         <tr key={idx} style={{ animationDelay: `${idx * 0.02}s` }} className="animate-slide-up">
-                            <td>
-                              <div className="user-cell">
-                                <p className="u-name">{row.user_name}</p>
-                                <p className="u-handle">@{row.user_handle}</p>
-                              </div>
-                            </td>
-                            <td className="bold">{formatNum(row.tiktok_user_followers)}</td>
-                            <td>
-                              <span className="song1-text">{row.first_no_videos}</span> / <span className="song2-text">{row.second_no_videos}</span>
-                            </td>
-                            <td>
-                              <span className="song1-text">{formatNum(row.first_views_total)}</span> / <span className="song2-text">{formatNum(row.second_views_total)}</span>
-                            </td>
-                            <td>
-                              <span className="song1-text">{formatNum(row.first_likes_total)}</span> / <span className="song2-text">{formatNum(row.second_likes_total)}</span>
-                            </td>
-                         </tr>
+                        <tr key={idx} style={{ animationDelay: `${idx * 0.02}s` }} className="animate-slide-up">
+                          <td>
+                            <div className="user-cell">
+                              <p className="u-name">{row.user_name}</p>
+                              <p className="u-handle">@{row.user_handle}</p>
+                            </div>
+                          </td>
+                          <td className="bold">{formatNum(row.tiktok_user_followers)}</td>
+                          <td>
+                            <span className="song1-text">{row.first_no_videos}</span> / <span className="song2-text">{row.second_no_videos}</span>
+                          </td>
+                          <td>
+                            <span className="song1-text">{formatNum(row.first_views_total)}</span> / <span className="song2-text">{formatNum(row.second_views_total)}</span>
+                          </td>
+                          <td>
+                            <span className="song1-text">{formatNum(row.first_likes_total)}</span> / <span className="song2-text">{formatNum(row.second_likes_total)}</span>
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>

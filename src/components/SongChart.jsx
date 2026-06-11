@@ -1,8 +1,8 @@
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
-import { useNavigate } from 'react-router-dom';
-import { useMemo, useState, useEffect, useRef } from 'react';
+
+import { useMemo, useState, useEffect, useRef, useId } from 'react';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -39,7 +39,9 @@ const Sparkline = ({ song, color }) => {
   useEffect(() => {
     let isMounted = true;
     if (song?.cs_song && isVisible && !hasFetched) {
-      setIsLoading(true);
+      Promise.resolve().then(() => {
+        if (isMounted) setIsLoading(true);
+      });
       fetch(`https://backend.digital-latino.com/api/report/getSongHistoricalStreamsWeek/${song.cs_song}/0/0`)
         .then(res => res.json())
         .then(json => {
@@ -78,7 +80,8 @@ const Sparkline = ({ song, color }) => {
 
   const pointsString = points.map(p => `${p.x},${p.y}`).join(' ');
   const fillPoints = `${pointsString} ${width},${height} 0,${height}`;
-  const gradientId = `spark-${color.replace('#', '')}-${song?.cs_song || Math.random().toString(36).substr(2, 5)}`;
+  const reactId = useId();
+  const gradientId = `spark-${color.replace('#', '')}-${song?.cs_song || reactId.replace(/:/g, '')}`;
   const colWidth = width / displayData.length;
 
   return (
@@ -176,7 +179,11 @@ const Sparkline = ({ song, color }) => {
 const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
   const { token, user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
-  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [songs]);
 
   // Generate deterministic "historical" trend data for demonstration purposes
   const enrichedSongs = useMemo(() => {
@@ -192,6 +199,17 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
       return { ...s, trend };
     });
   }, [songs]);
+
+  const filteredSongs = useMemo(() => {
+    if (!searchQuery.trim()) return enrichedSongs;
+    const query = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return enrichedSongs.filter(song => {
+      const songName = (song.song || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const artistName = (song.artists || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const labelName = (song.label || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return songName.includes(query) || artistName.includes(query) || labelName.includes(query);
+    });
+  }, [enrichedSongs, searchQuery]);
 
   if (isLoading) {
     return (
@@ -246,6 +264,11 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
             <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
               <h3 className="chart-title">{song.song}</h3>
               <p className="chart-artist">{song.artists}</p>
+              {song.label && (
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {song.label}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -418,6 +441,11 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
             >
               {song.artists}
             </p>
+            {song.label && (
+              <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+                {song.label}
+              </p>
+            )}
           </div>
         </div>
 
@@ -544,77 +572,234 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
         .chart-row:hover .compare-checkbox:not(.checked) {
           border-color: rgba(255, 255, 255, 0.5);
         }
+
+        /* Search Input Styles */
+        .song-search-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 1.25rem;
+          width: 100%;
+        }
+        
+        .song-search-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          flex: 1;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--glass-border);
+          border-radius: 12px;
+          padding: 8px 14px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .song-search-wrapper:focus-within {
+          border-color: var(--accent-primary);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 0 3px rgba(138, 136, 255, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .song-search-wrapper:hover:not(:focus-within) {
+          border-color: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .search-icon {
+          color: var(--accent-primary);
+          margin-right: 10px;
+          opacity: 0.8;
+          flex-shrink: 0;
+          transition: transform 0.3s ease;
+        }
+        
+        .song-search-wrapper:focus-within .search-icon {
+          transform: scale(1.1);
+          opacity: 1;
+        }
+        
+        .song-search-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: #fff;
+          font-size: 0.9rem;
+          font-family: inherit;
+          padding: 0;
+          width: 100%;
+        }
+        
+        .song-search-input::placeholder {
+          color: var(--text-muted);
+          opacity: 0.7;
+        }
+        
+        .song-search-clear {
+          background: rgba(255, 255, 255, 0.05);
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4px;
+          border-radius: 50%;
+          margin-left: 8px;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+        
+        .song-search-clear:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: #fff;
+          transform: scale(1.05);
+        }
+        
+        .search-results-badge {
+          font-size: 0.8rem;
+          color: var(--text-muted);
+          background: rgba(138, 136, 255, 0.1);
+          border: 1px solid rgba(138, 136, 255, 0.2);
+          padding: 6px 12px;
+          border-radius: 20px;
+          white-space: nowrap;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          animation: searchBadgeFadeIn 0.2s ease-out;
+        }
+        
+        @keyframes searchBadgeFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
       `}</style>
+
+      {/* Buscador de canciones */}
+      <div className="song-search-container">
+        <div className="song-search-wrapper">
+          <Search size={16} className="search-icon" />
+          <input
+            type="text"
+            className="song-search-input"
+            placeholder="Buscar por canción, artista o disquera..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              className="song-search-clear"
+              onClick={() => setSearchQuery('')}
+              title="Limpiar búsqueda"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        {searchQuery.trim() && (
+          <div className="search-results-badge">
+            {filteredSongs.length} {filteredSongs.length === 1 ? 'resultado' : 'resultados'}
+          </div>
+        )}
+      </div>
+
       <div className="grid-base" style={{ gap: '0.5rem' }}>
-        {token ? (
-          enrichedSongs.map((song, index) => renderRow(song, index, false))
+        {filteredSongs.length === 0 ? (
+          <div className="flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+              No se encontraron canciones que coincidan con "{searchQuery}"
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--glass-border)',
+                padding: '0.5rem 1.2rem',
+                borderRadius: '20px',
+                color: 'white',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+            >
+              Limpiar búsqueda
+            </button>
+          </div>
         ) : (
-          <>
-            {enrichedSongs.slice(0, 5).map((song, index) => renderRow(song, index, false))}
+          token ? (
+            filteredSongs.map((song, index) => renderRow(song, index, false))
+          ) : (
+            <>
+              {filteredSongs.slice(0, 5).map((song, index) => renderRow(song, index, false))}
 
-            {enrichedSongs.length > 5 && (
-              <div style={{ position: 'relative', marginTop: '1rem' }} className="glass-panel">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem' }}>
-                  {enrichedSongs.slice(5, 8).map((song, index) => renderRow(song, 5 + index, true))}
-                </div>
-
-                {/* Overlay CTA */}
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(15,17,26,0) 0%, rgba(15,17,26,0.6) 60%, rgba(15,17,26,0.9) 100%)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10,
-                  borderRadius: 'inherit',
-                  padding: '1.5rem'
-                }}>
-                  <div style={{
-                    background: 'linear-gradient(135deg, #ff3366, #c193ff)',
-                    padding: '0.8rem',
-                    borderRadius: '50%',
-                    marginBottom: '0.8rem',
-                    boxShadow: '0 0 15px rgba(255, 51, 102, 0.4)'
-                  }}>
-                    <Lock size={22} color="white" />
+              {filteredSongs.length > 5 && (
+                <div style={{ position: 'relative', marginTop: '1rem' }} className="glass-panel">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem' }}>
+                    {filteredSongs.slice(5, 8).map((song, index) => renderRow(song, 5 + index, true))}
                   </div>
-                  <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.3rem', textAlign: 'center', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                    ¿Quieres ver más allá del Top 5?
-                  </h2>
-                  <p style={{ color: '#d1d5db', fontSize: '0.9rem', marginBottom: '1.2rem', textAlign: 'center', maxWidth: '350px' }}>
-                    Accede a rankings completos y métricas avanzadas
-                  </p>
-                  <button
-                    onClick={onLoginClick}
-                    style={{
+
+                  {/* Overlay CTA */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to bottom, rgba(15,17,26,0) 0%, rgba(15,17,26,0.6) 60%, rgba(15,17,26,0.9) 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    borderRadius: 'inherit',
+                    padding: '1.5rem'
+                  }}>
+                    <div style={{
                       background: 'linear-gradient(135deg, #ff3366, #c193ff)',
-                      border: 'none',
-                      padding: '0.6rem 1.8rem',
-                      borderRadius: '30px',
-                      color: 'white',
-                      fontWeight: '700',
-                      fontSize: '0.95rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 15px rgba(255, 51, 102, 0.3)',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 51, 102, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.3)';
-                    }}
-                  >
-                    Ver ranking completo
-                  </button>
+                      padding: '0.8rem',
+                      borderRadius: '50%',
+                      marginBottom: '0.8rem',
+                      boxShadow: '0 0 15px rgba(255, 51, 102, 0.4)'
+                    }}>
+                      <Lock size={22} color="white" />
+                    </div>
+                    <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.3rem', textAlign: 'center', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                      ¿Quieres ver más allá del Top 5?
+                    </h2>
+                    <p style={{ color: '#d1d5db', fontSize: '0.9rem', marginBottom: '1.2rem', textAlign: 'center', maxWidth: '350px' }}>
+                      Accede a rankings completos y métricas avanzadas
+                    </p>
+                    <button
+                      onClick={onLoginClick}
+                      style={{
+                        background: 'linear-gradient(135deg, #ff3366, #c193ff)',
+                        border: 'none',
+                        padding: '0.6rem 1.8rem',
+                        borderRadius: '30px',
+                        color: 'white',
+                        fontWeight: '700',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(255, 51, 102, 0.3)',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 51, 102, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.3)';
+                      }}
+                    >
+                      Ver ranking completo
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
+              )}
+            </>
+          )
         )}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview';
 import { useNavigate } from 'react-router-dom';
 import { useMemo, useState, useEffect, useRef } from 'react';
+import { digitalLatinoApi } from '../../../api';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -40,10 +41,10 @@ const Sparkline = ({ song, color }) => {
     let isMounted = true;
     if (song?.cs_song && isVisible && !hasFetched) {
       setIsLoading(true);
-      fetch(`https://backend.digital-latino.com/api/report/getSongHistoricalStreams/${song.cs_song}`)
-        .then(res => res.json())
-        .then(json => {
-          if (isMounted) {
+      digitalLatinoApi.getSongHistoricalStreams(song.cs_song)
+        .then(response => {
+          if (isMounted && response && response.success && response.data) {
+            const json = response.data;
             setHasFetched(true);
             if (Array.isArray(json) && json.length > 0) {
               const sorted = [...json].sort((a, b) => a.date.localeCompare(b.date));
@@ -247,6 +248,11 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
             <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
               <h3 className="chart-title">{song.song}</h3>
               <p className="chart-artist">{song.artists}</p>
+              {song.label && (
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {song.label}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -411,6 +417,11 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
             >
               {song.artists}
             </p>
+            {song.label && (
+              <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+                {song.label}
+              </p>
+            )}
           </div>
         </div>
 

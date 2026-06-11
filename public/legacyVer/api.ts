@@ -846,6 +846,9 @@ export const digitalLatinoApi = {
   // Obtener información básica de la canción por cs_song
   getSongById: (csSong: number): Promise<ApiResponse<SongBasicInfo>> =>
     api.get<SongBasicInfo>(`report/getSongbyId/${csSong}`),
+  // Obtener streams históricos de una canción por cs_song
+  getSongHistoricalStreams: (csSong: number): Promise<ApiResponse<any>> =>
+    api.get<any>(`report/getSongHistoricalStreams/${csSong}`),
   // Obtener información básica de la canción por cs_song y countryId
   getRankSongByIdCountry: (
     csSong: number,
