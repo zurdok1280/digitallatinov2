@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
+import { getCountries, getCitiesGapData } from "../services/api";
 import "./DiagnosticsReportModal.css";
 
 const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) => {
@@ -29,6 +30,13 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
   const [price, setPrice] = useState("$5,000");
   const [card8Req, setCard8Req] = useState("Acceso como agencia a Spotify for Artists para optimizar perfil y hacer pitch editorial.");
   const [ctaLink, setCtaLink] = useState("https://digital-latino.com");
+
+  // Country Picker states
+  const [selectedCountries, setSelectedCountries] = useState([]);
+  const [countriesList, setCountriesList] = useState([]);
+  const [allCitiesData, setAllCitiesData] = useState(citiesGapData || []);
+  const [isCitiesLoading, setIsCitiesLoading] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   // Base64 image states to prevent html2canvas CORS hangs
   const [logoBase64, setLogoBase64] = useState("");
@@ -156,6 +164,55 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
     window.addEventListener("resize", compute);
     return () => window.removeEventListener("resize", compute);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const fetchCountries = async () => {
+      const data = await getCountries();
+      if (active) setCountriesList(data);
+    };
+    fetchCountries();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (selectedCountries.length === 0) {
+      setAllCitiesData(citiesGapData || []);
+      return;
+    }
+    
+    const fetchAll = async () => {
+      setIsCitiesLoading(true);
+      try {
+        const results = await Promise.all(
+          selectedCountries.map(countryId => getCitiesGapData(countryId, artist?.id))
+        );
+        if (active) {
+          const combined = results.flat();
+          setAllCitiesData(combined);
+        }
+      } catch (error) {
+        console.error("Error fetching cities for selected countries", error);
+      } finally {
+        if (active) setIsCitiesLoading(false);
+      }
+    };
+    
+    fetchAll();
+    return () => { active = false; };
+  }, [selectedCountries, artist?.id, citiesGapData]);
+
+  const toggleCountry = (countryId) => {
+    setSelectedCountries(prev => {
+      if (prev.includes(countryId)) {
+        return prev.filter(id => id !== countryId);
+      } else {
+        if (prev.length >= 10) return prev; // Max 10 countries
+        return [...prev, countryId];
+      }
+    });
+  };
 
   const formatNum = (num) => {
     if (!num) return "0";
@@ -325,8 +382,8 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
     }
   };
 
-  const topCities = citiesGapData
-    ? [...citiesGapData].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 5)
+  const topCities = allCitiesData
+    ? [...allCitiesData].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 5)
     : [];
 
   // ── Styles ────────────────────────────────────────────────────────────────
@@ -509,8 +566,38 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
                       <div className="report-logo-top"><img src={logoBase64 || "/logo.png"} alt="DL" /></div>
                       <div className="report-title-small">OPORTUNIDAD</div>
                       <h2 className="report-title-main" style={{ fontSize: "1.3rem" }}>La brecha que vamos a <span>cerrar</span>.</h2>
+                      
+                      {!isGeneratingPDF && (
+                        <div className="report-country-picker-container">
+                          <button 
+                            className="report-country-picker-btn"
+                            onClick={() => setShowCountryPicker(!showCountryPicker)}
+                          >
+                             Países ({selectedCountries.length || 'Todos'})
+                          </button>
+                          
+                          {showCountryPicker && (
+                            <div className="report-country-picker-dropdown">
+                              {countriesList.map(country => (
+                                <label key={country.id}>
+                                  <input 
+                                    type="checkbox"
+                                    checked={selectedCountries.includes(country.id)}
+                                    onChange={() => toggleCountry(country.id)}
+                                    disabled={!selectedCountries.includes(country.id) && selectedCountries.length >= 10}
+                                  />
+                                  {country.country_name}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div style={{ marginTop: "0.8rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        {topCities.map((city, idx) => (
+                        {isCitiesLoading ? (
+                          <div style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: "1rem", fontSize: "0.85rem" }}>Cargando datos...</div>
+                        ) : topCities.map((city, idx) => (
                           <div key={idx} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px", padding: "0.7rem" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
                               <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{city.city_name}</div>
@@ -525,7 +612,7 @@ const DiagnosticsReportModal = ({ artist, artistData, citiesGapData, onClose }) 
                             </div>
                           </div>
                         ))}
-                        {topCities.length === 0 && (
+                        {!isCitiesLoading && topCities.length === 0 && (
                           <div style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: "1rem", fontSize: "0.85rem" }}>Sin datos de ciudades.</div>
                         )}
                       </div>
