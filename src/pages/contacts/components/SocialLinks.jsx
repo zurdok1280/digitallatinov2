@@ -1,10 +1,10 @@
 import React from "react";
 
-const PLATFORM_LABELS = {
-  instagram: "IG",
-  facebook: "FB",
-  tiktok: "TK",
-  youtube: "YT",
+const PLATFORM_ICONS = {
+  instagram: "/logos/instagram-icon.svg",
+  facebook: "/logos/facebook-icon.svg",
+  tiktok: "/logos/tiktok-icon.png",
+  youtube: "/logos/youtube-icon.svg",
 };
 
 const SocialLinks = ({ contact, variant = "icons" }) => {
@@ -26,8 +26,9 @@ const SocialLinks = ({ contact, variant = "icons" }) => {
               className={`social-link-icon social-link-icon--${platform}`}
               title={social.handle || platform}
               onClick={(e) => e.stopPropagation()}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              {PLATFORM_LABELS[platform]}
+              <img src={PLATFORM_ICONS[platform]} alt={platform} style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
             </a>
           );
         })}
@@ -42,8 +43,9 @@ const SocialLinks = ({ contact, variant = "icons" }) => {
         const social = contact[platform];
         if (!social?.url && !social?.handle) return null;
         return (
-          <div key={platform} className="contacts-drawer-field">
-            <span className="contacts-drawer-field-label" style={{ textTransform: "capitalize" }}>
+          <div key={platform} className="contacts-drawer-field" style={{ alignItems: "center" }}>
+            <span className="contacts-drawer-field-label" style={{ textTransform: "capitalize", display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <img src={PLATFORM_ICONS[platform]} alt={platform} style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
               {platform}
             </span>
             <div className="contacts-drawer-field-value">
