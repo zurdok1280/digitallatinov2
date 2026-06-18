@@ -32,7 +32,7 @@ const Header = ({
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef(null);
   const location = useLocation();
-  const showFilters = !['/my-artist', '/admin', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].some(
+  const showFilters = !['/my-artist', '/admin', '/contactos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].some(
     path => location.pathname === path || location.pathname.startsWith(path + '/')
   );
 

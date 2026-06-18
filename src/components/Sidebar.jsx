@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings } from 'lucide-react';
+import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings, Contact } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -75,13 +75,22 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) =
     { icon: Camera,       label: 'Curator Picks',           active: activeView === 'CuratorPicks',                                     onClick: () => handleItemClick('CuratorPicks'),        color: ITEM_COLORS.CuratorPicks },
     { icon: Wand2,        label: 'Tiktoker Picks',          active: activeView === 'TiktokerPicks',                                    onClick: () => handleItemClick('TiktokerPicks'),       color: ITEM_COLORS.TiktokerPicks },
     { icon: Radio,        label: 'Digital Hits for Radio',  active: activeView === 'DigitalHitsForRadio',                              onClick: () => handleItemClick('DigitalHitsForRadio'), color: ITEM_COLORS.DigitalHitsForRadio },
-    ...(user?.role === 'ADMIN' ? [{
-      icon: Settings,
-      label: 'Panel Admin',
-      active: location.pathname === '/admin',
-      onClick: () => handleLinkClick('/admin'),
-      color: '#94a3b8',
-    }] : []),
+    ...(user?.role === 'ADMIN' ? [
+      {
+        icon: Settings,
+        label: 'Panel Admin',
+        active: location.pathname === '/admin',
+        onClick: () => handleLinkClick('/admin'),
+        color: '#94a3b8',
+      },
+      {
+        icon: Contact,
+        label: 'Contactos',
+        active: location.pathname === '/contactos',
+        onClick: () => handleLinkClick('/contactos'),
+        color: '#38bdf8',
+      }
+    ] : []),
   ];
 
   return (

@@ -62,6 +62,7 @@ import ResetPassword from './pages/ResetPassword';
 import DataUnavailableModal from './components/DataUnavailableModal';
 
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const ContactsPage = lazy(() => import("./pages/contacts/ContactsPage"));
 
 const RequireAdmin = ({ children }) => {
   const { user } = useAuth();
@@ -82,6 +83,7 @@ const withLazy = (Component) => (props) => (
 );
 
 const AdminPanelLazy = withLazy(AdminPanel);
+const ContactsPageLazy = withLazy(ContactsPage);
 
 
 function Dashboard() {
@@ -91,7 +93,7 @@ function Dashboard() {
   // Parse dynamic parameters manually from location.pathname because useParams() returns empty {}
   // when called in a parent component rendered outside the nested <Routes> block.
   const pathParts = location.pathname.split('/').filter(Boolean);
-  const isDashboardRoute = pathParts.length === 0 || !['my-artist', 'admin', 'auth', 'campaign', 'payment', 'forgot-password', 'reset-password'].includes(pathParts[0]);
+  const isDashboardRoute = pathParts.length === 0 || !['my-artist', 'admin', 'contactos', 'auth', 'campaign', 'payment', 'forgot-password', 'reset-password'].includes(pathParts[0]);
 
   const viewSlug = isDashboardRoute ? pathParts[0] : undefined;
   const countrySlug = isDashboardRoute ? pathParts[1] : undefined;
@@ -283,7 +285,7 @@ function Dashboard() {
       if (currentPath !== path) shouldNavigate = true;
     }
 
-    if (shouldNavigate && !['/my-artist', '/admin', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].includes(currentPath)) {
+    if (shouldNavigate && !['/my-artist', '/admin', '/contactos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].includes(currentPath)) {
       navigate(`${path}${location.search}`, { replace: true });
     }
   }, [activeView, selectedCountry, selectedGenre, selectedCity, countriesList, genresList, citiesList, hasInitializedFromUrl, location.search, location.pathname, navigate]);
@@ -768,6 +770,7 @@ function Dashboard() {
           <Routes>
             <Route path="/my-artist" element={<MyArtist onSongClick={setSelectedSong} />} />
             <Route path="/admin" element={<RequireAdmin><AdminPanelLazy /></RequireAdmin>} />
+            <Route path="/contactos" element={<RequireAdmin><ContactsPageLazy /></RequireAdmin>} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/:viewSlug/:countrySlug?/:genreSlug?/:citySlug?" element={
               !hasInitializedFromUrl ? (
