@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Search, X } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getTrendingTopPlatforms } from '../services/api';
 
@@ -113,6 +113,11 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [songs]);
 
   useEffect(() => {
     let isMounted = true;
@@ -146,6 +151,17 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
       return { ...s, trend };
     });
   }, [songs]);
+
+  const filteredSongs = useMemo(() => {
+    if (!searchQuery.trim()) return enrichedSongs;
+    const query = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return enrichedSongs.filter(song => {
+      const songName = (song.song || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const artistName = (song.artists || song.artist || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const labelName = (song.label || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return songName.includes(query) || artistName.includes(query) || labelName.includes(query);
+    });
+  }, [enrichedSongs, searchQuery]);
 
   if (isLoading) {
     return (
@@ -222,9 +238,165 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
           visibility: visible;
           transform: translateY(-50%) translateX(0);
         }
+
+        /* Search Input Styles */
+        .song-search-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 1.25rem;
+          width: 100%;
+        }
+        
+        .song-search-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          flex: 1;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--glass-border);
+          border-radius: 12px;
+          padding: 8px 14px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .song-search-wrapper:focus-within {
+          border-color: var(--accent-primary);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 0 3px rgba(138, 136, 255, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .song-search-wrapper:hover:not(:focus-within) {
+          border-color: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .search-icon {
+          color: var(--accent-primary);
+          margin-right: 10px;
+          opacity: 0.8;
+          flex-shrink: 0;
+          transition: transform 0.3s ease;
+        }
+        
+        .song-search-wrapper:focus-within .search-icon {
+          transform: scale(1.1);
+          opacity: 1;
+        }
+        
+        .song-search-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: #fff;
+          font-size: 0.9rem;
+          font-family: inherit;
+          padding: 0;
+          width: 100%;
+        }
+        
+        .song-search-input::placeholder {
+          color: var(--text-muted);
+          opacity: 0.7;
+        }
+        
+        .song-search-clear {
+          background: rgba(255, 255, 255, 0.05);
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4px;
+          border-radius: 50%;
+          margin-left: 8px;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+        
+        .song-search-clear:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: #fff;
+          transform: scale(1.05);
+        }
+        
+        .search-results-badge {
+          font-size: 0.8rem;
+          color: var(--text-muted);
+          background: rgba(138, 136, 255, 0.1);
+          border: 1px solid rgba(138, 136, 255, 0.2);
+          padding: 6px 12px;
+          border-radius: 20px;
+          white-space: nowrap;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          animation: searchBadgeFadeIn 0.2s ease-out;
+        }
+        
+        @keyframes searchBadgeFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
       `}</style>
+
+      {/* Buscador de canciones */}
+      <div className="song-search-container">
+        <div className="song-search-wrapper">
+          <Search size={16} className="search-icon" />
+          <input
+            type="text"
+            className="song-search-input"
+            placeholder="Buscar por canción, artista o disquera..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              className="song-search-clear"
+              onClick={() => setSearchQuery('')}
+              title="Limpiar búsqueda"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        {searchQuery.trim() && (
+          <div className="search-results-badge">
+            {filteredSongs.length} {filteredSongs.length === 1 ? 'resultado' : 'resultados'}
+          </div>
+        )}
+      </div>
+
       <div className="grid-base" style={{ gap: '0.5rem' }}>
-        {enrichedSongs.map((song, index) => {
+        {filteredSongs.length === 0 ? (
+          <div className="flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+              No se encontraron canciones que coincidan con "{searchQuery}"
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--glass-border)',
+                padding: '0.5rem 1.2rem',
+                borderRadius: '20px',
+                color: 'white',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+            >
+              Limpiar búsqueda
+            </button>
+          </div>
+        ) : (
+          filteredSongs.map((song, index) => {
           const rowColor = rankColors[index % rankColors.length];
           return (
             <div
@@ -313,6 +485,11 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
                 <div className="chart-title-wrapper" style={{ minWidth: 0 }}>
                   <h3 className="chart-title">{song.song}</h3>
                   <p className="chart-artist">{song.artists || song.artist}</p>
+                  {song.label && (
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+                      {song.label}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -334,7 +511,8 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
               </div>
             </div>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );

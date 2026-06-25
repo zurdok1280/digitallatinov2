@@ -2067,7 +2067,7 @@ export default function DigitalHitsRadio() {
                         top: tooltipPosition.y - 20,
                     }}
                 >
-                    El <strong>Score Digital</strong> es una métrica del 1 al 100 que evalúa el nivel de exposición de una canción basado en streams, playlists, engagement social y distribución geográfica.
+                    El <strong>Score Digital</strong> es una métrica del 1 al 100 que mide la exposición de canciones en español a partir de señales de consumo en plataformas digitales y su alcance geográfico. Se enfoca únicamente en canciones recientes.
                     <div className="absolute right-full top-1/2 transform -translate-y-1/2 border-4 border-transparent border-r-white"></div>
                 </div>
             )}
