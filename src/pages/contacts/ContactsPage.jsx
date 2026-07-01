@@ -1,7 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Search } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
-import { INITIAL_CURATORS, INITIAL_TIKTOKERS, EMPTY_CONTACT } from "./mockData";
+import {
+  getContactsCurators,
+  getContactsTiktokers,
+  createCurator,
+  createTiktoker,
+  updateCurator,
+  updateTiktoker,
+} from "../../services/api";
+import { EMPTY_CONTACT } from "./mockData";
 import ContactTable from "./components/ContactTable";
 import ContactDrawer from "./components/ContactDrawer";
 import ContactAddModal from "./components/ContactAddModal";
@@ -12,18 +20,42 @@ const ContactsPage = () => {
 
   // ── State ──────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("curators");
+  const [isLoading, setIsLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [curators, setCurators] = useState(INITIAL_CURATORS);
-  const [tiktokers, setTiktokers] = useState(INITIAL_TIKTOKERS);
-  const [drawerContact, setDrawerContact] = useState(null);   // contact open in Drawer
+  const [curators, setCurators] = useState([]);
+  const [tiktokers, setTiktokers] = useState([]);
+  const [drawerContact, setDrawerContact] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ ...EMPTY_CONTACT });
 
-  // Block body scroll when modal or drawer is open
+  // ── Fetch data from backend ────────────────────────────────
+  const fetchContacts = useCallback(async (tab) => {
+    setIsLoading(true);
+    try {
+      if (tab === "curators") {
+        const data = await getContactsCurators();
+        setCurators(data);
+      } else {
+        const data = await getContactsTiktokers();
+        setTiktokers(data);
+      }
+    } catch (err) {
+      console.error("Error fetching contacts:", err);
+      toast({ title: "Error", description: "No se pudieron cargar los contactos." });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  // Load on mount and whenever the active tab changes
   useEffect(() => {
-    const blocked = showAddModal;
-    document.body.style.overflow = blocked ? "hidden" : "";
+    fetchContacts(activeTab);
+  }, [activeTab, fetchContacts]);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = showAddModal ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [showAddModal]);
 
@@ -54,13 +86,22 @@ const ContactsPage = () => {
   // ── Drawer handlers ────────────────────────────────────────
   const handleRowClick = (contact) => setDrawerContact(contact);
   const handleDrawerClose = () => setDrawerContact(null);
-  const handleDrawerSave = (updatedContact) => {
-    if (activeTab === "curators") {
-      setCurators((prev) => prev.map((c) => c.id === updatedContact.id ? updatedContact : c));
-    } else {
-      setTiktokers((prev) => prev.map((t) => t.id === updatedContact.id ? updatedContact : t));
+
+  const handleDrawerSave = async (updatedContact) => {
+    try {
+      if (activeTab === "curators") {
+        await updateCurator(updatedContact.id, updatedContact);
+        setCurators((prev) => prev.map((c) => c.id === updatedContact.id ? updatedContact : c));
+      } else {
+        await updateTiktoker(updatedContact.id, updatedContact);
+        setTiktokers((prev) => prev.map((t) => t.id === updatedContact.id ? updatedContact : t));
+      }
+      setDrawerContact(updatedContact);
+      toast({ title: "Guardado", description: "Contacto actualizado correctamente." });
+    } catch (err) {
+      console.error("Error updating contact:", err);
+      toast({ title: "Error", description: "No se pudo actualizar el contacto." });
     }
-    setDrawerContact(updatedContact); // keep drawer open with fresh data
   };
 
   // ── Add Modal handlers ─────────────────────────────────────
@@ -77,17 +118,26 @@ const ContactsPage = () => {
     }));
   };
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    const newContact = { ...addForm, id: Date.now(), type: activeTab === "curators" ? "curator" : "tiktoker" };
-    if (activeTab === "curators") {
-      setCurators((prev) => [newContact, ...prev]);
-    } else {
-      setTiktokers((prev) => [newContact, ...prev]);
+    try {
+      if (activeTab === "curators") {
+        await createCurator(addForm);
+        // Reload from backend to get the real ID assigned by the DB
+        const fresh = await getContactsCurators();
+        setCurators(fresh);
+      } else {
+        await createTiktoker(addForm);
+        const fresh = await getContactsTiktokers();
+        setTiktokers(fresh);
+      }
+      setShowAddModal(false);
+      setAddForm({ ...EMPTY_CONTACT });
+      toast({ title: "Contacto agregado", description: `${addForm.name} fue agregado correctamente.` });
+    } catch (err) {
+      console.error("Error creating contact:", err);
+      toast({ title: "Error", description: "No se pudo guardar el contacto." });
     }
-    setShowAddModal(false);
-    setAddForm({ ...EMPTY_CONTACT });
-    toast({ title: "Contacto agregado", description: `${newContact.name} fue agregado correctamente.` });
   };
 
   // ── Render ─────────────────────────────────────────────────
@@ -134,7 +184,7 @@ const ContactsPage = () => {
       {/* Toolbar */}
       <div className="contacts-toolbar">
         <span className="contacts-count-badge">
-          {filteredData.length} {activeTab === "curators" ? "curators" : "tiktokers"}
+          {isLoading ? "—" : filteredData.length} {activeTab === "curators" ? "curators" : "tiktokers"}
         </span>
         <input
           type="text"
@@ -149,7 +199,7 @@ const ContactsPage = () => {
       <ContactTable
         data={filteredData}
         activeTab={activeTab}
-        isLoading={isTransitioning}
+        isLoading={isLoading || isTransitioning}
         onRowClick={handleRowClick}
       />
 

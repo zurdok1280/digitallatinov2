@@ -704,3 +704,214 @@ export const digitalLatinoApi = {
 };
 
 
+// ─── Contacts API ────────────────────────────────────────────────────────────
+// Adapters: translate the flat Java DTO → nested frontend Contact shape
+
+/**
+ * Converts a CuratorResponse (Java DTO) to the internal Contact object.
+ * Missing fields (facebook, notes, lastContact) are filled with empty strings.
+ */
+const mapCuratorToContact = (c) => ({
+  id: c.contactId,
+  type: 'curators',
+  name: c.displayName || '',
+  handle: c.email ? `@${c.email.split('@')[0]}` : '',
+  metric: c.playlists ? `${c.playlists.length} Playlist${c.playlists.length !== 1 ? 's' : ''}` : '0 Playlists',
+  email: c.email || '',
+  phone: c.phone || '',
+  country: c.country || '',
+  language: c.language || '',
+  status: c.contactStatus || 'nuevo',
+  lastContact: null,
+  notes: '',
+  instagram: {
+    handle: c.instagramUser || '',
+    url: c.instagramUrl || '',
+  },
+  facebook: { handle: '', url: '' },
+  tiktok: {
+    handle: c.tiktokUser || '',
+    url: c.tiktokUrl || '',
+  },
+  youtube: { handle: '', url: c.youtubeUrl || '' },
+  playlists: c.playlists || [],
+});
+
+/**
+ * Converts a TikTokerResponse (Java DTO) to the internal Contact object.
+ */
+const mapTikTokerToContact = (t) => ({
+  id: t.contactId,
+  type: 'tiktokers',
+  name: t.displayName || '',
+  handle: t.userHandle || t.userName || '',
+  metric: t.followersCount ? `${(t.followersCount / 1000).toFixed(0)}K Followers` : '—',
+  email: t.email || '',
+  phone: t.phone || '',
+  country: t.country || '',
+  language: t.language || '',
+  status: t.contactStatus || 'nuevo',
+  lastContact: null,
+  notes: '',
+  instagram: {
+    handle: t.instagramUser || '',
+    url: t.instagramUrl || '',
+  },
+  facebook: { handle: '', url: '' },
+  tiktok: {
+    handle: t.tiktokUser || t.userHandle || '',
+    url: t.tiktokUrl || '',
+  },
+  youtube: { handle: '', url: t.youtubeUrl || '' },
+});
+
+/**
+ * Fetch all curators from the backend.
+ * Returns an array of Contact-shaped objects.
+ */
+export const getContactsCurators = async () => {
+  try {
+    const response = await authFetch(`${API_BASE_URL}/contacts/curators`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    const raw = Array.isArray(data) ? data : (data?.data || []);
+    return raw.map(mapCuratorToContact);
+  } catch (error) {
+    console.error('API Error fetching curators:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch all tiktokers from the backend.
+ * Returns an array of Contact-shaped objects.
+ */
+export const getContactsTiktokers = async () => {
+  try {
+    const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    const raw = Array.isArray(data) ? data : (data?.data || []);
+    return raw.map(mapTikTokerToContact);
+  } catch (error) {
+    console.error('API Error fetching tiktokers:', error);
+    return [];
+  }
+};
+
+/**
+ * Creates a new curator via POST /api/contacts/curators.
+ * @param {object} contact - Internal Contact object
+ */
+export const createCurator = async (contact) => {
+  const body = {
+    displayName: contact.name,
+    email: contact.email,
+    phone: contact.phone,
+    country: contact.country,
+    language: contact.language,
+    instagramUser: contact.instagram?.handle || '',
+    instagramUrl: contact.instagram?.url || '',
+    tiktokUser: contact.tiktok?.handle || '',
+    tiktokUrl: contact.tiktok?.url || '',
+    youtubeUrl: contact.youtube?.url || '',
+    playlists: [],
+  };
+  const response = await authFetch(`${API_BASE_URL}/contacts/curators`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/**
+ * Creates a new tiktoker via POST /api/contacts/tiktokers.
+ * @param {object} contact - Internal Contact object
+ */
+export const createTiktoker = async (contact) => {
+  const followersRaw = contact.metric ? parseInt(contact.metric.replace(/[^0-9]/g, '')) * 1000 : 0;
+  const body = {
+    displayName: contact.name,
+    email: contact.email,
+    phone: contact.phone,
+    country: contact.country,
+    language: contact.language,
+    tiktokUser: contact.tiktok?.handle || '',
+    tiktokUrl: contact.tiktok?.url || '',
+    instagramUser: contact.instagram?.handle || '',
+    instagramUrl: contact.instagram?.url || '',
+    youtubeUrl: contact.youtube?.url || '',
+    followersCount: isNaN(followersRaw) ? 0 : followersRaw,
+    userName: contact.name,
+    userHandle: contact.handle,
+  };
+  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/**
+ * Updates a curator via PUT /api/contacts/curators/{id}.
+ * @param {number} id - The contact ID
+ * @param {object} contact - Updated Contact object
+ */
+export const updateCurator = async (id, contact) => {
+  const body = {
+    displayName: contact.name,
+    email: contact.email,
+    phone: contact.phone,
+    country: contact.country,
+    language: contact.language,
+    instagramUser: contact.instagram?.handle || '',
+    instagramUrl: contact.instagram?.url || '',
+    tiktokUser: contact.tiktok?.handle || '',
+    tiktokUrl: contact.tiktok?.url || '',
+    youtubeUrl: contact.youtube?.url || '',
+    playlists: contact.playlists || [],
+  };
+  const response = await authFetch(`${API_BASE_URL}/contacts/curators/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/**
+ * Updates a tiktoker via PUT /api/contacts/tiktokers/{id}.
+ * @param {number} id - The contact ID
+ * @param {object} contact - Updated Contact object
+ */
+export const updateTiktoker = async (id, contact) => {
+  const followersRaw = contact.metric ? parseInt(contact.metric.replace(/[^0-9]/g, '')) * 1000 : 0;
+  const body = {
+    displayName: contact.name,
+    email: contact.email,
+    phone: contact.phone,
+    country: contact.country,
+    language: contact.language,
+    tiktokUser: contact.tiktok?.handle || '',
+    tiktokUrl: contact.tiktok?.url || '',
+    instagramUser: contact.instagram?.handle || '',
+    instagramUrl: contact.instagram?.url || '',
+    youtubeUrl: contact.youtube?.url || '',
+    followersCount: isNaN(followersRaw) ? 0 : followersRaw,
+    userName: contact.name,
+    userHandle: contact.handle,
+  };
+  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+// ─────────────────────────────────────────────────────────────────────────────

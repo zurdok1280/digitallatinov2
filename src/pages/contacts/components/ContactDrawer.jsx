@@ -38,6 +38,16 @@ const ContactDrawer = ({ contact, onClose, onSave, activeTab }) => {
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleSocialChange = (platform, field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [platform]: {
+        ...(prev[platform] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
   const getInitials = (name) =>
     name ? name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() : "?";
 
@@ -154,7 +164,33 @@ const ContactDrawer = ({ contact, onClose, onSave, activeTab }) => {
           {/* Redes */}
           <div className="contacts-drawer-section">
             <div className="contacts-drawer-section-title">Redes Sociales</div>
-            <SocialLinks contact={isEditing ? editForm : contact} variant="full" />
+            {isEditing ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {["instagram", "facebook", "tiktok", "youtube"].map(platform => {
+                  if (activeTab === "curators" && platform === "tiktok") return null;
+                  if (activeTab === "tiktokers" && platform === "youtube") return null;
+                  return (
+                    <div key={platform} style={{ display: "flex", gap: "0.5rem", flexDirection: "column", background: "rgba(0,0,0,0.1)", padding: "0.5rem", borderRadius: "0.4rem" }}>
+                      <span style={{ textTransform: "capitalize", fontSize: "0.75rem", color: "#9ca3af", paddingLeft: "0.2rem" }}>{platform}</span>
+                      <input 
+                        placeholder="Handle (@usuario)" 
+                        value={editForm[platform]?.handle || ""} 
+                        onChange={(e) => handleSocialChange(platform, "handle", e.target.value)} 
+                        style={{...fieldStyle, padding: "0.4rem 0.6rem"}} 
+                      />
+                      <input 
+                        placeholder="URL (https://...)" 
+                        value={editForm[platform]?.url || ""} 
+                        onChange={(e) => handleSocialChange(platform, "url", e.target.value)} 
+                        style={{...fieldStyle, padding: "0.4rem 0.6rem"}} 
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <SocialLinks contact={contact} variant="full" />
+            )}
           </div>
 
           {/* Notas */}
