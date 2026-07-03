@@ -418,11 +418,11 @@ function Dashboard() {
 
         // Auto-select General (id 0) for genre on non-genre-focused views if we just arrived
         if (hasInitializedFromUrl) {
-          if (activeView === 'Platforms' || activeView === 'Artists') {
+          if (activeView === 'Artists') {
             const firstRealGenre = formatsData.find(g => g.id !== 0 && String(g.id) !== '0');
             setSelectedGenre(firstRealGenre ? firstRealGenre.id : (formatsData[0]?.id || 0));
           } else if (activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks') {
-            setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts and DigitalHitsForRadio
+            setSelectedGenre(targetCountry !== '0' ? 0 : 'All'); // Always default to General (id=0) for Charts, DigitalHitsForRadio and Platforms
           }
         }
       } else {
@@ -448,17 +448,7 @@ function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry, activeView]);
 
-  // Handle activeView switching to Platforms, shift off genre 0 if necessary
-  useEffect(() => {
-    if (activeView === 'Platforms') {
-      if (selectedGenre === 0 || selectedGenre === 'All' || String(selectedGenre) === '0') {
-        if (genresList && genresList.length > 0) {
-          const firstRealGenre = genresList.find(g => g.id !== 0 && String(g.id) !== '0');
-          if (firstRealGenre) setSelectedGenre(firstRealGenre.id);
-        }
-      }
-    }
-  }, [activeView, genresList, selectedGenre]);
+
 
   useEffect(() => {
     // Only fetch data after we have finished initializing from the URL!

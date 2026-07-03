@@ -124,8 +124,8 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
     const fetchPlatforms = async () => {
       setIsLoading(true);
 
-      // Enforce default values if they are 'All' or 0, as Platforms API strictly requires valid IDs
-      const safeFormat = (selectedGenre === 'All' || selectedGenre === 0 || selectedGenre === '0') ? 1 : selectedGenre;
+      // Enforce default values if they are 'All' or 0
+      const safeFormat = (selectedGenre === 'All' || selectedGenre === 0 || selectedGenre === '0') ? 0 : selectedGenre;
       const safeCountry = (selectedCountry === 'All' || selectedCountry === 0 || selectedCountry === '0') ? 1 : selectedCountry;
 
       const data = await getTrendingTopPlatforms(selectedPlatform, safeFormat, safeCountry);
