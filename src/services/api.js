@@ -1,4 +1,5 @@
 const API_BASE_URL = 'https://backend.digital-latino.com/api';
+// const API_BASE_URL = 'http://localhost:8085/api';
 
 const authFetch = async (url, options = {}) => {
   const token = localStorage.getItem('authToken');
