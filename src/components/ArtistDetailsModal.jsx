@@ -62,6 +62,7 @@ import DiagnosticsReportModal from "./DiagnosticsReportModal";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 import { useModalClose } from "../hooks/useModalClose";
+import ModalContactsAdmin from "./ModalContactsAdmin";
 
 // ── Platform definitions for the song metrics panel ──────────────────────────
 const SONG_PLATFORMS = [
@@ -298,6 +299,15 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
 
   const [tiktokersData, setTiktokersData] = useState([]);
   const [isTiktokersLoading, setIsTiktokersLoading] = useState(false);
+
+  const [adminModal, setAdminModal] = useState({
+    open: false,
+    targetType: null,
+    targetKey: null,
+    targetName: '',
+  });
+  const closeAdminModal = () =>
+    setAdminModal({ open: false, targetType: null, targetKey: null, targetName: '' });
 
   const [radioData, setRadioData] = useState([]);
   const [isRadioLoading, setIsRadioLoading] = useState(false);
@@ -2505,11 +2515,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                         style={{
                           padding: "1rem",
                           display: "flex",
+                          flexDirection: "column",
                           gap: "1rem",
-                          alignItems: "center",
                           borderLeft: `4px solid ${typeColor}`,
                         }}
                       >
+                        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                         <img
                           src={pl.artwork || "/logo.png"}
                           alt={pl.playlist_name}
@@ -2608,7 +2619,25 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                               </strong>
                             </span>
                           </div>
+                          </div>
                         </div>
+                        {user?.role === 'ADMIN' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAdminModal({
+                                open: true,
+                                targetType: 'playlist',
+                                targetKey: pl.spotify_id,
+                                targetName: pl.playlist_name,
+                              });
+                            }}
+                            className="btn-primary"
+                            style={{ marginTop: '0.8rem', fontSize: '0.75rem', padding: '5px 12px', width: '100%' }}
+                          >
+                            Administrar Curadores
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -2902,6 +2931,26 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                           </span>{" "}
                           {tk.related_artists_names}
                         </div>
+                      )}
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAdminModal({
+                              open: true,
+                              targetType: 'tiktoker',
+                              targetKey: tk.user_handle,
+                              targetName: tk.user_name,
+                            });
+                          }}
+                          className="btn-primary"
+                          style={{
+                            marginTop: '0.4rem', fontSize: '0.75rem', padding: '5px 12px', width: '100%',
+                            background: 'rgba(255,0,80,0.15)', borderColor: '#ff0050', color: '#ff0050'
+                          }}
+                        >
+                          Administrar TikToker
+                        </button>
                       )}
                     </div>
                   ))}
@@ -3626,6 +3675,16 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
         >
           <X size={22} />
         </button>
+      )}
+
+      {adminModal.open && (
+        <ModalContactsAdmin
+          isOpen={adminModal.open}
+          onClose={closeAdminModal}
+          targetType={adminModal.targetType}
+          targetKey={adminModal.targetKey}
+          targetName={adminModal.targetName}
+        />
       )}
     </div>
   );

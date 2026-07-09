@@ -1,6 +1,5 @@
 const API_BASE_URL = 'https://backend.digital-latino.com/api';
 // const API_BASE_URL = 'http://localhost:8085/api';
-
 const authFetch = async (url, options = {}) => {
   const token = localStorage.getItem('authToken');
   const headers = {
@@ -916,3 +915,39 @@ export const updateTiktoker = async (id, contact) => {
   return response.json();
 };
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** GET curadores asignados a una playlist por su spotify_id */
+export const getCuratorsForPlaylist = async (spotifyId) => {
+  const response = await authFetch(`${API_BASE_URL}/contacts/playlists/${encodeURIComponent(spotifyId)}/curators`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/** PUT actualizar curadores de una playlist por su spotify_id */
+export const updatePlaylistCurators = async (spotifyId, playlistName, curatorIds) => {
+  const response = await authFetch(`${API_BASE_URL}/contacts/playlists/${encodeURIComponent(spotifyId)}/curators`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playlistName, curatorIds }),
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/** GET curadores asignados a un tiktoker por su user_handle */
+export const getCuratorsForTiktoker = async (userHandle) => {
+  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers/by-handle/${encodeURIComponent(userHandle)}/curators`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/** PUT actualizar curadores de un tiktoker por su user_handle */
+export const updateTiktokerCurators = async (userHandle, userName, curatorIds) => {
+  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers/by-handle/${encodeURIComponent(userHandle)}/curators`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userName, curatorIds }),
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
