@@ -705,7 +705,23 @@ export const digitalLatinoApi = {
 
 
 // ─── Contacts API ────────────────────────────────────────────────────────────
+const CONTACTS_API_BASE_URL = API_BASE_URL;
+
 // Adapters: translate the flat Java DTO → nested frontend Contact shape
+
+/**
+ * Formats a date string or array from the backend into YYYY-MM-DD for <input type="date">
+ */
+const formatDateForInput = (dateVal) => {
+  if (!dateVal) return '';
+  if (Array.isArray(dateVal)) {
+    const y = dateVal[0];
+    const m = String(dateVal[1]).padStart(2, '0');
+    const d = String(dateVal[2]).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(dateVal).split('T')[0].split(' ')[0];
+};
 
 /**
  * Converts a CuratorResponse (Java DTO) to the internal Contact object.
@@ -722,18 +738,18 @@ const mapCuratorToContact = (c) => ({
   country: c.country || '',
   language: c.language || '',
   status: c.contactStatus || 'nuevo',
-  lastContact: null,
-  notes: '',
+  lastContact: formatDateForInput(c.lastContactDate),
+  notes: c.notes || '',
   instagram: {
     handle: c.instagramUser || '',
     url: c.instagramUrl || '',
   },
-  facebook: { handle: '', url: '' },
+  facebook: { handle: c.facebookUser || '', url: c.facebookUrl || '' },
   tiktok: {
     handle: c.tiktokUser || '',
     url: c.tiktokUrl || '',
   },
-  youtube: { handle: '', url: c.youtubeUrl || '' },
+  youtube: { handle: c.youtubeUser || '', url: c.youtubeUrl || '' },
   playlists: c.playlists || [],
 });
 
@@ -751,18 +767,18 @@ const mapTikTokerToContact = (t) => ({
   country: t.country || '',
   language: t.language || '',
   status: t.contactStatus || 'nuevo',
-  lastContact: null,
-  notes: '',
+  lastContact: formatDateForInput(t.lastContactDate),
+  notes: t.notes || '',
   instagram: {
     handle: t.instagramUser || '',
     url: t.instagramUrl || '',
   },
-  facebook: { handle: '', url: '' },
+  facebook: { handle: t.facebookUser || '', url: t.facebookUrl || '' },
   tiktok: {
     handle: t.tiktokUser || t.userHandle || '',
     url: t.tiktokUrl || '',
   },
-  youtube: { handle: '', url: t.youtubeUrl || '' },
+  youtube: { handle: t.youtubeUser || '', url: t.youtubeUrl || '' },
 });
 
 /**
@@ -771,7 +787,7 @@ const mapTikTokerToContact = (t) => ({
  */
 export const getContactsCurators = async () => {
   try {
-    const response = await authFetch(`${API_BASE_URL}/contacts/curators`);
+    const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/curators`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const raw = Array.isArray(data) ? data : (data?.data || []);
@@ -788,7 +804,7 @@ export const getContactsCurators = async () => {
  */
 export const getContactsTiktokers = async () => {
   try {
-    const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers`);
+    const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const raw = Array.isArray(data) ? data : (data?.data || []);
@@ -815,9 +831,15 @@ export const createCurator = async (contact) => {
     tiktokUser: contact.tiktok?.handle || '',
     tiktokUrl: contact.tiktok?.url || '',
     youtubeUrl: contact.youtube?.url || '',
+    youtubeUser: contact.youtube?.handle || '',
+    facebookUser: contact.facebook?.handle || '',
+    facebookUrl: contact.facebook?.url || '',
+    notes: contact.notes || '',
+    lastContactDate: contact.lastContact || '',
+    contactStatus: contact.status || 'nuevo',
     playlists: [],
   };
-  const response = await authFetch(`${API_BASE_URL}/contacts/curators`, {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/curators`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -843,11 +865,17 @@ export const createTiktoker = async (contact) => {
     instagramUser: contact.instagram?.handle || '',
     instagramUrl: contact.instagram?.url || '',
     youtubeUrl: contact.youtube?.url || '',
+    youtubeUser: contact.youtube?.handle || '',
+    facebookUser: contact.facebook?.handle || '',
+    facebookUrl: contact.facebook?.url || '',
+    notes: contact.notes || '',
+    lastContactDate: contact.lastContact || '',
+    contactStatus: contact.status || 'nuevo',
     followersCount: isNaN(followersRaw) ? 0 : followersRaw,
     userName: contact.name,
     userHandle: contact.handle,
   };
-  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers`, {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -873,9 +901,15 @@ export const updateCurator = async (id, contact) => {
     tiktokUser: contact.tiktok?.handle || '',
     tiktokUrl: contact.tiktok?.url || '',
     youtubeUrl: contact.youtube?.url || '',
+    youtubeUser: contact.youtube?.handle || '',
+    facebookUser: contact.facebook?.handle || '',
+    facebookUrl: contact.facebook?.url || '',
+    notes: contact.notes || '',
+    lastContactDate: contact.lastContact || '',
+    contactStatus: contact.status || 'nuevo',
     playlists: contact.playlists || [],
   };
-  const response = await authFetch(`${API_BASE_URL}/contacts/curators/${id}`, {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/curators/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -902,11 +936,17 @@ export const updateTiktoker = async (id, contact) => {
     instagramUser: contact.instagram?.handle || '',
     instagramUrl: contact.instagram?.url || '',
     youtubeUrl: contact.youtube?.url || '',
+    youtubeUser: contact.youtube?.handle || '',
+    facebookUser: contact.facebook?.handle || '',
+    facebookUrl: contact.facebook?.url || '',
+    notes: contact.notes || '',
+    lastContactDate: contact.lastContact || '',
+    contactStatus: contact.status || 'nuevo',
     followersCount: isNaN(followersRaw) ? 0 : followersRaw,
     userName: contact.name,
     userHandle: contact.handle,
   };
-  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers/${id}`, {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -916,16 +956,38 @@ export const updateTiktoker = async (id, contact) => {
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Deletes a curator via DELETE /api/contacts/curators/{id}.
+ */
+export const deleteCurator = async (id) => {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/curators/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response;
+};
+
+/**
+ * Deletes a tiktoker via DELETE /api/contacts/tiktokers/{id}.
+ */
+export const deleteTiktoker = async (id) => {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response;
+};
+
 /** GET curadores asignados a una playlist por su spotify_id */
 export const getCuratorsForPlaylist = async (spotifyId) => {
-  const response = await authFetch(`${API_BASE_URL}/contacts/playlists/${encodeURIComponent(spotifyId)}/curators`);
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/playlists/${encodeURIComponent(spotifyId)}/curators`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return response.json();
 };
 
 /** PUT actualizar curadores de una playlist por su spotify_id */
 export const updatePlaylistCurators = async (spotifyId, playlistName, curatorIds) => {
-  const response = await authFetch(`${API_BASE_URL}/contacts/playlists/${encodeURIComponent(spotifyId)}/curators`, {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/playlists/${encodeURIComponent(spotifyId)}/curators`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ playlistName, curatorIds }),
@@ -936,14 +998,14 @@ export const updatePlaylistCurators = async (spotifyId, playlistName, curatorIds
 
 /** GET curadores asignados a un tiktoker por su user_handle */
 export const getCuratorsForTiktoker = async (userHandle) => {
-  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers/by-handle/${encodeURIComponent(userHandle)}/curators`);
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers/by-handle/${encodeURIComponent(userHandle)}/curators`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return response.json();
 };
 
 /** PUT actualizar curadores de un tiktoker por su user_handle */
 export const updateTiktokerCurators = async (userHandle, userName, curatorIds) => {
-  const response = await authFetch(`${API_BASE_URL}/contacts/tiktokers/by-handle/${encodeURIComponent(userHandle)}/curators`, {
+  const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers/by-handle/${encodeURIComponent(userHandle)}/curators`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName, curatorIds }),

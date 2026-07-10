@@ -1,10 +1,69 @@
-import React from "react";
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
-import { CRM_STATUS_LABELS } from "../mockData";
+import { useToast } from "../../hooks/use-toast";
+import { createCurator, createTiktoker } from "../../services/api";
+import "../../pages/ContactsPage.css";
 
-const ContactAddModal = ({ activeTab, addForm, onChange, onSocialChange, onSubmit, onClose }) => {
-  return (
-    <div className="contacts-modal-overlay">
+const CRM_STATUS_LABELS = {
+  nuevo:       "Nuevo",
+  contactado:  "Contactado",
+  respondio:   "Respondió",
+  negociando:  "Negociando",
+  confirmado:  "Confirmado",
+  descartado:  "Descartado",
+};
+
+const EMPTY_CONTACT = {
+  name: "", handle: "", metric: "", email: "", phone: "",
+  instagram: { handle: "", url: "" },
+  facebook:  { handle: "", url: "" },
+  tiktok:    { handle: "", url: "" },
+  youtube:   { handle: "", url: "" },
+  country: "", language: "", status: "nuevo", lastContact: "", notes: "",
+};
+
+const ContactAddModal = ({ initialType = "tiktokers", onClose, onSaveSuccess }) => {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState(initialType);
+  const [addForm, setAddForm] = useState({ ...EMPTY_CONTACT });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setAddForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const onSocialChange = (e, platform, field) => {
+    const { value } = e.target;
+    setAddForm((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], [field]: value },
+    }));
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      if (activeTab === "curators") {
+        await createCurator(addForm);
+      } else {
+        await createTiktoker(addForm);
+      }
+      toast({ title: "Contacto agregado", description: `${addForm.name} fue agregado correctamente.` });
+      if (onSaveSuccess) onSaveSuccess();
+      onClose();
+    } catch (err) {
+      console.error("Error creating contact:", err);
+      toast({ title: "Error", description: "No se pudo guardar el contacto.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const modalContent = (
+    <div className="contacts-modal-overlay" style={{ zIndex: 10000 }}>
       <div className="contacts-modal-content">
         <div className="contacts-modal-header">
           <h2 className="contacts-modal-title">
@@ -12,6 +71,26 @@ const ContactAddModal = ({ activeTab, addForm, onChange, onSocialChange, onSubmi
             Nuevo {activeTab === "curators" ? "Curator" : "TikToker"}
           </h2>
           <button className="contacts-icon-btn" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {/* Optional Type Toggle */}
+        <div style={{ padding: "0 1.5rem 1rem", display: "flex", gap: "10px" }}>
+          <button 
+            type="button"
+            className={activeTab === "tiktokers" ? "contacts-btn-primary" : "contacts-icon-btn"}
+            onClick={() => setActiveTab("tiktokers")}
+            style={{ padding: "4px 12px", borderRadius: "20px", fontSize: "0.85rem", border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            TikToker
+          </button>
+          <button 
+            type="button"
+            className={activeTab === "curators" ? "contacts-btn-primary" : "contacts-icon-btn"}
+            onClick={() => setActiveTab("curators")}
+            style={{ padding: "4px 12px", borderRadius: "20px", fontSize: "0.85rem", border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            Curator (Playlist)
+          </button>
         </div>
 
         <form onSubmit={onSubmit}>
@@ -63,7 +142,7 @@ const ContactAddModal = ({ activeTab, addForm, onChange, onSocialChange, onSubmi
             </div>
             <div className="contacts-form-group">
               <label className="contacts-form-label">Última vez contactado</label>
-              <input type="date" name="lastContact" value={addForm.lastContact} onChange={onChange} className="contacts-form-input" />
+              <input type="date" name="lastContact" value={addForm.lastContact} onChange={onChange} className="contacts-form-input" style={{ colorScheme: 'dark' }} />
             </div>
           </div>
 
@@ -124,14 +203,17 @@ const ContactAddModal = ({ activeTab, addForm, onChange, onSocialChange, onSubmi
             <button type="button" onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af", padding: "0.5rem 1.25rem", borderRadius: "9999px", fontSize: "0.85rem", cursor: "pointer" }}>
               Cancelar
             </button>
-            <button type="submit" className="contacts-btn-primary" style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem" }}>
-              Guardar Contacto
+            <button type="submit" disabled={isSaving} className="contacts-btn-primary" style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem" }}>
+              {isSaving ? "Guardando..." : "Guardar Contacto"}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ContactAddModal;
+

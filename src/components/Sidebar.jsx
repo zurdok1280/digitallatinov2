@@ -85,10 +85,10 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) =
       },
       {
         icon: Contact,
-        label: 'Contactos',
-        active: location.pathname === '/contactos',
-        onClick: () => handleLinkClick('/contactos'),
-        color: '#38bdf8',
+        label: 'TikTokers',
+        active: location.pathname === '/tiktokers',
+        onClick: () => handleLinkClick('/tiktokers'),
+        color: '#ff0050',
       }
     ] : []),
   ];

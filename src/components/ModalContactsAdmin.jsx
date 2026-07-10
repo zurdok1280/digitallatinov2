@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Plus, Check, Loader2, Save } from 'lucide-react';
+import { X, Search, Edit2, Check, Loader2, Save, Plus } from 'lucide-react';
 import { 
   getCuratorsForPlaylist, 
   updatePlaylistCurators, 
@@ -9,6 +9,7 @@ import {
   getContactsTiktokers
 } from '../services/api';
 import { useToast } from '../hooks/use-toast';
+import ModalEditContacts from './shared/ModalEditContacts';
 
 export default function ModalContactsAdmin({ 
   isOpen, 
@@ -24,13 +25,9 @@ export default function ModalContactsAdmin({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showEditContacts, setShowEditContacts] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen || !targetKey) return;
-    
-    let isMounted = true;
-    
-    const loadData = async () => {
+  const loadData = async (isMounted = true) => {
       setIsLoading(true);
       try {
         // 1. Fetch assigned
@@ -70,9 +67,13 @@ export default function ModalContactsAdmin({
       } finally {
         if (isMounted) setIsLoading(false);
       }
-    };
+  };
+
+  useEffect(() => {
+    if (!isOpen || !targetKey) return;
     
-    loadData();
+    let isMounted = true;
+    loadData(isMounted);
     
     return () => { isMounted = false; };
   }, [isOpen, targetKey, targetType, toast]);
@@ -155,7 +156,7 @@ export default function ModalContactsAdmin({
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div>
+          <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main)' }}>
               {targetType === 'tiktoker' ? 'Administrar TikTokers' : 'Administrar Curadores'}
             </h2>
@@ -163,6 +164,25 @@ export default function ModalContactsAdmin({
               {targetName}
             </p>
           </div>
+          <button
+            onClick={() => setShowEditContacts(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '0.45rem 0.9rem',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: '8px',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              marginRight: '0.75rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Edit2 size={14} />
+            Editar {targetType === 'tiktoker' ? 'TikTokers' : 'Curadores'}
+          </button>
           <button onClick={onClose} style={{
             background: 'transparent',
             border: 'none',
@@ -228,16 +248,13 @@ export default function ModalContactsAdmin({
                   Disponibles
                 </h3>
                 
-                <div style={{
-                  position: 'relative',
-                  marginBottom: '1rem'
-                }}>
+                <div style={{ position: 'relative', marginBottom: '1rem' }}>
                   <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={targetType === 'tiktoker' ? "Buscar tiktoker por nombre..." : "Buscar curator por nombre..."}
+                    placeholder={targetType === 'tiktoker' ? "Buscar tiktoker..." : "Buscar curator..."}
                     style={{
                       width: '100%',
                       padding: '0.6rem 1rem 0.6rem 2.5rem',
@@ -331,6 +348,11 @@ export default function ModalContactsAdmin({
           </button>
         </div>
       </div>
+      <ModalEditContacts
+        isOpen={showEditContacts}
+        onClose={() => { setShowEditContacts(false); loadData(); }}
+        type={targetType === 'tiktoker' ? 'tiktokers' : 'curators'}
+      />
     </div>
   );
 }
