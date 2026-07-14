@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings, Contact } from 'lucide-react';
+import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings, Contact, ListMusic } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -82,6 +82,13 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) =
         active: location.pathname === '/admin',
         onClick: () => handleLinkClick('/admin'),
         color: '#94a3b8',
+      },
+      {
+        icon: ListMusic,
+        label: 'Playlists',
+        active: location.pathname === '/playlists',
+        onClick: () => handleLinkClick('/playlists'),
+        color: '#8a88ff',
       },
       {
         icon: Contact,

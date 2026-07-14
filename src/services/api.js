@@ -1013,3 +1013,42 @@ export const updateTiktokerCurators = async (userHandle, userName, curatorIds) =
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return response.json();
 };
+
+// ─── Report: Playlists & TikTokers ranking ────────────────────────────────────
+
+/**
+ * GET /api/report/getPlaylistData/{type}/{offset}/{page_size}
+ * type=0 → todas; offset=inicio; pageSize=cantidad a traer.
+ * Returns: { offset, page_size, total_records, playlists: [...] }
+ */
+export const getPlaylistData = async (type = 0, offset = 0, pageSize = 100) => {
+  try {
+    const response = await authFetch(`${API_BASE_URL}/report/getPlaylistData/${type}/${offset}/${pageSize}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    if (Array.isArray(data)) return { playlists: data, total_records: data.length };
+    return { playlists: data?.playlists || [], total_records: data?.total_records ?? 0 };
+  } catch (error) {
+    console.error('API Error fetching playlist data:', error);
+    return { playlists: [], total_records: 0 };
+  }
+};
+
+/**
+ * GET /api/report/getTiktokData/{genre}/{offset}/{page_size}
+ * genre=0 → todos; offset=inicio; pageSize=cantidad a traer.
+ * Returns: { offset, page_size, total_records, tiktok_users: [...] }
+ */
+export const getTiktokData = async (genre = 0, offset = 0, pageSize = 300) => {
+  try {
+    const response = await authFetch(`${API_BASE_URL}/report/getTiktokData/${genre}/${offset}/${pageSize}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    if (Array.isArray(data)) return { tiktok_users: data, total_records: data.length };
+    return { tiktok_users: data?.tiktok_users || [], total_records: data?.total_records ?? 0 };
+  } catch (error) {
+    console.error('API Error fetching tiktok data:', error);
+    return { tiktok_users: [], total_records: 0 };
+  }
+};
+
