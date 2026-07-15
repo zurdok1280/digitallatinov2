@@ -1,5 +1,13 @@
-const API_BASE_URL = 'https://backend.digital-latino.com/api';
-// const API_BASE_URL = 'http://localhost:8085/api';
+// ─── Backend URLs ─────────────────────────────────────────────────────────────
+// AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
+// ⚠️  Switch between production and local for development:
+const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
+// const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
+
+// Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
+// ⚠️  Switch between production and local for development:
+const LOGIN_API_BASE_URL = 'https://backend.digital-latino.com/api'; // ← PRODUCCIÓN
+// const LOGIN_API_BASE_URL = 'http://localhost:8085/api';                // ← LOCAL
 const authFetch = async (url, options = {}) => {
   const token = localStorage.getItem('authToken');
   const headers = {
@@ -705,7 +713,8 @@ export const digitalLatinoApi = {
 
 
 // ─── Contacts API ────────────────────────────────────────────────────────────
-const CONTACTS_API_BASE_URL = API_BASE_URL;
+// Uses Login-DigitalLatino backend (local:8085 in dev, production URL in prod)
+const CONTACTS_API_BASE_URL = LOGIN_API_BASE_URL;
 
 // Adapters: translate the flat Java DTO → nested frontend Contact shape
 

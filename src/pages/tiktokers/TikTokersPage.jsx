@@ -106,8 +106,11 @@ export default function TikTokersPage() {
   const isAdmin = user?.role === "ADMIN";
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [tiktokers, setTiktokers] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [serverOffset, setServerOffset] = useState(0);
+  const PAGE_SIZE = 300; // registros por batch del servidor
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [adminModal, setAdminModal] = useState({ isOpen: false, targetKey: null, targetName: "" });
@@ -116,19 +119,38 @@ export default function TikTokersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
+  // Carga inicial
   const fetchData = useCallback(async () => {
     setIsLoading(true);
+    setTiktokers([]);
+    setServerOffset(0);
     try {
-      const result = await getTiktokData(0, 0, 300);
+      const result = await getTiktokData(0, 0, PAGE_SIZE);
       setTiktokers(result.tiktok_users);
       setTotalRecords(result.total_records);
       setCurrentPage(1);
+      setServerOffset(PAGE_SIZE);
     } catch {
       toast({ title: "Error", description: "No se pudieron cargar los TikTokers." });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
+
+  // Carga siguiente batch y lo concatena
+  const fetchMore = useCallback(async () => {
+    if (isFetchingMore) return;
+    setIsFetchingMore(true);
+    try {
+      const result = await getTiktokData(0, serverOffset, PAGE_SIZE);
+      setTiktokers(prev => [...prev, ...result.tiktok_users]);
+      setServerOffset(prev => prev + PAGE_SIZE);
+    } catch {
+      toast({ title: "Error", description: "No se pudieron cargar más TikTokers." });
+    } finally {
+      setIsFetchingMore(false);
+    }
+  }, [isFetchingMore, serverOffset, toast]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -149,7 +171,20 @@ export default function TikTokersPage() {
   };
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const hasMoreOnServer = tiktokers.length < totalRecords;
   const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNext = () => {
+    const nextPage = currentPage + 1;
+    if (nextPage <= totalPages) {
+      setCurrentPage(nextPage);
+    }
+    // Activar carga anticipada desde la antepenúltima página
+    if (currentPage >= totalPages - 2 && hasMoreOnServer) {
+      fetchMore();
+      if (nextPage > totalPages) setCurrentPage(nextPage);
+    }
+  };
 
   const COL_COUNT = 6;
 
@@ -169,11 +204,21 @@ export default function TikTokersPage() {
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {!isLoading && filtered.length > itemsPerPage && (
+          {!isLoading && (filtered.length > itemsPerPage || hasMoreOnServer) && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-              <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage === 1 ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}>Anterior</button>
-              <span>{currentPage} / {totalPages}</span>
-              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage === totalPages ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage === totalPages ? "not-allowed" : "pointer" }}>Siguiente</button>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage === 1 ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}
+              >Anterior</button>
+              <span>{currentPage} / {Math.ceil(totalRecords / itemsPerPage) || totalPages}</span>
+              <button
+                disabled={currentPage >= totalPages && !hasMoreOnServer}
+                onClick={handleNext}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: (currentPage >= totalPages && !hasMoreOnServer) ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: (currentPage >= totalPages && !hasMoreOnServer) ? "not-allowed" : "pointer" }}
+              >
+                Siguiente
+              </button>
             </div>
           )}
           <div style={{ position: "relative" }}>
@@ -196,9 +241,17 @@ export default function TikTokersPage() {
             <Loader2 size={40} color={ACCENT} className="loading-spinner" />
           </div>
         ) : paginatedData.length === 0 ? (
-          <div style={{ height: "250px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
-            No se encontraron TikTokers.
-          </div>
+          isFetchingMore ? (
+            <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse" style={{ height: "48px", background: "rgba(255,255,255,0.03)", borderRadius: "8px" }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ height: "250px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
+              No se encontraron TikTokers.
+            </div>
+          )
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
