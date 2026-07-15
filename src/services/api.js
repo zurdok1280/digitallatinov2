@@ -6,7 +6,7 @@ const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCI
 
 // Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
 // ⚠️  Switch between production and local for development:
-const LOGIN_API_BASE_URL = 'https://backend.digital-latino.com/api'; // ← PRODUCCIÓN
+const LOGIN_API_BASE_URL = 'https://security.digital-latino.com/api'; // ← PRODUCCIÓN
 // const LOGIN_API_BASE_URL = 'http://localhost:8085/api';                // ← LOCAL
 const authFetch = async (url, options = {}) => {
   const token = localStorage.getItem('authToken');
