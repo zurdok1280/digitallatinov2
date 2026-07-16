@@ -117,7 +117,9 @@ const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSa
           </div>
           <div style={fieldGroupStyle}>
             <label style={labelStyle}>{type === 'curators' ? 'Playlists' : 'Followers'}</label>
-            <input name="metric" value={form.metric} onChange={onChange} style={inputStyle} placeholder={type === 'curators' ? '5 Playlists' : '100K'} />
+            <div style={{ padding: '0.55rem 0.2rem', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600 }}>
+              {form.metric || 'N/A'}
+            </div>
           </div>
           <div style={fieldGroupStyle}>
             <label style={labelStyle}>Estado CRM</label>
@@ -232,7 +234,6 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
       else await createTiktoker(payload);
       toast({ title: 'Agregado', description: `${form.name} fue agregado correctamente.` });
       setForm({ name: '', handle: '', email: '' });
-      setExpanded(false);
       if (onAdded) onAdded();
     } catch (err) {
       console.error(err);
@@ -324,7 +325,7 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
  *  onClose {() => void}
  *  type    {'curators' | 'tiktokers'}
  */
-export default function ModalEditContacts({ isOpen, onClose, type = 'curators' }) {
+export default function ModalEditContacts({ isOpen, onClose, type = 'curators', contactToEdit = null }) {
   const { toast } = useToast();
   const [contacts, setContacts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -332,8 +333,8 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators' }
   const [deletingId, setDeletingId] = useState(null);
 
   // 'list' | 'edit' | 'create'
-  const [view, setView] = useState('list');
-  const [activeContact, setActiveContact] = useState(null); // contact being edited/created
+  const [view, setView] = useState(contactToEdit ? 'edit' : 'list');
+  const [activeContact, setActiveContact] = useState(contactToEdit); // contact being edited/created
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchContacts = useCallback(async () => {
@@ -350,8 +351,17 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators' }
   }, [type, toast]);
 
   useEffect(() => {
-    if (isOpen) { setView('list'); setActiveContact(null); fetchContacts(); }
-  }, [isOpen, fetchContacts]);
+    if (isOpen) {
+      if (contactToEdit) {
+        setView('edit');
+        setActiveContact(contactToEdit);
+      } else {
+        setView('list');
+        setActiveContact(null);
+      }
+      fetchContacts();
+    }
+  }, [isOpen, contactToEdit, fetchContacts]);
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const handleDelete = async (contact, e) => {
@@ -386,8 +396,12 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators' }
         toast({ title: 'Agregado', description: `${form.name} fue agregado correctamente.` });
       }
       await fetchContacts();
-      setView('list');
-      setActiveContact(null);
+      if (contactToEdit) {
+        onClose();
+      } else {
+        setView('list');
+        setActiveContact(null);
+      }
     } catch (err) {
       console.error(err);
       toast({ title: 'Error', description: 'No se pudo guardar el contacto.', variant: 'destructive' });
@@ -579,7 +593,14 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators' }
               type={type}
               initialData={activeContact || EMPTY_CONTACT}
               onSave={handleSave}
-              onCancel={() => { setView('list'); setActiveContact(null); }}
+              onCancel={() => {
+                if (contactToEdit) {
+                  onClose();
+                } else {
+                  setView('list');
+                  setActiveContact(null);
+                }
+              }}
               isSaving={isSaving}
             />
           )}

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Search, Settings2, Loader2, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/useAuth";
-import { getTiktokData, getCuratorsForTiktoker } from "../../services/api";
+import { getTiktokData, getCuratorsForTiktoker, getContactsCurators, updateTiktokerCurators } from "../../services/api";
 import ModalContactsAdmin from "../../components/ModalContactsAdmin";
+import ContactPreviewModal from "../../components/shared/ContactPreviewModal";
 
 const ACCENT = "#ff0050";
 
@@ -38,65 +39,254 @@ function Avatar({ handle }) {
   );
 }
 
-function CuratorChips({ handle, refresh }) {
-  const [curators, setCurators] = useState(null);
+function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh }) {
+  const [assigned, setAssigned] = useState([]);
+  const [available, setAvailable] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!handle) return;
-    let cancelled = false;
-    setCurators(null); // eslint-disable-line react-hooks/set-state-in-effect
-    const cleanHandle = handle.startsWith("@") ? handle.slice(1) : handle;
-    getCuratorsForTiktoker(cleanHandle)
-      .then((data) => { if (!cancelled) setCurators(Array.isArray(data) ? data : []); })
-      .catch(() => { if (!cancelled) setCurators([]); });
-    return () => { cancelled = true; };
-  }, [handle, refresh]);
+    let isMounted = true;
+    setIsLoading(true);
 
-  if (curators === null) return <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>Cargando...</span>;
-  if (curators.length === 0) return <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>Sin curadores asignados</span>;
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-      {curators.map((c) => (
-        <span key={c.id} style={{
-          background: "rgba(255,0,80,0.12)",
-          border: "1px solid rgba(255,0,80,0.3)",
-          color: ACCENT, borderRadius: "20px",
-          padding: "0.2rem 0.6rem", fontSize: "0.75rem", fontWeight: 500,
-        }}>
-          {c.displayName}
-        </span>
-      ))}
-    </div>
-  );
-}
+    const cleanHandle = tiktoker.user_handle.startsWith("@") ? tiktoker.user_handle.slice(1) : tiktoker.user_handle;
 
-function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh }) {
+    Promise.all([
+      getCuratorsForTiktoker(cleanHandle).catch(() => []),
+      getContactsCurators().catch(() => [])
+    ]).then(([assignedData, allContacts]) => {
+      if (!isMounted) return;
+      
+      const assignedIds = new Set((Array.isArray(assignedData) ? assignedData : []).map(c => c.id));
+      
+      // Hydrate assigned contacts
+      const hydratedAssigned = (Array.isArray(assignedData) ? assignedData : []).map(a => {
+        const full = allContacts.find(c => c.id === a.id);
+        return full || a;
+      });
+      
+      const availableContacts = allContacts.filter(c => !assignedIds.has(c.id));
+      
+      setAssigned(hydratedAssigned);
+      setAvailable(availableContacts);
+      setIsLoading(false);
+    });
+
+    return () => { isMounted = false; };
+  }, [tiktoker.user_handle, refresh]);
+
+  const onDragStart = (e, contact, source) => {
+    e.dataTransfer.setData('contactId', contact.id);
+    e.dataTransfer.setData('source', source);
+  };
+  const onDragOver = (e) => e.preventDefault();
+  const onDropAssigned = (e) => {
+    e.preventDefault();
+    const source = e.dataTransfer.getData('source');
+    const contactId = e.dataTransfer.getData('contactId');
+    if (source === 'available') {
+      const c = available.find(x => x.id === contactId || x.id === parseInt(contactId));
+      if (c) setPendingAction({ action: 'assign', contact: c });
+    }
+  };
+  const onDropAvailable = (e) => {
+    e.preventDefault();
+    const source = e.dataTransfer.getData('source');
+    const contactId = e.dataTransfer.getData('contactId');
+    if (source === 'assigned') {
+      const c = assigned.find(x => x.id === contactId || x.id === parseInt(contactId));
+      if (c) setPendingAction({ action: 'unassign', contact: c });
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!pendingAction) return;
+    setIsSaving(true);
+    const { action, contact } = pendingAction;
+    try {
+      let newAssigned = [];
+      if (action === 'assign') {
+        newAssigned = [...assigned, contact];
+      } else {
+        newAssigned = assigned.filter(c => c.id !== contact.id);
+      }
+      const curatorIds = newAssigned.map(c => c.id);
+      
+      const cleanHandle = tiktoker.user_handle.startsWith("@") ? tiktoker.user_handle.slice(1) : tiktoker.user_handle;
+      const targetName = tiktoker.user_name || tiktoker.user_handle;
+      await updateTiktokerCurators(cleanHandle, targetName, curatorIds);
+      
+      if (action === 'assign') {
+        setAssigned([...assigned, contact]);
+        setAvailable(available.filter(c => c.id !== contact.id));
+      } else {
+        setAssigned(assigned.filter(c => c.id !== contact.id));
+        setAvailable([...available, contact]);
+      }
+      setPendingAction(null);
+    } catch (err) {
+      console.error(err);
+      alert('Error al actualizar la asignación.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <tr>
-      <td colSpan={colSpan} style={{ padding: "0.75rem 1rem 1.1rem 4.5rem", background: "rgba(255,0,80,0.03)", borderBottom: "1px solid var(--glass-border)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
-          <div>
-            <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Curadores asignados</span>
-            <div style={{ marginTop: "0.3rem" }}>
-              <CuratorChips handle={tiktoker.user_handle} refresh={refresh} />
+    <>
+      <tr>
+        <td colSpan={colSpan} style={{ position: 'relative', padding: "0.75rem 1rem 1.1rem 4.5rem", background: "rgba(255,0,80,0.03)", borderBottom: "1px solid var(--glass-border)" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "1.5rem", flexWrap: "wrap" }}>
+            
+            {/* Contactos */}
+            <div style={{ flex: 1, minWidth: "300px" }}>
+              <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                Curadores asignados 
+                {isLoading && <Loader2 size={12} className="loading-spinner" color="var(--text-muted)" />}
+              </span>
+              
+              <div 
+                onDragOver={onDragOver} 
+                onDrop={onDropAssigned}
+                style={{ marginTop: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.35rem", minHeight: "32px", padding: "4px", border: "1px dashed transparent", transition: "all 0.2s" }}
+              >
+                {!isLoading && assigned.length === 0 && (
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.8rem", opacity: 0.4, fontStyle: "italic", alignSelf: "center" }}>Sin curadores asignados</span>
+                )}
+                {assigned.map((c) => (
+                  <button 
+                    key={c.id} 
+                    draggable
+                    onDragStart={(e) => onDragStart(e, c, 'assigned')}
+                    onClick={() => setSelectedContact(c)}
+                    style={{
+                      background: "rgba(255,0,80,0.12)",
+                      border: "1px solid rgba(255,0,80,0.3)",
+                      color: ACCENT, borderRadius: "20px",
+                      padding: "0.3rem 0.7rem", fontSize: "0.75rem", fontWeight: 500,
+                      cursor: "pointer", transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = "rgba(255,0,80,0.22)"}
+                    onMouseLeave={(e) => e.target.style.background = "rgba(255,0,80,0.12)"}
+                  >
+                    {c.displayName || c.name}
+                  </button>
+                ))}
+              </div>
+
+              {!isLoading && available.length > 0 && (
+                <div style={{ marginTop: "1.2rem" }}>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "0.5rem" }}>
+                    Sugerencia de contactos
+                  </span>
+                  <div 
+                    onDragOver={onDragOver} 
+                    onDrop={onDropAvailable}
+                    style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", minHeight: "32px", padding: "4px", border: "1px dashed transparent", transition: "all 0.2s" }}
+                  >
+                    {available.slice(0, 5).map(c => (
+                      <button 
+                        key={c.id} 
+                        draggable
+                        onDragStart={(e) => onDragStart(e, c, 'available')}
+                        onClick={() => setSelectedContact(c)}
+                        style={{
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "var(--text-main)", borderRadius: "20px",
+                          padding: "0.25rem 0.6rem", fontSize: "0.75rem",
+                          cursor: "pointer", transition: "all 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.1)"}
+                        onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.05)"}
+                      >
+                        {c.displayName || c.name}
+                      </button>
+                    ))}
+                    {available.length > 5 && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onManage(tiktoker); }}
+                        style={{
+                          background: "transparent", border: "1px dashed var(--glass-border)",
+                          color: "var(--text-muted)", borderRadius: "20px",
+                          padding: "0.25rem 0.6rem", fontSize: "0.75rem",
+                          cursor: "pointer", transition: "all 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.target.style.color = "var(--text-main)"}
+                        onMouseLeave={(e) => e.target.style.color = "var(--text-muted)"}
+                      >
+                        +{available.length - 5} más
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Acciones */}
+            {isAdmin && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onManage(tiktoker); }}
+                style={{
+                  background: "rgba(255,0,80,0.1)", border: "1px solid rgba(255,0,80,0.3)", color: ACCENT,
+                  padding: "0.45rem 1rem", borderRadius: "20px", fontSize: "0.82rem",
+                  cursor: "pointer", display: "inline-flex", alignItems: "center",
+                  gap: "0.4rem", transition: "all 0.2s", whiteSpace: "nowrap",
+                  flexShrink: 0
+                }}
+              >
+                <Settings2 size={14} /> Administrar Curadores
+              </button>
+            )}
           </div>
-          {isAdmin && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onManage(tiktoker); }}
-              style={{
-                background: "rgba(255,0,80,0.1)", border: "1px solid rgba(255,0,80,0.3)", color: ACCENT,
-                padding: "0.4rem 0.9rem", borderRadius: "20px", fontSize: "0.82rem",
-                cursor: "pointer", display: "inline-flex", alignItems: "center",
-                gap: "0.4rem", transition: "all 0.2s", whiteSpace: "nowrap",
-              }}
-            >
-              <Settings2 size={13} /> Administrar Curadores
-            </button>
+          
+          {/* Overlay Confirmación */}
+          {pendingAction && (
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10
+            }}>
+              <div style={{
+                background: '#1a1a1a', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--glass-border)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)', maxWidth: '300px', textAlign: 'center'
+              }}>
+                <p style={{ margin: '0 0 1.2rem', color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                  ¿Estás seguro de {pendingAction.action === 'assign' ? 'asignar' : 'desasignar'} a <strong>{pendingAction.contact.displayName || pendingAction.contact.name}</strong>?
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                  <button 
+                    onClick={() => setPendingAction(null)} 
+                    disabled={isSaving}
+                    style={{ padding: '0.4rem 1rem', background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-main)', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleConfirm} 
+                    disabled={isSaving}
+                    className="btn-primary"
+                    style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {isSaving && <Loader2 size={14} className="loading-spinner" />}
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
-        </div>
-      </td>
-    </tr>
+        </td>
+      </tr>
+      
+      <ContactPreviewModal
+        isOpen={!!selectedContact}
+        onClose={() => setSelectedContact(null)}
+        contact={selectedContact}
+        type="curators"
+      />
+    </>
   );
 }
 
@@ -106,11 +296,8 @@ export default function TikTokersPage() {
   const isAdmin = user?.role === "ADMIN";
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [tiktokers, setTiktokers] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [serverOffset, setServerOffset] = useState(0);
-  const PAGE_SIZE = 300; // registros por batch del servidor
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [adminModal, setAdminModal] = useState({ isOpen: false, targetKey: null, targetName: "" });
@@ -123,13 +310,11 @@ export default function TikTokersPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setTiktokers([]);
-    setServerOffset(0);
     try {
-      const result = await getTiktokData(0, 0, PAGE_SIZE);
+      const result = await getTiktokData(0, 0, 9999);
       setTiktokers(result.tiktok_users);
       setTotalRecords(result.total_records);
       setCurrentPage(1);
-      setServerOffset(PAGE_SIZE);
     } catch {
       toast({ title: "Error", description: "No se pudieron cargar los TikTokers." });
     } finally {
@@ -137,22 +322,6 @@ export default function TikTokersPage() {
     }
   }, [toast]);
 
-  // Carga siguiente batch y lo concatena
-  const fetchMore = useCallback(async () => {
-    if (isFetchingMore) return;
-    setIsFetchingMore(true);
-    try {
-      const result = await getTiktokData(0, serverOffset, PAGE_SIZE);
-      setTiktokers(prev => [...prev, ...result.tiktok_users]);
-      setServerOffset(prev => prev + PAGE_SIZE);
-    } catch {
-      toast({ title: "Error", description: "No se pudieron cargar más TikTokers." });
-    } finally {
-      setIsFetchingMore(false);
-    }
-  }, [isFetchingMore, serverOffset, toast]);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filtered = tiktokers.filter((t) => {
@@ -171,19 +340,10 @@ export default function TikTokersPage() {
   };
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const hasMoreOnServer = tiktokers.length < totalRecords;
   const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNext = () => {
-    const nextPage = currentPage + 1;
-    if (nextPage <= totalPages) {
-      setCurrentPage(nextPage);
-    }
-    // Activar carga anticipada desde la antepenúltima página
-    if (currentPage >= totalPages - 2 && hasMoreOnServer) {
-      fetchMore();
-      if (nextPage > totalPages) setCurrentPage(nextPage);
-    }
+    if (currentPage < totalPages) setCurrentPage(p => p + 1);
   };
 
   const COL_COUNT = 6;
@@ -204,18 +364,18 @@ export default function TikTokersPage() {
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {!isLoading && (filtered.length > itemsPerPage || hasMoreOnServer) && (
+          {!isLoading && filtered.length > itemsPerPage && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)", fontSize: "0.875rem" }}>
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => p - 1)}
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage === 1 ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}
               >Anterior</button>
-              <span>{currentPage} / {Math.ceil(totalRecords / itemsPerPage) || totalPages}</span>
+              <span>{currentPage} / {totalPages}</span>
               <button
-                disabled={currentPage >= totalPages && !hasMoreOnServer}
+                disabled={currentPage >= totalPages}
                 onClick={handleNext}
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: (currentPage >= totalPages && !hasMoreOnServer) ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: (currentPage >= totalPages && !hasMoreOnServer) ? "not-allowed" : "pointer" }}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage >= totalPages ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage >= totalPages ? "not-allowed" : "pointer" }}
               >
                 Siguiente
               </button>

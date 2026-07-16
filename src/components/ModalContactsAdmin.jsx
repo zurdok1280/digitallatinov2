@@ -38,12 +38,11 @@ export default function ModalContactsAdmin({
           assigned = await getCuratorsForTiktoker(targetKey);
         }
         
-        // 2. Fetch all available
         let all = [];
         if (targetType === 'playlist') {
           all = await getContactsCurators();
         } else if (targetType === 'tiktoker') {
-          all = await getContactsTiktokers();
+          all = await getContactsCurators();
         }
         
         if (isMounted) {
