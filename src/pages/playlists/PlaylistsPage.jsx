@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, Settings2, Loader2, Music, ChevronUp, ChevronDown, ExternalLink, Filter } from "lucide-react";
+import { Search, Settings2, Loader2, Music, ChevronUp, ChevronDown, ExternalLink, Filter, UserCheck } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/useAuth";
 import { getPlaylistData, getPlaylistTypes, getCuratorsForPlaylist, getContactsCurators, updatePlaylistCurators } from "../../services/api";
@@ -19,7 +19,7 @@ const formatTotal = (num) => {
   return num.toString();
 };
 
-function ExpandedRow({ playlist, colSpan, onManage, isAdmin, refresh }) {
+function ExpandedRow({ playlist, colSpan, onManage, isAdmin, refresh, onAssignmentLoaded }) {
   const [assigned, setAssigned] = useState([]);
   const [available, setAvailable] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,11 +94,15 @@ function ExpandedRow({ playlist, colSpan, onManage, isAdmin, refresh }) {
       await updatePlaylistCurators(playlist.spotify_id, playlist.name, curatorIds);
       
       if (action === 'assign') {
-        setAssigned([...assigned, contact]);
+        const updatedAssigned = [...assigned, contact];
+        setAssigned(updatedAssigned);
         setAvailable(available.filter(c => c.id !== contact.id));
+        if (onAssignmentLoaded) onAssignmentLoaded(playlist.spotify_id, updatedAssigned.length);
       } else {
-        setAssigned(assigned.filter(c => c.id !== contact.id));
+        const updatedAssigned = assigned.filter(c => c.id !== contact.id);
+        setAssigned(updatedAssigned);
         setAvailable([...available, contact]);
+        if (onAssignmentLoaded) onAssignmentLoaded(playlist.spotify_id, updatedAssigned.length);
       }
       setPendingAction(null);
     } catch (err) {
@@ -285,6 +289,11 @@ export default function PlaylistsPage() {
   const [expandedId, setExpandedId] = useState(null);
   const [adminModal, setAdminModal] = useState({ isOpen: false, targetKey: null, targetName: "" });
   const [chipsRefresh, setChipsRefresh] = useState(0);
+  const [assignmentMap, setAssignmentMap] = useState({});
+
+  const onAssignmentLoaded = useCallback((spotifyId, count) => {
+    setAssignmentMap(prev => ({ ...prev, [spotifyId]: count }));
+  }, []);
 
   // Type filter
   const [playlistTypesList, setPlaylistTypesList] = useState([]);
@@ -301,6 +310,20 @@ export default function PlaylistsPage() {
       setPlaylistTypesList(normalized);
     });
   }, []);
+
+  // Build assignment map: { spotifyId → curatorCount }
+  // Reloads whenever chipsRefresh changes (after modal closes)
+  useEffect(() => {
+    getContactsCurators().then(curators => {
+      const map = {};
+      curators.forEach(c => {
+        (c.playlists || []).forEach(p => {
+          if (p.spotifyId) map[p.spotifyId] = (map[p.spotifyId] || 0) + 1;
+        });
+      });
+      setAssignmentMap(map);
+    }).catch(() => {});
+  }, [chipsRefresh]);
 
   // Carga inicial (o cuando cambia el tipo)
   const fetchData = useCallback(async (type) => {
@@ -452,13 +475,16 @@ export default function PlaylistsPage() {
                 {paginatedData.map((pl, i) => {
                   const isExpanded = expandedId === pl.spotify_id;
                   const uniqueKey = `${pl.spotify_id}-${i}`;
+                  const assignedCount = assignmentMap[pl.spotify_id] || 0;
+                  const hasAssigned = assignedCount > 0;
+                  const baseBg = hasAssigned ? "rgba(138,136,255,0.055)" : "transparent";
                   return (
                     <React.Fragment key={uniqueKey}>
                       <tr
                         onClick={() => toggleExpand(pl.spotify_id)}
-                        style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(255,255,255,0.04)", background: isExpanded ? "rgba(138,136,255,0.06)" : "transparent", cursor: "pointer", transition: "background 0.15s" }}
-                        onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                        onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = "transparent"; }}
+                        style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(255,255,255,0.04)", background: isExpanded ? "rgba(138,136,255,0.08)" : baseBg, cursor: "pointer", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                        onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = baseBg; }}
                       >
                         <td style={{ padding: "0.85rem 1rem", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.9rem" }}>{pl.rk}</td>
                         <td style={{ padding: "0.85rem 1rem" }}>
@@ -490,9 +516,25 @@ export default function PlaylistsPage() {
                             </span>
                           )}
                         </td>
-                        <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-main)", fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>{fmt(pl.followers_count)}</td>
+                        <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-main)", fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>
+                          <span
+                            title={`${parseInt(pl.followers_count || 0).toLocaleString()} seguidores`}
+                            style={{ cursor: 'default' }}
+                          >
+                            {formatTotal(pl.followers_count || 0)}
+                          </span>
+                        </td>
                         <td style={{ padding: "0.85rem 0.75rem", textAlign: "right" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "1rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.75rem" }}>
+                            {hasAssigned && (
+                              <span
+                                title={`${assignedCount} Curador${assignedCount !== 1 ? 'es' : ''} asignado${assignedCount !== 1 ? 's' : ''}`}
+                                style={{ cursor: 'help', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <UserCheck size={16} color="#22c55e" />
+                              </span>
+                            )}
                             {isAdmin && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); openManage(pl); }}
@@ -511,7 +553,7 @@ export default function PlaylistsPage() {
                         </td>
                       </tr>
                       {isExpanded && (
-                        <ExpandedRow playlist={pl} colSpan={COL_COUNT} onManage={openManage} isAdmin={isAdmin} refresh={chipsRefresh} />
+                        <ExpandedRow playlist={pl} colSpan={COL_COUNT} onManage={openManage} isAdmin={isAdmin} refresh={chipsRefresh} onAssignmentLoaded={onAssignmentLoaded} />
                       )}
                     </React.Fragment>
                   );

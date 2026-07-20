@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Search, Settings2, Loader2, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Search, Settings2, Loader2, ChevronUp, ChevronDown, ExternalLink, UserCheck } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/useAuth";
 import { getTiktokData, getCuratorsForTiktoker, getContactsCurators, updateTiktokerCurators } from "../../services/api";
@@ -39,7 +39,7 @@ function Avatar({ handle }) {
   );
 }
 
-function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh }) {
+function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh, onAssignmentLoaded }) {
   const [assigned, setAssigned] = useState([]);
   const [available, setAvailable] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +72,13 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh }) {
       setAssigned(hydratedAssigned);
       setAvailable(availableContacts);
       setIsLoading(false);
+      // Notify parent with the count of assigned curators
+      if (onAssignmentLoaded) {
+        const cleanHandle = tiktoker.user_handle.startsWith("@")
+          ? tiktoker.user_handle.slice(1)
+          : tiktoker.user_handle;
+        onAssignmentLoaded(cleanHandle, hydratedAssigned.length);
+      }
     });
 
     return () => { isMounted = false; };
@@ -119,11 +126,15 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh }) {
       await updateTiktokerCurators(cleanHandle, targetName, curatorIds);
       
       if (action === 'assign') {
-        setAssigned([...assigned, contact]);
+        const updatedAssigned = [...assigned, contact];
+        setAssigned(updatedAssigned);
         setAvailable(available.filter(c => c.id !== contact.id));
+        if (onAssignmentLoaded) onAssignmentLoaded(cleanHandle, updatedAssigned.length);
       } else {
-        setAssigned(assigned.filter(c => c.id !== contact.id));
+        const updatedAssigned = assigned.filter(c => c.id !== contact.id);
+        setAssigned(updatedAssigned);
         setAvailable([...available, contact]);
+        if (onAssignmentLoaded) onAssignmentLoaded(cleanHandle, updatedAssigned.length);
       }
       setPendingAction(null);
     } catch (err) {
@@ -143,7 +154,7 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh }) {
             {/* Contactos */}
             <div style={{ flex: 1, minWidth: "300px" }}>
               <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                Curadores asignados 
+                Curadores asignados
                 {isLoading && <Loader2 size={12} className="loading-spinner" color="var(--text-muted)" />}
               </span>
               
@@ -302,6 +313,14 @@ export default function TikTokersPage() {
   const [expandedId, setExpandedId] = useState(null);
   const [adminModal, setAdminModal] = useState({ isOpen: false, targetKey: null, targetName: "" });
   const [chipsRefresh, setChipsRefresh] = useState(0);
+  const [assignmentMap, setAssignmentMap] = useState({});
+
+  const onAssignmentLoaded = useCallback((handle, count) => {
+    setAssignmentMap(prev => ({ ...prev, [handle]: count }));
+  }, []);
+
+  // Tracks which handles have already been fetched to avoid duplicate requests
+  const fetchedHandles = useRef(new Set());
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -324,6 +343,38 @@ export default function TikTokersPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // On page load and page/search change: batch-fetch assignment counts
+  // for visible tiktokers that haven't been fetched yet.
+  // This is a workaround until the backend exposes a bulk summary endpoint.
+  useEffect(() => {
+    if (tiktokers.length === 0) return;
+    const q = searchQuery.toLowerCase();
+    const filteredList = tiktokers.filter(t =>
+      (t.user_name || "").toLowerCase().includes(q) ||
+      (t.user_handle || "").toLowerCase().includes(q)
+    );
+    const page = filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const toFetch = page.reduce((acc, t) => {
+      const h = t.user_handle?.startsWith("@") ? t.user_handle.slice(1) : (t.user_handle || "");
+      if (h && !fetchedHandles.current.has(h)) {
+        fetchedHandles.current.add(h);
+        acc.push(h);
+      }
+      return acc;
+    }, []);
+    if (toFetch.length === 0) return;
+    Promise.allSettled(
+      toFetch.map(handle =>
+        getCuratorsForTiktoker(handle).then(curators => ({ handle, count: (curators || []).length }))
+      )
+    ).then(results => {
+      const updates = {};
+      results.forEach(r => { if (r.status === 'fulfilled') updates[r.value.handle] = r.value.count; });
+      if (Object.keys(updates).length > 0)
+        setAssignmentMap(prev => ({ ...prev, ...updates }));
+    });
+  }, [tiktokers, currentPage, searchQuery]); // assignmentMap excluded intentionally to avoid infinite loop
+
   const filtered = tiktokers.filter((t) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -335,8 +386,20 @@ export default function TikTokersPage() {
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
   const openManage = (t) => setAdminModal({ isOpen: true, targetKey: t.user_handle, targetName: t.user_name });
   const closeManage = () => {
+    const managedHandle = adminModal.targetKey;
     setAdminModal({ isOpen: false, targetKey: null, targetName: "" });
     setChipsRefresh((n) => n + 1);
+    // Immediately update the assignment count for the managed tiktoker
+    if (managedHandle) {
+      const cleanHandle = managedHandle.startsWith("@") ? managedHandle.slice(1) : managedHandle;
+      // Remove from fetched cache so the batch effect can re-fetch if page changes
+      fetchedHandles.current.delete(cleanHandle);
+      getCuratorsForTiktoker(cleanHandle)
+        .then(curators => {
+          setAssignmentMap(prev => ({ ...prev, [cleanHandle]: (curators || []).length }));
+        })
+        .catch(() => {});
+    }
   };
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -428,13 +491,17 @@ export default function TikTokersPage() {
                 {paginatedData.map((t, i) => {
                   const isExpanded = expandedId === t.tiktok_user_id;
                   const uniqueKey = `${t.tiktok_user_id}-${i}`;
+                  const cleanHandle = t.user_handle?.startsWith("@") ? t.user_handle.slice(1) : (t.user_handle || "");
+                  const assignedCount = assignmentMap[cleanHandle] || 0;
+                  const hasAssigned = assignedCount > 0;
+                  const baseBg = hasAssigned ? "rgba(255,0,80,0.04)" : "transparent";
                   return (
                     <React.Fragment key={uniqueKey}>
                       <tr
                         onClick={() => toggleExpand(t.tiktok_user_id)}
-                        style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(255,255,255,0.04)", background: isExpanded ? "rgba(255,0,80,0.05)" : "transparent", cursor: "pointer", transition: "background 0.15s" }}
-                        onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                        onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = "transparent"; }}
+                        style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(255,255,255,0.04)", background: isExpanded ? "rgba(255,0,80,0.07)" : baseBg, cursor: "pointer", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                        onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = baseBg; }}
                       >
                         <td style={{ padding: "0.85rem 1rem", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.9rem" }}>{t.rk}</td>
                         <td style={{ padding: "0.85rem 1rem" }}>
@@ -455,9 +522,25 @@ export default function TikTokersPage() {
                           </a>
                         </td>
                         <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "var(--text-dim)", fontSize: "0.875rem" }}>{fmtAvg(t.avg_data)}</td>
-                        <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-main)", fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>{fmt(t.followers_count)}</td>
+                        <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-main)", fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>
+                          <span
+                            title={`${parseInt(t.followers_count || 0).toLocaleString()} seguidores`}
+                            style={{ cursor: 'default' }}
+                          >
+                            {formatTotal(t.followers_count || 0)}
+                          </span>
+                        </td>
                         <td style={{ padding: "0.85rem 0.75rem", textAlign: "right" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "1rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.75rem" }}>
+                            {hasAssigned && (
+                              <span
+                                title={`${assignedCount} TikToker${assignedCount !== 1 ? 's' : ''} asignado${assignedCount !== 1 ? 's' : ''}`}
+                                style={{ cursor: 'help', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <UserCheck size={16} color="#22c55e" />
+                              </span>
+                            )}
                             {isAdmin && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); openManage(t); }}
@@ -476,7 +559,7 @@ export default function TikTokersPage() {
                         </td>
                       </tr>
                       {isExpanded && (
-                        <ExpandedRow tiktoker={t} colSpan={COL_COUNT} onManage={openManage} isAdmin={isAdmin} refresh={chipsRefresh} />
+                        <ExpandedRow tiktoker={t} colSpan={COL_COUNT} onManage={openManage} isAdmin={isAdmin} refresh={chipsRefresh} onAssignmentLoaded={onAssignmentLoaded} />
                       )}
                     </React.Fragment>
                   );
