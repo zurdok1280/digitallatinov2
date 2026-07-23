@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Settings2, Loader2, Music, ChevronUp, ChevronDown, ExternalLink, Filter, UserCheck } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/useAuth";
-import { getPlaylistData, getPlaylistTypes, getCuratorsForPlaylist, getContactsCurators, updatePlaylistCurators } from "../../services/api";
+import { getPlaylistData, getPlaylistTypes, getCuratorsForPlaylist, getContactsCurators, updatePlaylistCurators, searchPlaylists } from "../../services/api";
 import ModalContactsAdmin from "../../components/ModalContactsAdmin";
 import ContactPreviewModal from "../../components/shared/ContactPreviewModal";
 
@@ -303,6 +303,12 @@ export default function PlaylistsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
+  // Server-side search state
+  const [searchResults, setSearchResults] = useState(null); // null = sin búsqueda activa
+  const [searchTotalRecords, setSearchTotalRecords] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchAbortRef = useRef(null);
+
   // Load playlist types on mount
   useEffect(() => {
     getPlaylistTypes().then(types => {
@@ -343,7 +349,37 @@ export default function PlaylistsPage() {
 
   useEffect(() => { fetchData(selectedType); }, [selectedType, fetchData]);
 
-  const filtered = playlists.filter((p) => {
+  // Buscar con paginación
+  const fetchSearch = useCallback(async (query, type, page) => {
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+    searchAbortRef.current = new AbortController();
+    setIsSearching(true);
+    const offset = (page - 1) * itemsPerPage;
+    const result = await searchPlaylists(query, type, offset, itemsPerPage, searchAbortRef.current.signal);
+    if (result !== null) {
+      setSearchResults(result.playlists);
+      setSearchTotalRecords(result.total_records);
+    }
+    setIsSearching(false);
+  }, []);
+
+  // Server-side search: debounce 350ms + AbortController para cancelar peticiones stale
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      setSearchTotalRecords(0);
+      setCurrentPage(1); // Volver a pag 1 local al borrar
+      return;
+    }
+    const timer = setTimeout(() => {
+      setCurrentPage(1);
+      fetchSearch(searchQuery, selectedType, 1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedType, fetchSearch]);
+
+  // Cuando hay búsqueda activa usa los resultados del servidor; si no, filtra localmente
+  const filteredLocal = playlists.filter((p) => {
     const q = searchQuery.toLowerCase();
     return (
       (p.playlist_name || "").toLowerCase().includes(q) ||
@@ -352,6 +388,8 @@ export default function PlaylistsPage() {
     );
   });
 
+  const displayData = searchResults !== null ? searchResults : filteredLocal;
+
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
   const openManage = (pl) => setAdminModal({ isOpen: true, targetKey: pl.spotify_id, targetName: pl.playlist_name });
   const closeManage = () => {
@@ -359,11 +397,28 @@ export default function PlaylistsPage() {
     setChipsRefresh((n) => n + 1);
   };
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = searchResults !== null
+    ? Math.ceil(searchTotalRecords / itemsPerPage)
+    : Math.ceil(filteredLocal.length / itemsPerPage);
+
+  const paginatedData = searchResults !== null
+    ? searchResults
+    : filteredLocal.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage(p => p + 1);
+    if (currentPage < totalPages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      if (searchResults !== null) fetchSearch(searchQuery, selectedType, nextPage);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentPage > 1) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      if (searchResults !== null) fetchSearch(searchQuery, selectedType, prevPage);
+    }
   };
 
   const COL_COUNT = 6;
@@ -377,9 +432,13 @@ export default function PlaylistsPage() {
             <Music size={22} color={ACCENT} />
             Ranking de <span style={{ color: ACCENT }}>&nbsp;Playlists</span>
           </h1>
-          {!isLoading && (
-            <span className="hidden md:inline-block" style={{ marginLeft: "auto", color: "var(--text-muted)", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", padding: "0.25rem 0.65rem", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.08)" }}>
-              {filtered.length} de {formatTotal(totalRecords)} Playlists
+          {(isSearching || !isLoading) && (
+            <span className="hidden md:inline-block" style={{ marginLeft: "auto", color: "var(--text-muted)", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", padding: "0.25rem 0.65rem", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              {isSearching && <Loader2 size={12} className="loading-spinner" />}
+              {searchResults !== null
+                ? `${searchTotalRecords >= 50 ? "50+" : searchTotalRecords} resultados para "${searchQuery}"`
+                : `${formatTotal(totalRecords)} Playlists`
+              }
             </span>
           )}
         </div>
@@ -410,11 +469,11 @@ export default function PlaylistsPage() {
             </select>
           </div>
           {/* Pagination */}
-          {!isLoading && filtered.length > itemsPerPage && (
+          {!isLoading && (searchResults !== null ? searchTotalRecords > itemsPerPage : filteredLocal.length > itemsPerPage) && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
               <button
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
+                onClick={handlePrev}
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage === 1 ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}
               >Anterior</button>
               <span>{currentPage} / {totalPages}</span>
@@ -422,9 +481,7 @@ export default function PlaylistsPage() {
                 disabled={currentPage >= totalPages}
                 onClick={handleNext}
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage >= totalPages ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.3rem 0.75rem", borderRadius: "15px", cursor: currentPage >= totalPages ? "not-allowed" : "pointer" }}
-              >
-                Siguiente
-              </button>
+              >Siguiente</button>
             </div>
           )}
           {/* Search */}
@@ -443,9 +500,36 @@ export default function PlaylistsPage() {
 
       {/* Table */}
       <div className="glass-panel" style={{ overflow: "hidden" }}>
-        {isLoading ? (
-          <div style={{ height: "350px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Loader2 size={40} color={ACCENT} className="loading-spinner" />
+        {(isLoading || isSearching) ? (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--glass-border)", background: "rgba(255,255,255,0.025)" }}>
+                  {["#", "Playlist", "Propietario", "Tipo", "Seguidores", ""].map((h, i) => (
+                    <th key={i} style={{ padding: "0.85rem 1rem", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: i === 4 ? "right" : "left", width: i === 0 ? 48 : i === 5 ? 180 : "auto" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "0.85rem 1rem" }}><div className="animate-pulse" style={{ height: "18px", width: "18px", background: "rgba(255,255,255,0.05)", borderRadius: "4px" }} /></td>
+                    <td style={{ padding: "0.85rem 1rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <div className="animate-pulse" style={{ height: "42px", width: "42px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", flexShrink: 0 }} />
+                        <div className="animate-pulse" style={{ height: "18px", width: "140px", background: "rgba(255,255,255,0.05)", borderRadius: "4px" }} />
+                      </div>
+                    </td>
+                    <td style={{ padding: "0.85rem 1rem" }}><div className="animate-pulse" style={{ height: "18px", width: "80px", background: "rgba(255,255,255,0.05)", borderRadius: "4px" }} /></td>
+                    <td style={{ padding: "0.85rem 1rem" }}><div className="animate-pulse" style={{ height: "22px", width: "70px", background: "rgba(255,255,255,0.05)", borderRadius: "12px" }} /></td>
+                    <td style={{ padding: "0.85rem 1rem" }}><div className="animate-pulse" style={{ height: "18px", width: "60px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", marginLeft: "auto" }} /></td>
+                    <td style={{ padding: "0.85rem 1rem" }}><div className="animate-pulse" style={{ height: "26px", width: "90px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", marginLeft: "auto" }} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : paginatedData.length === 0 ? (
           isFetchingMore ? (
@@ -563,6 +647,31 @@ export default function PlaylistsPage() {
           </div>
         )}
       </div>
+
+      {/* Bottom Pagination */}
+      {!isLoading && (searchResults !== null ? searchTotalRecords > itemsPerPage : filteredLocal.length > itemsPerPage) && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "1.5rem", marginBottom: "2rem" }}>
+          <div className="glass-panel" style={{ display: "inline-flex", alignItems: "center", gap: "1rem", padding: "0.6rem 1.5rem", borderRadius: "30px", background: "rgba(20,20,30,0.6)" }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={handlePrev}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage === 1 ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.4rem 1rem", borderRadius: "20px", cursor: currentPage === 1 ? "not-allowed" : "pointer", transition: "background 0.2s" }}
+              onMouseEnter={(e) => { if (currentPage !== 1) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+              onMouseLeave={(e) => { if (currentPage !== 1) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+            >Anterior</button>
+            <span style={{ color: "var(--text-muted)", fontSize: "0.9rem", fontWeight: 500 }}>
+              Página <span style={{ color: "var(--text-main)" }}>{currentPage}</span> de {totalPages}
+            </span>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={handleNext}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--glass-border)", color: currentPage >= totalPages ? "rgba(255,255,255,0.2)" : "var(--text-main)", padding: "0.4rem 1rem", borderRadius: "20px", cursor: currentPage >= totalPages ? "not-allowed" : "pointer", transition: "background 0.2s" }}
+              onMouseEnter={(e) => { if (currentPage < totalPages) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+              onMouseLeave={(e) => { if (currentPage < totalPages) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+            >Siguiente</button>
+          </div>
+        </div>
+      )}
 
       {adminModal.isOpen && (
         <ModalContactsAdmin
