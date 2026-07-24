@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { getPlaylistData, getPlaylistTypes, getCuratorsForPlaylist, getContactsCurators, updatePlaylistCurators, searchPlaylists } from "../../services/api";
 import ModalContactsAdmin from "../../components/ModalContactsAdmin";
 import ContactPreviewModal from "../../components/shared/ContactPreviewModal";
+import ToggleSwitch from "../../components/shared/ToggleSwitch";
 
 const ACCENT = "#8a88ff";
 
@@ -306,6 +307,8 @@ export default function PlaylistsPage() {
   // Server-side search state
   const [searchResults, setSearchResults] = useState(null); // null = sin búsqueda activa
   const [searchTotalRecords, setSearchTotalRecords] = useState(0);
+
+  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchAbortRef = useRef(null);
 
@@ -390,6 +393,10 @@ export default function PlaylistsPage() {
 
   const displayData = searchResults !== null ? searchResults : filteredLocal;
 
+  const visibleData = showUnassignedOnly
+    ? displayData.filter(p => !assignmentMap[p.spotify_id])
+    : displayData;
+
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
   const openManage = (pl) => setAdminModal({ isOpen: true, targetKey: pl.spotify_id, targetName: pl.playlist_name });
   const closeManage = () => {
@@ -397,13 +404,13 @@ export default function PlaylistsPage() {
     setChipsRefresh((n) => n + 1);
   };
 
-  const totalPages = searchResults !== null
-    ? Math.ceil(searchTotalRecords / itemsPerPage)
-    : Math.ceil(filteredLocal.length / itemsPerPage);
+  const totalPages = visibleData.length > 0
+    ? Math.ceil((searchResults !== null && !showUnassignedOnly ? searchTotalRecords : visibleData.length) / itemsPerPage)
+    : 1;
 
-  const paginatedData = searchResults !== null
+  const paginatedData = searchResults !== null && !showUnassignedOnly
     ? searchResults
-    : filteredLocal.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    : visibleData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNext = () => {
     if (currentPage < totalPages) {
@@ -646,6 +653,15 @@ export default function PlaylistsPage() {
             </table>
           </div>
         )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.75rem 1.5rem 0.5rem" }}>
+        <ToggleSwitch
+          checked={showUnassignedOnly}
+          onChange={(v) => { setShowUnassignedOnly(v); setCurrentPage(1); }}
+          labelOff="Mostrar Playlists sin asignar"
+          labelOn="Mostrar todas"
+        />
       </div>
 
       {/* Bottom Pagination */}

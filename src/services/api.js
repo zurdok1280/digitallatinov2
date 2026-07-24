@@ -825,6 +825,22 @@ export const getContactsTiktokers = async () => {
 };
 
 /**
+ * Fetch all assigned tiktoker handles from the backend.
+ * Returns a Set of strings (handles).
+ */
+export const getAssignedTiktokerHandles = async () => {
+  try {
+    const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/tiktokers/assigned-handles`);
+    if (!response.ok) return new Set();
+    const data = await response.json();
+    return new Set(Array.isArray(data) ? data : []);
+  } catch (error) {
+    console.error('API Error fetching assigned handles:', error);
+    return new Set();
+  }
+};
+
+/**
  * Creates a new curator via POST /api/contacts/curators.
  * @param {object} contact - Internal Contact object
  */

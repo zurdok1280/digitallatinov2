@@ -5,6 +5,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { getTiktokData, getCuratorsForTiktoker, getContactsCurators, updateTiktokerCurators, searchTiktokUsers } from "../../services/api";
 import ModalContactsAdmin from "../../components/ModalContactsAdmin";
 import ContactPreviewModal from "../../components/shared/ContactPreviewModal";
+import ToggleSwitch from "../../components/shared/ToggleSwitch";
+import { getAssignedTiktokerHandles } from "../../services/api";
 
 const ACCENT = "#ff0050";
 
@@ -325,6 +327,14 @@ export default function TikTokersPage() {
   // Server-side search state
   const [searchResults, setSearchResults] = useState(null); // null = sin búsqueda activa
   const [searchTotalRecords, setSearchTotalRecords] = useState(0);
+
+  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
+  const [assignedHandlesSet, setAssignedHandlesSet] = useState(new Set());
+
+  // Load all assigned handles globally
+  useEffect(() => {
+    getAssignedTiktokerHandles().then(set => setAssignedHandlesSet(set));
+  }, [chipsRefresh]);
   const [isSearching, setIsSearching] = useState(false);
   const searchAbortRef = useRef(null);
 
@@ -424,6 +434,13 @@ export default function TikTokersPage() {
 
   const displayData = searchResults !== null ? searchResults : filteredLocal;
 
+  const visibleData = showUnassignedOnly
+    ? displayData.filter(t => {
+        const h = t.user_handle?.startsWith("@") ? t.user_handle.slice(1) : (t.user_handle || "");
+        return !assignedHandlesSet.has(h) && !(assignmentMap[h] > 0);
+      })
+    : displayData;
+
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
   const openManage = (t) => setAdminModal({ isOpen: true, targetKey: t.user_handle, targetName: t.user_name });
   const closeManage = () => {
@@ -443,13 +460,13 @@ export default function TikTokersPage() {
     }
   };
 
-  const totalPages = searchResults !== null
-    ? Math.ceil(searchTotalRecords / itemsPerPage)
-    : Math.ceil(filteredLocal.length / itemsPerPage);
+  const totalPages = visibleData.length > 0
+    ? Math.ceil((searchResults !== null && !showUnassignedOnly ? searchTotalRecords : visibleData.length) / itemsPerPage)
+    : 1;
 
-  const paginatedData = searchResults !== null
+  const paginatedData = searchResults !== null && !showUnassignedOnly
     ? searchResults
-    : filteredLocal.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    : visibleData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNext = () => {
     if (currentPage < totalPages) {
@@ -656,6 +673,15 @@ export default function TikTokersPage() {
             </table>
           </div>
         )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.75rem 1.5rem 0.5rem" }}>
+        <ToggleSwitch
+          checked={showUnassignedOnly}
+          onChange={(v) => { setShowUnassignedOnly(v); setCurrentPage(1); }}
+          labelOff="Mostrar TikTokers sin asignar"
+          labelOn="Mostrar todos"
+        />
       </div>
 
       {/* Bottom Pagination */}
