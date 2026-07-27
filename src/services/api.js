@@ -1,8 +1,8 @@
 // ─── Backend URLs ─────────────────────────────────────────────────────────────
 // AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
 // ⚠️  Switch between production and local for development:
-const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
-// const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
+// const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
+const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
 
 // Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
 // ⚠️  Switch between production and local for development:
@@ -358,7 +358,7 @@ export const getTrendingTopPlatforms = async (platform, formatId = 0, countryId 
   const pId = platform || 'spotify';
   const fId = formatId === 'All' ? 0 : formatId;
   const cId = countryId === 'All' ? 0 : countryId;
-  
+
   try {
     const response = await authFetch(`${API_BASE_URL}/report/getTopPlatform/${encodeURIComponent(pId)}/${fId}/${cId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -378,7 +378,7 @@ export const getTrendingTopArtists = async (formatId = 0, countryId = 0, cityId 
   const fId = formatId === 'All' ? 0 : formatId;
   const cId = countryId === 'All' ? 0 : countryId;
   const ctyId = cityId === 'All' ? 0 : cityId;
-  
+
   try {
     const response = await authFetch(`${API_BASE_URL}/report/getTopArtist/${fId}/${cId}/${ctyId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -496,7 +496,7 @@ export const getSongHistoricalStreamsWeek = async (csSong, countryId = 0, format
 export const getDebutSongs = async (formatId = 0, countryId = 0) => {
   const fId = formatId === 'All' ? 0 : formatId;
   const cId = countryId === 'All' ? 0 : countryId;
-  
+
   try {
     const response = await authFetch(`${API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -679,14 +679,14 @@ export const setLogSong = async ({ userid, spotifyid, isartist }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userid, spotifyid, isartist })
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     // 2. Guardar en cache para evitar spam en esta sesión
     sessionStorage.setItem(cacheKey, 'true');
-    
+
     // Leer como texto primero porque el backend puede devolver "ok" en lugar de un JSON válido
     const text = await response.text();
     try {
@@ -1077,41 +1077,110 @@ export const getTiktokData = async (genre = 0, offset = 0, pageSize = 300) => {
   }
 };
 
-/**
- * Busca playlists por nombre o propietario (server-side, paginado).
- * Usa AbortController para cancelar peticiones stale al escribir rápido.
- * Returns: { playlists: [...], total_records: N } | null si la petición fue cancelada
- */
-export const searchPlaylists = async (query, type = 0, offset = 0, pageSize = 50, signal) => {
-  if (!query || query.trim().length < 2) return { playlists: [], total_records: 0 };
+// ─── Format Digital (Géneros) CRUD ──────────────────────────────────────────
+
+const FORMAT_DIGITAL_BASE = `${API_BASE_URL}/formatDigital`;
+const FORMAT_DIGITAL_ALT_BASE = `${LOGIN_API_BASE_URL}/formatDigital`;
+
+async function fetchFormatDigitalEndpoint(pathPrimary, pathSecondary, options = {}) {
   try {
-    const params = new URLSearchParams({ query: query.trim(), type, offset, pageSize });
-    const response = await authFetch(`${API_BASE_URL}/report/searchPlaylist?${params}`, { signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return { playlists: data?.playlists || [], total_records: data?.total_records ?? 0 };
+    let res = await authFetch(`${FORMAT_DIGITAL_BASE}${pathPrimary}`, options);
+    if (res.status === 404 && pathSecondary) {
+      res = await authFetch(`${FORMAT_DIGITAL_BASE}${pathSecondary}`, options);
+    }
+    if (res.status === 404) {
+      try {
+        let altRes = await authFetch(`${FORMAT_DIGITAL_ALT_BASE}${pathPrimary}`, options);
+        if (altRes.status === 404 && pathSecondary) {
+          altRes = await authFetch(`${FORMAT_DIGITAL_ALT_BASE}${pathSecondary}`, options);
+        }
+        if (altRes.ok) return altRes;
+      } catch (_) { }
+    }
+    return res;
   } catch (err) {
-    if (err.name === 'AbortError') return null; // petición cancelada — no actualizar UI
-    console.error('searchPlaylists error:', err);
-    return { playlists: [], total_records: 0 };
+    let altRes = await authFetch(`${FORMAT_DIGITAL_ALT_BASE}${pathPrimary}`, options);
+    if (altRes.status === 404 && pathSecondary) {
+      altRes = await authFetch(`${FORMAT_DIGITAL_ALT_BASE}${pathSecondary}`, options);
+    }
+    return altRes;
+  }
+}
+
+/**
+ * GET /api/formatDigital/getAll
+ */
+export const getFormatosDigitales = async () => {
+  try {
+    const res = await fetchFormatDigitalEndpoint('/getAll', '');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error('API Error fetching formatDigital list:', error);
+    throw error;
   }
 };
 
 /**
- * Busca TikTokers por nombre o handle (server-side, paginado).
- * Returns: { tiktok_users: [...], total_records: N } | null si fue cancelada
+ * GET /api/formatDigital/getById/{id}
  */
-export const searchTiktokUsers = async (query, genre = 0, offset = 0, pageSize = 50, signal) => {
-  if (!query || query.trim().length < 2) return { tiktok_users: [], total_records: 0 };
+export const getFormatoDigitalById = async (id) => {
   try {
-    const params = new URLSearchParams({ query: query.trim(), genre, offset, pageSize });
-    const response = await authFetch(`${API_BASE_URL}/report/searchTiktokUser?${params}`, { signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return { tiktok_users: data?.tiktok_users || [], total_records: data?.total_records ?? 0 };
-  } catch (err) {
-    if (err.name === 'AbortError') return null;
-    console.error('searchTiktokUsers error:', err);
-    return { tiktok_users: [], total_records: 0 };
+    const res = await fetchFormatDigitalEndpoint(`/getById/${id}`, `/${id}`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    console.error(`API Error fetching formatDigital ${id}:`, error);
+    throw error;
   }
 };
+
+/**
+ * POST /api/formatDigital/create
+ */
+export const createFormatoDigital = async (payload) => {
+  const options = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  };
+  const res = await fetchFormatDigitalEndpoint('/create', '', options);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(errText || `HTTP error! status: ${res.status}`);
+  }
+  return await res.json().catch(() => ({ success: true }));
+};
+
+/**
+ * PUT /api/formatDigital/update/{id}
+ */
+export const updateFormatoDigital = async (id, payload) => {
+  const options = {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  };
+  const res = await fetchFormatDigitalEndpoint(`/update/${id}`, `/${id}`, options);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(errText || `HTTP error! status: ${res.status}`);
+  }
+  return await res.json().catch(() => ({ success: true }));
+};
+
+/**
+ * DELETE /api/formatDigital/delete/{id}
+ */
+export const deleteFormatoDigital = async (id) => {
+  const options = { method: 'DELETE' };
+  const res = await fetchFormatDigitalEndpoint(`/delete/${id}`, `/${id}`, options);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(errText || `HTTP error! status: ${res.status}`);
+  }
+  return await res.json().catch(() => ({ success: true }));
+};
+
+

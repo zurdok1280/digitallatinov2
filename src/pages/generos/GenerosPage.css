@@ -1,0 +1,379 @@
+/* Global & Container */
+.generos-container {
+    min-height: 100vh;
+    background-color: #0a0b10;
+    color: #f3f4f6;
+    padding: 2rem;
+    position: relative;
+    padding-bottom: 8rem;
+    font-family: inherit;
+}
+
+@media (max-width: 640px) {
+    .generos-container {
+        padding: 1rem;
+    }
+}
+
+/* Header Section */
+.generos-header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 2rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .generos-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.generos-header-gradient-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, #c193ff, #ff0050, #00e5ff);
+    opacity: 0.7;
+}
+
+.generos-header-title {
+    font-size: 1.65rem;
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.generos-header-desc {
+    color: #9ca3af;
+    margin-top: 0.5rem;
+    max-width: 42rem;
+    font-size: 0.95rem;
+}
+
+/* Buttons */
+.btn-primary-generos {
+    background: #c193ff;
+    color: black;
+    padding: 0.85rem 1.4rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    box-shadow: 0 10px 15px -3px rgba(193, 147, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.btn-primary-generos:hover {
+    background: #d1acff;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px -3px rgba(193, 147, 255, 0.4);
+}
+
+.btn-secondary-generos {
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-secondary-generos:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Controls Bar (Search + Info) */
+.generos-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.search-box-generos {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+    max-width: 450px;
+}
+
+.search-input-generos {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.search-input-generos:focus {
+    outline: none;
+    border-color: #c193ff;
+    background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 2px rgba(193, 147, 255, 0.2);
+}
+
+.search-icon-generos {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    pointer-events: none;
+}
+
+.total-badge-generos {
+    background: rgba(193, 147, 255, 0.1);
+    border: 1px solid rgba(193, 147, 255, 0.2);
+    color: #c193ff;
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+/* Table */
+.generos-table-wrapper {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.generos-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+}
+
+.generos-table th {
+    background-color: rgba(255, 255, 255, 0.03);
+    color: #9ca3af;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.generos-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: #e5e7eb;
+    font-size: 0.875rem;
+}
+
+.generos-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.generos-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.generos-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.id-badge {
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a78bfa;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+    width: 34px;
+    height: 34px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn.edit:hover {
+    background: rgba(193, 147, 255, 0.15);
+    border-color: rgba(193, 147, 255, 0.3);
+    color: #c193ff;
+}
+
+.action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+/* Modals */
+.generos-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+}
+
+.generos-modal-content {
+    background: #12131c;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    position: relative;
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.generos-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.generos-modal-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+}
+
+.generos-modal-close {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.generos-modal-close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.form-group-generos {
+    margin-bottom: 1.25rem;
+}
+
+.form-label-generos {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.form-input-generos {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.form-input-generos:focus {
+    outline: none;
+    border-color: #c193ff;
+    background-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 0 2px rgba(193, 147, 255, 0.2);
+}
+
+textarea.form-input-generos {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.generos-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.loader-spin-generos {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(15px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
