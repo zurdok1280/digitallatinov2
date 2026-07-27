@@ -1077,6 +1077,45 @@ export const getTiktokData = async (genre = 0, offset = 0, pageSize = 300) => {
   }
 };
 
+/**
+ * Busca playlists por nombre o propietario (server-side, paginado).
+ * Usa AbortController para cancelar peticiones stale al escribir rápido.
+ * Returns: { playlists: [...], total_records: N } | null si la petición fue cancelada
+ */
+export const searchPlaylists = async (query, type = 0, offset = 0, pageSize = 50, signal) => {
+  if (!query || query.trim().length < 2) return { playlists: [], total_records: 0 };
+  try {
+    const params = new URLSearchParams({ query: query.trim(), type, offset, pageSize });
+    const response = await authFetch(`${API_BASE_URL}/report/searchPlaylist?${params}`, { signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return { playlists: data?.playlists || [], total_records: data?.total_records ?? 0 };
+  } catch (err) {
+    if (err.name === 'AbortError') return null;
+    console.error('searchPlaylists error:', err);
+    return { playlists: [], total_records: 0 };
+  }
+};
+
+/**
+ * Busca TikTokers por nombre o handle (server-side, paginado).
+ * Returns: { tiktok_users: [...], total_records: N } | null si fue cancelada
+ */
+export const searchTiktokUsers = async (query, genre = 0, offset = 0, pageSize = 50, signal) => {
+  if (!query || query.trim().length < 2) return { tiktok_users: [], total_records: 0 };
+  try {
+    const params = new URLSearchParams({ query: query.trim(), genre, offset, pageSize });
+    const response = await authFetch(`${API_BASE_URL}/report/searchTiktokUser?${params}`, { signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return { tiktok_users: data?.tiktok_users || [], total_records: data?.total_records ?? 0 };
+  } catch (err) {
+    if (err.name === 'AbortError') return null;
+    console.error('searchTiktokUsers error:', err);
+    return { tiktok_users: [], total_records: 0 };
+  }
+};
+
 // ─── Format Digital (Géneros) CRUD ──────────────────────────────────────────
 
 const FORMAT_DIGITAL_BASE = `${API_BASE_URL}/formatDigital`;
