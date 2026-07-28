@@ -12,6 +12,7 @@ import {
   deleteTiktoker,
 } from '../../services/api';
 import { useToast } from '../../hooks/use-toast';
+import { CountryCombobox, PhoneDialInput, LanguageCombobox, COUNTRIES, LANGUAGES } from './CountryPhoneSelect';
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 const inputStyle = {
@@ -54,21 +55,46 @@ const EMPTY_CONTACT = {
   name: '', handle: '', metric: '', email: '', phone: '',
   instagram: { handle: '', url: '' },
   facebook: { handle: '', url: '' },
+  x: { handle: '', url: '' },
   tiktok: { handle: '', url: '' },
   youtube: { handle: '', url: '' },
-  country: '', language: '', status: 'nuevo', lastContact: '', notes: '',
+  country: '', language: '', status: 'nuevo', lastContact: '', notes: '', priceUsd: '',
+  phoneDialCode: '+52', // Default dial code
 };
 
 // ─── Full Contact Form ─────────────────────────────────────────────────────────
 const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSaving }) => {
-  const [form, setForm] = useState(() => ({
-    ...EMPTY_CONTACT,
-    ...initialData,
-    instagram: { ...EMPTY_CONTACT.instagram, ...(initialData.instagram || {}) },
-    facebook: { ...EMPTY_CONTACT.facebook, ...(initialData.facebook || {}) },
-    tiktok: { ...EMPTY_CONTACT.tiktok, ...(initialData.tiktok || {}) },
-    youtube: { ...EMPTY_CONTACT.youtube, ...(initialData.youtube || {}) },
-  }));
+  const [form, setForm] = useState(() => {
+    let initDialCode = '+52';
+    let initPhone = initialData.phone || '';
+    
+    if (initPhone) {
+      // Find matching dial code (sort by length descending)
+      const sortedDialCodes = [...new Set(COUNTRIES.map(c => c.dial))].sort((a, b) => b.length - a.length);
+      for (const dial of sortedDialCodes) {
+        if (initPhone.startsWith(dial)) {
+          initDialCode = dial;
+          initPhone = initPhone.substring(dial.length).trim();
+          break;
+        }
+      }
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    return {
+      ...EMPTY_CONTACT,
+      ...initialData,
+      phoneDialCode: initDialCode,
+      phone: initPhone,
+      lastContact: initialData.lastContact || today,
+      instagram: { ...EMPTY_CONTACT.instagram, ...(initialData.instagram || {}) },
+      facebook: { ...EMPTY_CONTACT.facebook, ...(initialData.facebook || {}) },
+      x: { ...EMPTY_CONTACT.x, ...(initialData.x || {}) },
+      tiktok: { ...EMPTY_CONTACT.tiktok, ...(initialData.tiktok || {}) },
+      youtube: { ...EMPTY_CONTACT.youtube, ...(initialData.youtube || {}) },
+    };
+  });
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -96,27 +122,46 @@ const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSa
             <input required name="name" value={form.name} onChange={onChange} style={inputStyle} placeholder="Nombre completo" />
           </div>
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Handle</label>
-            <input name="handle" value={form.handle} onChange={onChange} style={inputStyle} placeholder="@usuario" />
+            <label style={labelStyle}>Precio USD</label>
+            <input type="number" step="0.01" name="priceUsd" value={form.priceUsd} onChange={onChange} style={inputStyle} placeholder="100.00" />
           </div>
           <div style={fieldGroupStyle}>
             <label style={labelStyle}>Email</label>
             <input type="email" name="email" value={form.email} onChange={onChange} style={inputStyle} placeholder="email@..." />
           </div>
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Teléfono</label>
-            <input name="phone" value={form.phone} onChange={onChange} style={inputStyle} placeholder="+52..." />
+            <label style={labelStyle}>País</label>
+            <CountryCombobox 
+              value={form.country} 
+              onChange={(countryObj) => {
+                setForm(p => {
+                  const updates = { country: countryObj.name };
+                  if (!p.phone) {
+                    updates.phoneDialCode = countryObj.dial;
+                  }
+                  return { ...p, ...updates };
+                });
+              }} 
+            />
           </div>
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>País</label>
-            <input name="country" value={form.country} onChange={onChange} style={inputStyle} placeholder="México" />
+            <label style={labelStyle}>Teléfono</label>
+            <PhoneDialInput
+              dialCode={form.phoneDialCode}
+              phone={form.phone}
+              onDialChange={(dial) => setForm(p => ({ ...p, phoneDialCode: dial }))}
+              onPhoneChange={(val) => setForm(p => ({ ...p, phone: val }))}
+            />
           </div>
           <div style={fieldGroupStyle}>
             <label style={labelStyle}>Idioma</label>
-            <input name="language" value={form.language} onChange={onChange} style={inputStyle} placeholder="Español" />
+            <LanguageCombobox 
+              value={form.language} 
+              onChange={(val) => setForm(p => ({ ...p, language: val }))} 
+            />
           </div>
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>{type === 'curators' ? 'Playlists' : 'Followers'}</label>
+            <label style={labelStyle}>{type === 'curators' ? 'Playlists' : 'TikTokers'}</label>
             <div style={{ padding: '0.55rem 0.2rem', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600 }}>
               {form.metric || 'N/A'}
             </div>
@@ -158,15 +203,28 @@ const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSa
             <label style={labelStyle}>Facebook URL</label>
             <input value={form.facebook.url} onChange={(e) => onSocialChange(e, 'facebook', 'url')} style={inputStyle} placeholder="https://..." />
           </div>
-          {/* TikTok */}
+          {/* X (Twitter) */}
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>TikTok Handle</label>
-            <input value={form.tiktok.handle} onChange={(e) => onSocialChange(e, 'tiktok', 'handle')} style={inputStyle} placeholder="@user" />
+            <label style={labelStyle}>X Handle</label>
+            <input value={form.x.handle} onChange={(e) => onSocialChange(e, 'x', 'handle')} style={inputStyle} placeholder="@user" />
           </div>
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>TikTok URL</label>
-            <input value={form.tiktok.url} onChange={(e) => onSocialChange(e, 'tiktok', 'url')} style={inputStyle} placeholder="https://..." />
+            <label style={labelStyle}>X URL</label>
+            <input value={form.x.url} onChange={(e) => onSocialChange(e, 'x', 'url')} style={inputStyle} placeholder="https://..." />
           </div>
+          {/* TikTok (solo visible si NO es tiktoker) */}
+          {type !== 'tiktokers' && (
+            <>
+              <div style={fieldGroupStyle}>
+                <label style={labelStyle}>TikTok Handle</label>
+                <input value={form.tiktok.handle} onChange={(e) => onSocialChange(e, 'tiktok', 'handle')} style={inputStyle} placeholder="@user" />
+              </div>
+              <div style={fieldGroupStyle}>
+                <label style={labelStyle}>TikTok URL</label>
+                <input value={form.tiktok.url} onChange={(e) => onSocialChange(e, 'tiktok', 'url')} style={inputStyle} placeholder="https://..." />
+              </div>
+            </>
+          )}
           {/* YouTube */}
           <div style={fieldGroupStyle}>
             <label style={labelStyle}>YouTube Handle</label>
@@ -203,7 +261,13 @@ const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSa
         <button
           type="button"
           disabled={isSaving || !form.name.trim()}
-          onClick={() => onSave(form)}
+          onClick={() => {
+            const finalForm = {
+              ...form,
+              phone: form.phone ? `${form.phoneDialCode} ${form.phone}`.trim() : ''
+            };
+            onSave(finalForm);
+          }}
           className="btn-primary"
           style={{ padding: '0.55rem 1.4rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: (isSaving || !form.name.trim()) ? 0.6 : 1 }}
         >
@@ -218,7 +282,7 @@ const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSa
 // ─── Quick Add Row (collapsed / simple) ───────────────────────────────────────
 const AddContactRow = ({ type, onAdded, onOpenFull }) => {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', handle: '', email: '' });
+  const [form, setForm] = useState({ name: '', priceUsd: '', email: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
@@ -233,7 +297,7 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
       if (type === 'curators') await createCurator(payload);
       else await createTiktoker(payload);
       toast({ title: 'Agregado', description: `${form.name} fue agregado correctamente.` });
-      setForm({ name: '', handle: '', email: '' });
+      setForm({ name: '', priceUsd: '', email: '' });
       if (onAdded) onAdded();
     } catch (err) {
       console.error(err);
@@ -258,7 +322,7 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
         }}
       >
         <Plus size={16} />
-        Agregar {type === 'curators' ? 'curador' : 'TikToker'}
+        Agregar {type === 'curators' ? 'curador' : 'contacto'}
       </button>
     );
   }
@@ -275,7 +339,7 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
       </p>
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <input name="name" required value={form.name} onChange={onChange} placeholder="Nombre *" autoFocus style={{ ...inputStyle, flex: '1 1 140px' }} />
-        <input name="handle" value={form.handle} onChange={onChange} placeholder="@handle" style={{ ...inputStyle, flex: '1 1 110px' }} />
+        <input name="priceUsd" type="number" step="0.01" value={form.priceUsd} onChange={onChange} placeholder="Precio USD" style={{ ...inputStyle, flex: '1 1 110px' }} />
         <input name="email" type="email" value={form.email} onChange={onChange} placeholder="Email" style={{ ...inputStyle, flex: '1 1 160px' }} />
       </div>
       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -296,7 +360,7 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button
             type="button"
-            onClick={() => { setForm({ name: '', handle: '', email: '' }); setExpanded(false); }}
+            onClick={() => { setForm({ name: '', priceUsd: '', email: '' }); setExpanded(false); }}
             style={{ padding: '0.4rem 0.9rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
           >
             Cancelar
@@ -360,7 +424,13 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators', 
         setActiveContact(null);
       }
       fetchContacts();
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen, contactToEdit, fetchContacts]);
 
   // ── Delete ──────────────────────────────────────────────────────────────────
@@ -395,13 +465,17 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators', 
         else await createTiktoker(form);
         toast({ title: 'Agregado', description: `${form.name} fue agregado correctamente.` });
       }
-      await fetchContacts();
+      // Navigate first, then refresh the list in the background
       if (contactToEdit) {
         onClose();
       } else {
         setView('list');
         setActiveContact(null);
       }
+      // Refresh list (don't block navigation on this)
+      fetchContacts().catch((err) => {
+        console.error('Error refreshing contacts after save:', err);
+      });
     } catch (err) {
       console.error(err);
       toast({ title: 'Error', description: 'No se pudo guardar el contacto.', variant: 'destructive' });
@@ -423,7 +497,7 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators', 
 
   if (!isOpen) return null;
 
-  const label = type === 'curators' ? 'Curadores' : 'TikTokers';
+  const label = type === 'curators' ? 'Curadores' : 'Contactos';
   const accentColor = type === 'curators' ? '#1DB954' : '#ff0050';
 
   // ── Helpers para el header según vista ─────────────────────────────────────
@@ -431,7 +505,7 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators', 
     ? `Editar ${label}`
     : view === 'edit'
     ? `Editar: ${activeContact?.name || ''}`
-    : `Nuevo ${type === 'curators' ? 'Curador' : 'TikToker'}`;
+    : `Nuevo ${type === 'curators' ? 'Curador' : 'Contacto'}`;
 
   const modal = (
     <div
@@ -554,8 +628,9 @@ export default function ModalEditContacts({ isOpen, onClose, type = 'curators', 
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
                     >
                       <div style={{ overflow: 'hidden', flex: 1 }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {c.name}
+                          {c.priceUsd ? <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem' }}>${c.priceUsd}</span> : null}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '1px' }}>
                           {[c.handle, c.email, c.country].filter(Boolean).join(' · ')}

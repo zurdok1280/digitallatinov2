@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '../hooks/use-toast';
 import { X } from 'lucide-react';
 import './Toaster.css'; // Nuestros estilos independientes
@@ -6,14 +7,14 @@ import './Toaster.css'; // Nuestros estilos independientes
 export function Toaster() {
   const { toasts, dismissToast } = useToast();
 
-  return (
+  const content = (
     <div className="toaster-container">
       {toasts.map((t) => (
-        <div 
-          key={t.id} 
+        <div
+          key={t.id}
           className={`toast-item ${
-            t.variant === 'destructive' 
-              ? 'toast-error' 
+            t.variant === 'destructive'
+              ? 'toast-error'
               : 'toast-success'
           }`}
           style={{ position: 'relative', paddingRight: '2.5rem' }}
@@ -46,4 +47,6 @@ export function Toaster() {
       ))}
     </div>
   );
+
+  return createPortal(content, document.body);
 }

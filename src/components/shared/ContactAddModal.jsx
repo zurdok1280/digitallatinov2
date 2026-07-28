@@ -18,9 +18,10 @@ const EMPTY_CONTACT = {
   name: "", handle: "", metric: "", email: "", phone: "",
   instagram: { handle: "", url: "" },
   facebook:  { handle: "", url: "" },
+  x:         { handle: "", url: "" },
   tiktok:    { handle: "", url: "" },
   youtube:   { handle: "", url: "" },
-  country: "", language: "", status: "nuevo", lastContact: "", notes: "",
+  country: "", language: "", status: "nuevo", lastContact: "", notes: "", priceUsd: "",
 };
 
 const ContactAddModal = ({ initialType = "tiktokers", onClose, onSaveSuccess }) => {
@@ -101,8 +102,8 @@ const ContactAddModal = ({ initialType = "tiktokers", onClose, onSaveSuccess }) 
               <input required name="name" value={addForm.name} onChange={onChange} className="contacts-form-input" placeholder="Nombre completo" />
             </div>
             <div className="contacts-form-group">
-              <label className="contacts-form-label">Handle</label>
-              <input name="handle" value={addForm.handle} onChange={onChange} className="contacts-form-input" placeholder="@usuario" />
+              <label className="contacts-form-label">Precio USD</label>
+              <input type="number" step="0.01" name="priceUsd" value={addForm.priceUsd} onChange={onChange} className="contacts-form-input" placeholder="100.00" />
             </div>
             <div className="contacts-form-group">
               <label className="contacts-form-label">{activeTab === "curators" ? "Playlists" : "Followers"}</label>
@@ -160,34 +161,32 @@ const ContactAddModal = ({ initialType = "tiktokers", onClose, onSaveSuccess }) 
               <input value={addForm.facebook.handle} onChange={(e) => onSocialChange(e, "facebook", "handle")} className="contacts-form-input" placeholder="Nombre" />
             </div>
             <div className="contacts-form-group">
-              <label className="contacts-form-label">{activeTab === "curators" ? "YouTube Handle" : "TikTok Handle"}</label>
-              <input
-                value={activeTab === "curators" ? addForm.youtube.handle : addForm.tiktok.handle}
-                onChange={(e) => onSocialChange(e, activeTab === "curators" ? "youtube" : "tiktok", "handle")}
-                className="contacts-form-input"
-                placeholder={activeTab === "curators" ? "Canal" : "@user"}
-              />
-            </div>
-          </div>
-
-          {/* Fila 5: URLs */}
-          <div className="contacts-form-grid-3">
-            <div className="contacts-form-group">
-              <label className="contacts-form-label">Instagram URL</label>
-              <input value={addForm.instagram.url} onChange={(e) => onSocialChange(e, "instagram", "url")} className="contacts-form-input" placeholder="https://..." />
+              <label className="contacts-form-label">X Handle</label>
+              <input value={addForm.x.handle} onChange={(e) => onSocialChange(e, "x", "handle")} className="contacts-form-input" placeholder="@user" />
             </div>
             <div className="contacts-form-group">
-              <label className="contacts-form-label">Facebook URL</label>
-              <input value={addForm.facebook.url} onChange={(e) => onSocialChange(e, "facebook", "url")} className="contacts-form-input" placeholder="https://..." />
+              <label className="contacts-form-label">X URL</label>
+              <input value={addForm.x.url} onChange={(e) => onSocialChange(e, "x", "url")} className="contacts-form-input" placeholder="https://..." />
+            </div>
+            {activeTab !== "tiktokers" && (
+              <>
+                <div className="contacts-form-group">
+                  <label className="contacts-form-label">TikTok Handle</label>
+                  <input value={addForm.tiktok.handle} onChange={(e) => onSocialChange(e, "tiktok", "handle")} className="contacts-form-input" placeholder="@user" />
+                </div>
+                <div className="contacts-form-group">
+                  <label className="contacts-form-label">TikTok URL</label>
+                  <input value={addForm.tiktok.url} onChange={(e) => onSocialChange(e, "tiktok", "url")} className="contacts-form-input" placeholder="https://..." />
+                </div>
+              </>
+            )}
+            <div className="contacts-form-group">
+              <label className="contacts-form-label">YouTube Handle</label>
+              <input value={addForm.youtube.handle} onChange={(e) => onSocialChange(e, "youtube", "handle")} className="contacts-form-input" placeholder="Canal" />
             </div>
             <div className="contacts-form-group">
-              <label className="contacts-form-label">{activeTab === "curators" ? "YouTube URL" : "TikTok URL"}</label>
-              <input
-                value={activeTab === "curators" ? addForm.youtube.url : addForm.tiktok.url}
-                onChange={(e) => onSocialChange(e, activeTab === "curators" ? "youtube" : "tiktok", "url")}
-                className="contacts-form-input"
-                placeholder="https://..."
-              />
+              <label className="contacts-form-label">YouTube URL</label>
+              <input value={addForm.youtube.url} onChange={(e) => onSocialChange(e, "youtube", "url")} className="contacts-form-input" placeholder="https://..." />
             </div>
           </div>
 

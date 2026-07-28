@@ -2668,12 +2668,47 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                   >
                     <Users size={20} color="#ff0050" /> Influencers de TikTok
                   </h3>
-                  <p
-                    style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}
-                  >
-                    Ranking de creadores usando sonidos o interactuando con este
-                    artista.
-                  </p>
+                  {playlistsData.length > 0 ? (
+                    (() => {
+                      const allArtists = playlistsData
+                        .flatMap((pl) =>
+                          pl.related_artists_names
+                            ? pl.related_artists_names
+                              .split(",")
+                              .map((s) => s.trim())
+                            : [],
+                        )
+                        .filter(Boolean);
+                      const uniqueArtists = [...new Set(allArtists)];
+                      const topArtists = uniqueArtists.slice(0, 8).join(", ");
+                      return (
+                        <p
+                          style={{
+                            color: "var(--text-muted)",
+                            marginTop: "0.5rem",
+                            fontSize: "0.85rem",
+                            maxWidth: "600px",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={uniqueArtists.join(", ")}
+                        >
+                          Ranking de creadores usando sonidos o interactuando con:{" "}
+                          <span style={{ color: "var(--text-main)" }}>
+                            {topArtists}
+                            {uniqueArtists.length > 8 ? "..." : ""}
+                          </span>
+                        </p>
+                      );
+                    })()
+                  ) : (
+                    <p
+                      style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}
+                    >
+                      Ranking de creadores usando sonidos o interactuando con este artista.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -2949,7 +2984,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                             background: 'rgba(255,0,80,0.15)', borderColor: '#ff0050', color: '#ff0050'
                           }}
                         >
-                          Administrar TikToker
+                          Administrar Contactos
                         </button>
                       )}
                     </div>

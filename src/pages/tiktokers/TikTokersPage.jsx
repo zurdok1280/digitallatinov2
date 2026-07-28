@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Settings2, Loader2, ChevronUp, ChevronDown, ExternalLink, UserCheck } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/useAuth";
-import { getTiktokData, getCuratorsForTiktoker, getContactsCurators, updateTiktokerCurators, searchTiktokUsers } from "../../services/api";
+import { getTiktokData, getCuratorsForTiktoker, getContactsTiktokers, updateTiktokerCurators, searchTiktokUsers } from "../../services/api";
 import ModalContactsAdmin from "../../components/ModalContactsAdmin";
 import ContactPreviewModal from "../../components/shared/ContactPreviewModal";
 import ToggleSwitch from "../../components/shared/ToggleSwitch";
@@ -57,7 +57,7 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh, onAssignme
 
     Promise.all([
       getCuratorsForTiktoker(cleanHandle).catch(() => []),
-      getContactsCurators().catch(() => [])
+      getContactsTiktokers().catch(() => [])
     ]).then(([assignedData, allContacts]) => {
       if (!isMounted) return;
       
@@ -184,7 +184,10 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh, onAssignme
                     onMouseEnter={(e) => e.target.style.background = "rgba(255,0,80,0.22)"}
                     onMouseLeave={(e) => e.target.style.background = "rgba(255,0,80,0.12)"}
                   >
-                    {c.displayName || c.name}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {c.displayName || c.name}
+                      {c.priceUsd ? <span style={{ opacity: 0.7, fontWeight: 700 }}>${c.priceUsd}</span> : null}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -215,7 +218,10 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh, onAssignme
                         onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.1)"}
                         onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.05)"}
                       >
-                        {c.displayName || c.name}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {c.displayName || c.name}
+                          {c.priceUsd ? <span style={{ color: 'var(--text-dim)', fontWeight: 700 }}>${c.priceUsd}</span> : null}
+                        </span>
                       </button>
                     ))}
                     {available.length > 5 && (
@@ -250,7 +256,7 @@ function ExpandedRow({ tiktoker, colSpan, onManage, isAdmin, refresh, onAssignme
                   flexShrink: 0
                 }}
               >
-                <Settings2 size={14} /> Administrar Curadores
+                <Settings2 size={14} /> Administrar Contactos
               </button>
             )}
           </div>

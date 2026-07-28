@@ -42,16 +42,20 @@ export default function ModalContactsAdmin({
         if (targetType === 'playlist') {
           all = await getContactsCurators();
         } else if (targetType === 'tiktoker') {
-          all = await getContactsCurators();
+          all = await getContactsTiktokers();
         }
         
         if (isMounted) {
-          // assigned objects have {id, displayName}
-          setAssignedCurators(assigned);
+          // normalize: Curator responses use {id, name, priceUsd}, TikToker responses use {id, displayName, priceUsd}
+          const normalizedAll = all.map(c => ({ id: c.id, displayName: c.displayName || c.name, priceUsd: c.priceUsd }));
           
-          // all objects have {id, name, ...}
-          // Let's normalize available to {id, displayName}
-          const normalizedAll = all.map(c => ({ id: c.id, displayName: c.name }));
+          // hydrate assigned with priceUsd from all
+          const hydratedAssigned = assigned.map(a => {
+            const full = normalizedAll.find(c => c.id === a.id);
+            return { ...a, priceUsd: full?.priceUsd };
+          });
+          
+          setAssignedCurators(hydratedAssigned);
           setAvailableCurators(normalizedAll);
         }
       } catch (err) {
@@ -69,12 +73,19 @@ export default function ModalContactsAdmin({
   };
 
   useEffect(() => {
-    if (!isOpen || !targetKey) return;
+    if (!isOpen || !targetKey) {
+      document.body.style.overflow = 'unset';
+      return;
+    }
     
+    document.body.style.overflow = 'hidden';
     let isMounted = true;
     loadData(isMounted);
     
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false; 
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen, targetKey, targetType, toast]);
 
   if (!isOpen) return null;
@@ -124,6 +135,8 @@ export default function ModalContactsAdmin({
     return c.displayName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  const totalBudget = assignedCurators.reduce((sum, c) => sum + (parseFloat(c.priceUsd) || 0), 0);
+
   return (
     <div className="modal-overlay-anim" style={{
       position: 'fixed',
@@ -157,7 +170,7 @@ export default function ModalContactsAdmin({
         }}>
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main)' }}>
-              {targetType === 'tiktoker' ? 'Administrar TikTokers' : 'Administrar Curadores'}
+              {targetType === 'tiktoker' ? 'Administrar Contactos' : 'Administrar Curadores'}
             </h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
               {targetName}
@@ -180,7 +193,7 @@ export default function ModalContactsAdmin({
             }}
           >
             <Edit2 size={14} />
-            Editar {targetType === 'tiktoker' ? 'TikTokers' : 'Curadores'}
+            Editar {targetType === 'tiktoker' ? 'Contactos' : 'Curadores'}
           </button>
           <button onClick={onClose} style={{
             background: 'transparent',
@@ -206,12 +219,20 @@ export default function ModalContactsAdmin({
             <>
               {/* Assigned Section */}
               <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Asignados ({assignedCurators.length})
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Asignados ({assignedCurators.length})
+                  </h3>
+                  {totalBudget > 0 && (
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                      <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginRight: '4px' }}>Presupuesto total:</span>
+                      ${totalBudget.toFixed(2)}
+                    </div>
+                  )}
+                </div>
                 {assignedCurators.length === 0 ? (
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                    {targetType === 'tiktoker' ? 'Ningún TikToker asignado' : 'Ningún curador asignado'}
+                    {targetType === 'tiktoker' ? 'Ningún Contacto asignado' : 'Ningún curador asignado'}
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -228,6 +249,7 @@ export default function ModalContactsAdmin({
                         color: 'var(--text-main)'
                       }}>
                         {c.displayName}
+                        {c.priceUsd ? <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>${c.priceUsd}</span> : null}
                         <button
                           onClick={() => handleToggleAssign(c)}
                           style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}
@@ -253,7 +275,7 @@ export default function ModalContactsAdmin({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={targetType === 'tiktoker' ? "Buscar tiktoker..." : "Buscar curator..."}
+                    placeholder={targetType === 'tiktoker' ? "Buscar Contacto..." : "Buscar curator..."}
                     style={{
                       width: '100%',
                       padding: '0.6rem 1rem 0.6rem 2.5rem',
@@ -276,7 +298,7 @@ export default function ModalContactsAdmin({
                 }}>
                   {filteredAvailable.length === 0 ? (
                     <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', textAlign: 'center', padding: '1rem' }}>
-                      {targetType === 'tiktoker' ? 'No se encontraron TikTokers' : 'No se encontraron curadores'}
+                      {targetType === 'tiktoker' ? 'No se encontraron Contactos' : 'No se encontraron curadores'}
                     </p>
                   ) : (
                     filteredAvailable.map(c => (
@@ -290,7 +312,10 @@ export default function ModalContactsAdmin({
                         border: '1px solid transparent',
                         transition: 'all 0.2s'
                       }}>
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{c.displayName}</span>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {c.displayName}
+                          {c.priceUsd ? <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: 600 }}>${c.priceUsd}</span> : null}
+                        </span>
                         <button
                           onClick={() => handleToggleAssign(c)}
                           className="btn-primary"
