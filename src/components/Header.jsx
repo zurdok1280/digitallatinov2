@@ -32,8 +32,8 @@ const Header = ({
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef(null);
   const location = useLocation();
-  const showFilters = !['/my-artist', '/admin', '/tiktokers', '/playlists', '/contactos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].some(
-    path => location.pathname === path || location.pathname.startsWith(path + '/')
+  const showFilters = !['/my-artist', '/admin', '/tiktokers', '/playlists', '/generos', '/Chart', '/chart', '/contactos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].some(
+    path => location.pathname === path || location.pathname.startsWith(path + '/') || location.pathname.toLowerCase().startsWith('/chart/')
   );
 
   const viewCfg = VIEW_CONFIG[activeView] || VIEW_CONFIG.Charts;
