@@ -1179,10 +1179,23 @@ export const getFormatoDigitalById = async (id) => {
  * POST /api/formatDigital/create
  */
 export const createFormatoDigital = async (payload) => {
+  const bodyData = typeof payload === 'string' 
+    ? { digitalformat: payload }
+    : {
+        ...(payload.id ? { id: Number(payload.id) } : {}),
+        digitalformat: payload.digitalformat || payload.format || payload.nombre || payload.name || '',
+        meta_title: payload.meta_title ?? payload.metaTitle ?? null,
+        metaTitle: payload.meta_title ?? payload.metaTitle ?? null,
+        meta_description: payload.meta_description ?? payload.metaDescription ?? null,
+        metaDescription: payload.meta_description ?? payload.metaDescription ?? null,
+        meta_keywords: payload.meta_keywords ?? payload.metaKeywords ?? null,
+        metaKeywords: payload.meta_keywords ?? payload.metaKeywords ?? null
+      };
+
   const options = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(bodyData)
   };
   const res = await fetchFormatDigitalEndpoint('/create', '', options);
   if (!res.ok) {
@@ -1196,10 +1209,23 @@ export const createFormatoDigital = async (payload) => {
  * PUT /api/formatDigital/update/{id}
  */
 export const updateFormatoDigital = async (id, payload) => {
+  const bodyData = typeof payload === 'string'
+    ? { id: Number(id), digitalformat: payload }
+    : {
+        id: Number(id),
+        digitalformat: payload.digitalformat || payload.format || payload.nombre || payload.name || '',
+        meta_title: payload.meta_title ?? payload.metaTitle ?? null,
+        metaTitle: payload.meta_title ?? payload.metaTitle ?? null,
+        meta_description: payload.meta_description ?? payload.metaDescription ?? null,
+        metaDescription: payload.meta_description ?? payload.metaDescription ?? null,
+        meta_keywords: payload.meta_keywords ?? payload.metaKeywords ?? null,
+        metaKeywords: payload.meta_keywords ?? payload.metaKeywords ?? null
+      };
+
   const options = {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(bodyData)
   };
   const res = await fetchFormatDigitalEndpoint(`/update/${id}`, `/${id}`, options);
   if (!res.ok) {
@@ -1221,5 +1247,110 @@ export const deleteFormatoDigital = async (id) => {
   }
   return await res.json().catch(() => ({ success: true }));
 };
+
+// ─── Format Digital Genre (Relación Formato - Género) ──────────────────────────
+
+const FORMAT_DIGITAL_GENRE_BASE = `${API_BASE_URL}/formatDigitalGenre`;
+const FORMAT_DIGITAL_GENRE_ALT_BASE = `${LOGIN_API_BASE_URL}/formatDigitalGenre`;
+
+async function fetchFormatDigitalGenreEndpoint(pathPrimary, options = {}) {
+  try {
+    let res = await authFetch(`${FORMAT_DIGITAL_GENRE_BASE}${pathPrimary}`, options);
+    if (res.status === 404) {
+      try {
+        let altRes = await authFetch(`${FORMAT_DIGITAL_GENRE_ALT_BASE}${pathPrimary}`, options);
+        if (altRes.ok) return altRes;
+      } catch (_) {}
+    }
+    return res;
+  } catch (err) {
+    return await authFetch(`${FORMAT_DIGITAL_GENRE_ALT_BASE}${pathPrimary}`, options);
+  }
+}
+
+/**
+ * GET /api/formatDigitalGenre/genres/available
+ */
+export const getAvailableGenres = async () => {
+  try {
+    const res = await fetchFormatDigitalGenreEndpoint('/genres/available');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error('API Error fetching available genres:', error);
+    return [];
+  }
+};
+
+/**
+ * GET /api/formatDigitalGenre/byFormat/{fkFormat}
+ */
+export const getGenresByFormat = async (fkFormat) => {
+  try {
+    const res = await fetchFormatDigitalGenreEndpoint(`/byFormat/${fkFormat}`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error(`API Error fetching genres by format ${fkFormat}:`, error);
+    return [];
+  }
+};
+
+/**
+ * POST /api/formatDigitalGenre/assign/{fkFormat}/{fkGenre}
+ */
+export const assignGenreToFormat = async (fkFormat, fkGenre) => {
+  const options = { method: 'POST' };
+  const res = await fetchFormatDigitalGenreEndpoint(`/assign/${fkFormat}/${fkGenre}`, options);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(errText || `HTTP error! status: ${res.status}`);
+  }
+  return await res.json().catch(() => ({ success: true }));
+};
+
+/**
+ * DELETE /api/formatDigitalGenre/delete/{fkFormat}/{fkGenre}
+ */
+export const deleteGenreFromFormat = async (fkFormat, fkGenre) => {
+  const options = { method: 'DELETE' };
+  const res = await fetchFormatDigitalGenreEndpoint(`/delete/${fkFormat}/${fkGenre}`, options);
+  if (!res.ok && res.status !== 204) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(errText || `HTTP error! status: ${res.status}`);
+  }
+  return { success: true };
+};
+
+/**
+ * GET /api/report/getChartCancionesNombreFormatoDigital?nombreFormatoDigital={formatName}&country={country}&top={top}
+ */
+export const getChartByFormatoDigitalName = async (nombreFormatoDigital, country = 0, top = 100) => {
+  try {
+    const params = new URLSearchParams({
+      nombreFormatoDigital: nombreFormatoDigital,
+      country: String(country),
+      top: String(top)
+    });
+    const response = await authFetch(`${API_BASE_URL}/report/getChartCancionesNombreFormatoDigital?${params}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    const results = Array.isArray(data) ? data : (data?.results || data?.data || []);
+
+    return deduplicateSongs(results.map(s => ({
+      ...s,
+      rk: s.posicion ?? s.rk ?? 1,
+      rk_lw: s.posicion_anterior ?? s.rk_lw,
+      img: s.avatar || s.img || s.image_url,
+    })));
+  } catch (error) {
+    console.error(`API Error fetching chart for format digital ${nombreFormatoDigital}:`, error);
+    return [];
+  }
+};
+
+
 
 
