@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Search, Music2, Headphones, RefreshCw } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Search, Music2, Headphones, RefreshCw, Info } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getChartByFormatoDigitalName } from '../services/api';
@@ -196,7 +196,6 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
             }}
           />
         </div>
-
         <button
           onClick={fetchChart}
           style={{
@@ -416,6 +415,27 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
           })}
         </div>
       )}
+
+      {/* Disclaimer Note (Bottom) */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.55rem',
+        background: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.07)',
+        borderRadius: '0.75rem',
+        padding: '0.65rem 1rem',
+        fontSize: '0.82rem',
+        color: '#9ca3af',
+        marginTop: '2rem',
+        maxWidth: '720px',
+        marginInline: 'auto',
+      }}>
+        <Info size={15} color="#c193ff" style={{ flexShrink: 0 }} />
+        <span>
+          <strong style={{ color: '#e5e7eb' }}>Nota:</strong> Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.
+        </span>
+      </div>
     </div>
   );
 };

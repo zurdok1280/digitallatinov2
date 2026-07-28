@@ -514,6 +514,25 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
         })
         )}
       </div>
+
+      {/* Disclaimer Note (Bottom) */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.55rem',
+        background: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.07)',
+        borderRadius: '0.75rem',
+        padding: '0.65rem 1rem',
+        fontSize: '0.82rem',
+        color: '#9ca3af',
+        marginTop: '1.25rem',
+      }}>
+        <Info size={15} color="#c193ff" style={{ flexShrink: 0 }} />
+        <span>
+          <strong style={{ color: '#e5e7eb' }}>Nota:</strong> Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.
+        </span>
+      </div>
     </div>
   );
 };
