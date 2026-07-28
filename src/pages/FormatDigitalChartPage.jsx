@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Search, Music2, Headphones, Radio, ArrowLeft, RefreshCw } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Search, Music2, Headphones, RefreshCw } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
-import { getChartByFormatoDigitalName, getCountries } from '../services/api';
+import { getChartByFormatoDigitalName } from '../services/api';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -13,7 +13,6 @@ const rankColors = [
 
 const FormatDigitalChartPage = ({ onSongClick }) => {
   const { formatName: rawFormatName } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
 
@@ -22,19 +21,10 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
   }, [rawFormatName]);
 
   const [songs, setSongs] = useState([]);
+  const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState('0');
-  const [topCount, setTopCount] = useState(100);
-  const [countries, setCountries] = useState([]);
-
-  // Load countries catalog
-  useEffect(() => {
-    getCountries()
-      .then((res) => setCountries(Array.isArray(res) ? res : []))
-      .catch((err) => console.error('Error fetching countries:', err));
-  }, []);
 
   // Fetch chart data
   const fetchChart = async () => {
@@ -42,8 +32,11 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getChartByFormatoDigitalName(formatName, selectedCountry, topCount);
-      setSongs(Array.isArray(data) ? data : []);
+      const responseData = await getChartByFormatoDigitalName(formatName, 0, 100);
+      const fetchedSongs = Array.isArray(responseData) ? responseData : (responseData?.results || []);
+      const fetchedMeta = responseData?.metadata || null;
+      setSongs(fetchedSongs);
+      setMetadata(fetchedMeta);
     } catch (err) {
       console.error(`Error fetching chart for format ${formatName}:`, err);
       setError('No se pudieron cargar los datos del chart. Reintenta más tarde.');
@@ -54,7 +47,34 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
 
   useEffect(() => {
     fetchChart();
-  }, [formatName, selectedCountry, topCount]);
+  }, [formatName]);
+
+  // Inject dynamic SEO Metadata into document head
+  useEffect(() => {
+    const titleText = metadata?.meta_title || formatName || 'Chart Digital';
+    document.title = `${titleText} | DigitalLatino`;
+
+    if (metadata) {
+      if (metadata.meta_description) {
+        let descMeta = document.querySelector('meta[name="description"]');
+        if (!descMeta) {
+          descMeta = document.createElement('meta');
+          descMeta.setAttribute('name', 'description');
+          document.head.appendChild(descMeta);
+        }
+        descMeta.setAttribute('content', metadata.meta_description);
+      }
+      if (metadata.meta_keywords) {
+        let keyMeta = document.querySelector('meta[name="keywords"]');
+        if (!keyMeta) {
+          keyMeta = document.createElement('meta');
+          keyMeta.setAttribute('name', 'keywords');
+          document.head.appendChild(keyMeta);
+        }
+        keyMeta.setAttribute('content', metadata.meta_keywords);
+      }
+    }
+  }, [metadata, formatName]);
 
   // Filter songs by search query
   const filteredSongs = useMemo(() => {
@@ -91,9 +111,14 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
         backgroundColor: 'rgba(255, 255, 255, 0.02)',
         border: '1px solid rgba(255, 255, 255, 0.06)',
         borderRadius: '2rem',
-        padding: '1.75rem 2rem',
-        overflow: 'hidden',
+        padding: '2rem 1.5rem',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+        overflow: 'hidden',
       }}>
         {/* Accent Glow */}
         <div style={{
@@ -106,104 +131,53 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
           opacity: 0.8,
         }} />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <button
-                onClick={() => navigate(-1)}
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'white',
-                  borderRadius: '0.6rem',
-                  padding: '0.4rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                title="Volver"
-              >
-                <ArrowLeft size={18} />
-              </button>
+        <span style={{
+          background: 'rgba(193, 147, 255, 0.12)',
+          border: '1px solid rgba(193, 147, 255, 0.25)',
+          color: '#c193ff',
+          padding: '0.25rem 0.75rem',
+          borderRadius: '9999px',
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '0.75rem',
+        }}>
+          CHART DIGITAL
+        </span>
 
-              <span style={{
-                background: 'rgba(193, 147, 255, 0.12)',
-                border: '1px solid rgba(193, 147, 255, 0.25)',
-                color: '#c193ff',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '9999px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}>
-                CHART DIGITAL
-              </span>
-            </div>
+        <h1 style={{
+          fontSize: '2.2rem',
+          fontWeight: 900,
+          color: 'white',
+          margin: 0,
+          textTransform: 'uppercase',
+          letterSpacing: '-0.02em',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.75rem',
+        }}>
+          <Music2 size={32} color="#c193ff" />
+          {formatName || 'Formato Digital'}
+        </h1>
 
-            <h1 style={{
-              fontSize: '2rem',
-              fontWeight: 900,
-              color: 'white',
-              margin: 0,
-              textTransform: 'uppercase',
-              letterSpacing: '-0.02em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-            }}>
-              <Music2 size={32} color="#c193ff" />
-              {formatName || 'Formato Digital'}
-            </h1>
-            <p style={{ color: '#9ca3af', marginTop: '0.4rem', fontSize: '0.92rem', marginBottom: 0 }}>
-              Ranking oficial de canciones en el formato <strong style={{ color: 'white' }}>{formatName}</strong>.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <button
-              onClick={fetchChart}
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#9ca3af',
-                padding: '0.6rem',
-                borderRadius: '0.75rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-              title="Recargar chart"
-            >
-              <RefreshCw size={18} className={loading ? 'loader-spin-generos' : ''} />
-            </button>
-
-            <span style={{
-              background: 'rgba(0, 240, 255, 0.1)',
-              border: '1px solid rgba(0, 240, 255, 0.2)',
-              color: '#00f0ff',
-              padding: '0.5rem 1rem',
-              borderRadius: '9999px',
-              fontWeight: 700,
-              fontSize: '0.85rem',
-            }}>
-              {songs.length} Canciones
-            </span>
-          </div>
-        </div>
+        <p style={{ color: '#9ca3af', marginTop: '0.5rem', fontSize: '0.95rem', marginBottom: 0 }}>
+          {metadata?.meta_description || (
+            <>Ranking oficial de canciones en el formato <strong style={{ color: 'white' }}>{formatName}</strong>.</>
+          )}
+        </p>
       </div>
 
-      {/* Controls Bar: Search, Country, Top limit */}
+      {/* Controls Bar: Centered Search & Refresh */}
       <div style={{
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
-        gap: '1rem',
+        gap: '0.75rem',
         marginBottom: '1.5rem',
-        flexWrap: 'wrap',
       }}>
-        {/* Search */}
-        <div style={{ position: 'relative', flex: 1, minWidth: '260px', maxWidth: '420px' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: '520px' }}>
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
           <input
             type="text"
@@ -223,49 +197,22 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
           />
         </div>
 
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <select
-            value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value)}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '0.75rem',
-              padding: '0.65rem 1rem',
-              color: 'white',
-              fontSize: '0.85rem',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="0" style={{ background: '#12131c' }}>🌐 Todos los Países</option>
-            {countries.map((c) => (
-              <option key={c.id} value={c.id} style={{ background: '#12131c' }}>
-                {c.description || c.country || c.id}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={topCount}
-            onChange={(e) => setTopCount(Number(e.target.value))}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '0.75rem',
-              padding: '0.65rem 1rem',
-              color: 'white',
-              fontSize: '0.85rem',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value={50} style={{ background: '#12131c' }}>Top 50</option>
-            <option value={100} style={{ background: '#12131c' }}>Top 100</option>
-            <option value={200} style={{ background: '#12131c' }}>Top 200</option>
-          </select>
-        </div>
+        <button
+          onClick={fetchChart}
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: '#9ca3af',
+            padding: '0.75rem',
+            borderRadius: '1rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          title="Recargar chart"
+        >
+          <RefreshCw size={18} className={loading ? 'loader-spin-generos' : ''} />
+        </button>
       </div>
 
       {/* Chart Rows Container */}
@@ -313,7 +260,7 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
             No se encontraron canciones para el formato "{formatName}"
           </p>
           <p style={{ fontSize: '0.875rem' }}>
-            Intenta cambiar los filtros de país o búsqueda.
+            Intenta ingresar otro término de búsqueda.
           </p>
         </div>
       ) : (

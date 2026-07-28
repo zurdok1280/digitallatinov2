@@ -1179,18 +1179,18 @@ export const getFormatoDigitalById = async (id) => {
  * POST /api/formatDigital/create
  */
 export const createFormatoDigital = async (payload) => {
-  const bodyData = typeof payload === 'string' 
+  const bodyData = typeof payload === 'string'
     ? { digitalformat: payload }
     : {
-        ...(payload.id ? { id: Number(payload.id) } : {}),
-        digitalformat: payload.digitalformat || payload.format || payload.nombre || payload.name || '',
-        meta_title: payload.meta_title ?? payload.metaTitle ?? null,
-        metaTitle: payload.meta_title ?? payload.metaTitle ?? null,
-        meta_description: payload.meta_description ?? payload.metaDescription ?? null,
-        metaDescription: payload.meta_description ?? payload.metaDescription ?? null,
-        meta_keywords: payload.meta_keywords ?? payload.metaKeywords ?? null,
-        metaKeywords: payload.meta_keywords ?? payload.metaKeywords ?? null
-      };
+      ...(payload.id ? { id: Number(payload.id) } : {}),
+      digitalformat: payload.digitalformat || payload.format || payload.nombre || payload.name || '',
+      meta_title: payload.meta_title ?? payload.metaTitle ?? null,
+      metaTitle: payload.meta_title ?? payload.metaTitle ?? null,
+      meta_description: payload.meta_description ?? payload.metaDescription ?? null,
+      metaDescription: payload.meta_description ?? payload.metaDescription ?? null,
+      meta_keywords: payload.meta_keywords ?? payload.metaKeywords ?? null,
+      metaKeywords: payload.meta_keywords ?? payload.metaKeywords ?? null
+    };
 
   const options = {
     method: 'POST',
@@ -1212,15 +1212,15 @@ export const updateFormatoDigital = async (id, payload) => {
   const bodyData = typeof payload === 'string'
     ? { id: Number(id), digitalformat: payload }
     : {
-        id: Number(id),
-        digitalformat: payload.digitalformat || payload.format || payload.nombre || payload.name || '',
-        meta_title: payload.meta_title ?? payload.metaTitle ?? null,
-        metaTitle: payload.meta_title ?? payload.metaTitle ?? null,
-        meta_description: payload.meta_description ?? payload.metaDescription ?? null,
-        metaDescription: payload.meta_description ?? payload.metaDescription ?? null,
-        meta_keywords: payload.meta_keywords ?? payload.metaKeywords ?? null,
-        metaKeywords: payload.meta_keywords ?? payload.metaKeywords ?? null
-      };
+      id: Number(id),
+      digitalformat: payload.digitalformat || payload.format || payload.nombre || payload.name || '',
+      meta_title: payload.meta_title ?? payload.metaTitle ?? null,
+      metaTitle: payload.meta_title ?? payload.metaTitle ?? null,
+      meta_description: payload.meta_description ?? payload.metaDescription ?? null,
+      metaDescription: payload.meta_description ?? payload.metaDescription ?? null,
+      meta_keywords: payload.meta_keywords ?? payload.metaKeywords ?? null,
+      metaKeywords: payload.meta_keywords ?? payload.metaKeywords ?? null
+    };
 
   const options = {
     method: 'PUT',
@@ -1260,7 +1260,7 @@ async function fetchFormatDigitalGenreEndpoint(pathPrimary, options = {}) {
       try {
         let altRes = await authFetch(`${FORMAT_DIGITAL_GENRE_ALT_BASE}${pathPrimary}`, options);
         if (altRes.ok) return altRes;
-      } catch (_) {}
+      } catch (_) { }
     }
     return res;
   } catch (err) {
@@ -1337,17 +1337,31 @@ export const getChartByFormatoDigitalName = async (nombreFormatoDigital, country
     const response = await authFetch(`${API_BASE_URL}/report/getChartCancionesNombreFormatoDigital?${params}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    const results = Array.isArray(data) ? data : (data?.results || data?.data || []);
 
-    return deduplicateSongs(results.map(s => ({
+    const rawResults = Array.isArray(data) ? data : (data?.results || data?.data || []);
+    const metadata = data?.metadata || {
+      meta_title: nombreFormatoDigital,
+      meta_description: '',
+      meta_keywords: ''
+    };
+
+    const songs = deduplicateSongs(rawResults.map(s => ({
       ...s,
       rk: s.posicion ?? s.rk ?? 1,
       rk_lw: s.posicion_anterior ?? s.rk_lw,
       img: s.avatar || s.img || s.image_url,
     })));
+
+    return {
+      metadata,
+      results: songs
+    };
   } catch (error) {
     console.error(`API Error fetching chart for format digital ${nombreFormatoDigital}:`, error);
-    return [];
+    return {
+      metadata: { meta_title: nombreFormatoDigital, meta_description: '', meta_keywords: '' },
+      results: []
+    };
   }
 };
 

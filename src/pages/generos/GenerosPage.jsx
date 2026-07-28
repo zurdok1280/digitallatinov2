@@ -12,7 +12,8 @@ import {
   Link2,
   ListFilter,
   Check,
-  ChevronRight
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import {
@@ -488,7 +489,33 @@ const GenerosPage = () => {
                           <span className="id-badge">#{itemId}</span>
                         </td>
                         <td>
-                          <span style={{ fontWeight: 600, color: 'white' }}>{itemFormat}</span>
+                          <a
+                            href={`/Chart/${encodeURIComponent(itemFormat)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontWeight: 600,
+                              color: 'white',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              transition: 'color 0.2s ease',
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = '#c193ff';
+                              e.currentTarget.style.textDecoration = 'underline';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = 'white';
+                              e.currentTarget.style.textDecoration = 'none';
+                            }}
+                            title={`Abrir chart de "${itemFormat}" en una nueva pestaña`}
+                          >
+                            <span>{itemFormat}</span>
+                            <ExternalLink size={14} style={{ opacity: 0.6 }} />
+                          </a>
                         </td>
                         <td>
                           <span style={{ color: '#c193ff', fontSize: '0.85rem', fontWeight: 500 }}>{itemTitle}</span>
@@ -566,11 +593,36 @@ const GenerosPage = () => {
               </select>
 
               {currentSelectedFormatObj && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#c193ff', fontSize: '0.85rem' }}>
-                  <Check size={16} />
-                  <span>
-                    Formato activo: <strong>{currentSelectedFormatObj.digitalformat || currentSelectedFormatObj.format}</strong>
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#c193ff', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Check size={16} />
+                    <span>
+                      Formato activo: <strong>{currentSelectedFormatObj.digitalformat || currentSelectedFormatObj.format}</strong>
+                    </span>
+                  </div>
+                  <a
+                    href={`/Chart/${encodeURIComponent(currentSelectedFormatObj.digitalformat || currentSelectedFormatObj.format)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#00f0ff',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      textDecoration: 'none',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      background: 'rgba(0, 240, 255, 0.1)',
+                      border: '1px solid rgba(0, 240, 255, 0.25)',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '0.5rem',
+                      transition: 'all 0.2s'
+                    }}
+                    title="Ver chart en una nueva pestaña"
+                  >
+                    <span>Ver Chart</span>
+                    <ExternalLink size={13} />
+                  </a>
                 </div>
               )}
             </div>
