@@ -41,6 +41,8 @@ import {
   getMapData,
   getPlaylistTypes,
   getArtistPlaylists,
+  getSongTopPlaylists,
+  getSongTopTiktokers,
   getArtistTiktokers,
   getArtistRadioRelated,
   getArtistGraph,
@@ -299,6 +301,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
 
   const [tiktokersData, setTiktokersData] = useState([]);
   const [isTiktokersLoading, setIsTiktokersLoading] = useState(false);
+
+  // Top Playlists / TikTokers BY SONG
+  const [songTopPlaylistsData, setSongTopPlaylistsData] = useState([]);
+  const [isSongTopPlaylistsLoading, setIsSongTopPlaylistsLoading] = useState(false);
+  const [selectedSongPlaylistType, setSelectedSongPlaylistType] = useState(0);
+
+  const [songTopTiktokersData, setSongTopTiktokersData] = useState([]);
+  const [isSongTopTiktokersLoading, setIsSongTopTiktokersLoading] = useState(false);
 
   const [adminModal, setAdminModal] = useState({
     open: false,
@@ -565,6 +575,46 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
       isMounted = false;
     };
   }, [artist?.id]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const csSong = artist?.cs_song || artist?.csSong;
+    if (activeTab !== "song_playlists" || !csSong) return;
+
+    const fetchSongPlaylists = async () => {
+      setIsSongTopPlaylistsLoading(true);
+      const data = await getSongTopPlaylists(csSong, selectedSongPlaylistType);
+      if (isMounted) {
+        setSongTopPlaylistsData(data);
+        setIsSongTopPlaylistsLoading(false);
+      }
+    };
+    fetchSongPlaylists();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, artist?.cs_song, artist?.csSong, selectedSongPlaylistType]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const csSong = artist?.cs_song || artist?.csSong;
+    if (activeTab !== "song_tiktok" || !csSong) return;
+
+    const fetchSongTiktokers = async () => {
+      setIsSongTopTiktokersLoading(true);
+      const data = await getSongTopTiktokers(csSong);
+      if (isMounted) {
+        setSongTopTiktokersData(data);
+        setIsSongTopTiktokersLoading(false);
+      }
+    };
+    fetchSongTiktokers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, artist?.cs_song, artist?.csSong]);
 
   useEffect(() => {
     let isMounted = true;
@@ -840,7 +890,17 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
               ]
               : []),
             { id: "playlists", label: "Playlists Recomendadas", icon: Music },
-            { id: "tiktok", label: "TikTokers", icon: Users },
+            ...(artist?.cs_song || artist?.csSong
+              ? [
+                  { id: "song_playlists", label: "Playlist con presencia", icon: Music },
+                ]
+              : []),
+            { id: "tiktok", label: "Recomendaciones TikTokers", icon: Users },
+            ...(artist?.cs_song || artist?.csSong
+              ? [
+                  { id: "song_tiktok", label: "TikTokers habituales", icon: Users },
+                ]
+              : []),
             { id: "overview", label: "Panorama", icon: Activity },
             { id: "radio", label: "Emisoras Gap", icon: Radio },
             { id: "ciudades", label: "Ciudades", icon: MapPin },
@@ -880,7 +940,296 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
           className="modal-content-area"
           style={{ padding: "2rem", flex: 1 }}
         >
-          {activeTab === "overview" && (
+          
+          {activeTab === "song_tiktok" && (
+            <div className="animate-fade-in">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "1.5rem",
+                  flexWrap: "wrap",
+                  gap: "1rem",
+                }}
+              >
+                <div>
+                  <h3
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <Users size={20} color="#ff0050" /> Top TikTokers de la Canción
+                  </h3>
+                  {songTopTiktokersData.length > 0 ? (
+                    (() => {
+                      const allArtists = songTopTiktokersData
+                        .flatMap((tk) =>
+                          tk.related_artists_names
+                            ? tk.related_artists_names
+                              .split(",")
+                              .map((s) => s.trim())
+                            : [],
+                        )
+                        .filter(Boolean);
+                      const uniqueArtists = [...new Set(allArtists)];
+                      const topArtists = uniqueArtists.slice(0, 8).join(", ");
+                      return (
+                        <p
+                          style={{
+                            color: "var(--text-muted)",
+                            marginTop: "0.5rem",
+                            fontSize: "0.85rem",
+                            maxWidth: "600px",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={uniqueArtists.join(", ")}
+                        >
+                          Ranking de creadores usando esta canción:{" "}
+                          <span style={{ color: "var(--text-main)" }}>
+                            {topArtists}
+                            {uniqueArtists.length > 8 ? "..." : ""}
+                          </span>
+                        </p>
+                      );
+                    })()
+                  ) : (
+                    <p
+                      style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}
+                    >
+                      Ranking de creadores usando sonidos o interactuando con esta canción.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {isSongTopTiktokersLoading ? (
+                <div className="flex-center" style={{ height: "300px" }}>
+                  <Loader2
+                    className="loading-spinner"
+                    size={32}
+                    color="#ff0050"
+                  />
+                </div>
+              ) : songTopTiktokersData.length === 0 ? (
+                <div
+                  className="flex-center"
+                  style={{ height: "200px", color: "var(--text-muted)" }}
+                >
+                  No se encontraron TikTokers habituales para esta canción.
+                </div>
+              ) : (
+                <div
+                  className="grid-base"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: "1rem",
+                  }}
+                >
+                  {songTopTiktokersData.map((tk, i) => (
+                    <div
+                      key={i}
+                      className="glass-panel"
+                      style={{
+                        padding: "1.2rem",
+                        borderLeft: "3px solid #ff0050",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.8rem",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "0.2rem",
+                          }}
+                        >
+                          <h4
+                            style={{
+                              margin: 0,
+                              fontSize: "1.1rem",
+                              color: "var(--text-main)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.4rem",
+                            }}
+                          >
+                            {tk.username}
+                            <a
+                              href={`https://www.tiktok.com/@${tk.user_handle}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: "#ff0050",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                              title="Ir a TikTok"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                          </h4>
+                          <p
+                            style={{
+                              color: "var(--text-muted)",
+                              fontSize: "0.85rem",
+                              margin: "0",
+                            }}
+                          >
+                            @{tk.user_handle}
+                          </p>
+                        </div>
+                        <div
+                          style={{
+                            background: "rgba(255, 0, 80, 0.1)",
+                            color: "#ff0050",
+                            padding: "0.2rem 0.6rem",
+                            borderRadius: "12px",
+                            fontSize: "0.8rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          #{tk.rk}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(3, 1fr)",
+                          gap: "0.6rem",
+                          fontSize: "0.8rem",
+                          color: "var(--text-muted)",
+                          background: "rgba(0,0,0,0.15)",
+                          padding: "0.8rem",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.65rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Followers
+                          </span>
+                          <strong
+                            style={{
+                              color: "var(--text-main)",
+                              fontSize: "0.95rem",
+                            }}
+                          >
+                            {formatNumber(tk.tiktok_user_followers)}
+                          </strong>
+                        </div>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.65rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Vistas
+                          </span>
+                          <strong
+                            style={{
+                              color: "var(--text-main)",
+                              fontSize: "0.95rem",
+                            }}
+                          >
+                            {formatNumber(tk.views_total)}
+                          </strong>
+                        </div>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.65rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Likes
+                          </span>
+                          <strong
+                            style={{
+                              color: "var(--text-main)",
+                              fontSize: "0.95rem",
+                            }}
+                          >
+                            {formatNumber(tk.likes_total)}
+                          </strong>
+                        </div>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.65rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Compartidos
+                          </span>
+                          <strong
+                            style={{
+                              color: "var(--text-main)",
+                              fontSize: "0.95rem",
+                            }}
+                          >
+                            {formatNumber(tk.shares_total)}
+                          </strong>
+                        </div>
+                      </div>
+                      
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAdminModal({
+                              open: true,
+                              targetType: 'tiktoker',
+                              targetKey: tk.user_handle,
+                              targetName: tk.username,
+                            });
+                          }}
+                          className="btn-primary"
+                          style={{ marginTop: '0.8rem', fontSize: '0.75rem', padding: '5px 12px', width: '100%' }}
+                        >
+                          Administrar Curadores
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+{activeTab === "overview" && (
             <div
               className="grid-base stats-grid-responsive"
               style={{
@@ -2646,7 +2995,276 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
             </div>
           )}
 
-          {activeTab === "tiktok" && (
+          
+          {activeTab === "song_playlists" && (
+            <div className="animate-fade-in">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "1.5rem",
+                  flexWrap: "wrap",
+                  gap: "1rem",
+                }}
+              >
+                <div>
+                  <h3
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <Music size={20} color="var(--accent-tertiary)" /> Top Playlists de la Canción
+                  </h3>
+                  {songTopPlaylistsData.length > 0 ? (
+                    (() => {
+                      const allArtists = songTopPlaylistsData
+                        .flatMap((pl) =>
+                          pl.related_artists_names
+                            ? pl.related_artists_names
+                              .split(",")
+                              .map((s) => s.trim())
+                            : [],
+                        )
+                        .filter(Boolean);
+                      const uniqueArtists = [...new Set(allArtists)];
+                      const topArtists = uniqueArtists.slice(0, 8).join(", ");
+                      return (
+                        <p
+                          style={{
+                            color: "var(--text-muted)",
+                            marginTop: "0.5rem",
+                            fontSize: "0.85rem",
+                            maxWidth: "600px",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={uniqueArtists.join(", ")}
+                        >
+                          Playlist donde suena la canción: {artist?.songName || artist?.name}{" "}
+                          <span style={{ color: "var(--text-main)" }}>
+                            {topArtists}
+                            {uniqueArtists.length > 8 ? "..." : ""}
+                          </span>
+                        </p>
+                      );
+                    })()
+                  ) : (
+                    <p
+                      style={{
+                        color: "var(--text-muted)",
+                        marginTop: "0.5rem",
+                      }}
+                    >
+                      Playlists donde aparece esta canción específica.
+                    </p>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    minWidth: "180px",
+                  }}
+                >
+                  <span
+                    style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}
+                  >
+                    Tipo:
+                  </span>
+                  <SearchableSelect
+                    options={playlistTypes.map((t) => ({
+                      value: String(t.id),
+                      label: t.name,
+                    }))}
+                    value={String(selectedSongPlaylistType)}
+                    onChange={(val) => setSelectedSongPlaylistType(val)}
+                    searchable={false}
+                    placeholder="Tipo de Playlist"
+                  />
+                </div>
+              </div>
+
+              {isSongTopPlaylistsLoading ? (
+                <div className="flex-center" style={{ height: "300px" }}>
+                  <Loader2
+                    className="loading-spinner"
+                    size={32}
+                    color="var(--accent-primary)"
+                  />
+                </div>
+              ) : songTopPlaylistsData.length === 0 ? (
+                <div
+                  className="flex-center"
+                  style={{ height: "200px", color: "var(--text-muted)" }}
+                >
+                  No hay playlists disponibles para este filtro.
+                </div>
+              ) : (
+                <div
+                  className="grid-base"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: "1rem",
+                  }}
+                >
+                  {songTopPlaylistsData.map((pl, i) => {
+                    const artistsList = pl.related_artists_names
+                      ? pl.related_artists_names
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                      : [];
+                    const top5 = artistsList.slice(0, 5).join(", ");
+                    const hasMore = artistsList.length > 5;
+                    const typeColor = getPlaylistColor(pl.type_name);
+
+                    return (
+                      <div
+                        key={i}
+                        className="glass-panel"
+                        style={{
+                          padding: "1rem",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "1rem",
+                          borderLeft: `4px solid ${typeColor}`,
+                        }}
+                      >
+                        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                        <img
+                          src={pl.artwork || "/logo.png"}
+                          alt={pl.playlist_name}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            borderRadius: "8px",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.4rem",
+                            }}
+                          >
+                            <h4
+                              style={{
+                                margin: 0,
+                                fontSize: "1rem",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                color: "var(--text-main)",
+                              }}
+                            >
+                              {pl.playlist_name}
+                            </h4>
+                            {pl.external_url && (
+                              <a
+                                href={pl.external_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  color: "var(--accent-primary)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                }}
+                                title="Abrir en Spotify"
+                              >
+                                <ExternalLink size={14} />
+                              </a>
+                            )}
+                          </div>
+                          <p
+                            style={{
+                              color: "var(--text-muted)",
+                              fontSize: "0.8rem",
+                              margin: "0.2rem 0",
+                            }}
+                          >
+                            {pl.owner_name} • {pl.type_name}
+                          </p>
+
+                          {artistsList.length > 0 && (
+                            <p
+                              style={{
+                                color: "var(--text-dim)",
+                                fontSize: "0.75rem",
+                                margin: "0.3rem 0",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                              title={pl.related_artists_names}
+                            >
+                              <span style={{ color: "var(--text-main)" }}>
+                                Con:
+                              </span>{" "}
+                              {top5}
+                              {hasMore ? "..." : ""}
+                            </p>
+                          )}
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "1rem",
+                              fontSize: "0.75rem",
+                              color: "var(--text-dim)",
+                              marginTop: "0.4rem",
+                            }}
+                          >
+                            <span>
+                              Followers:{" "}
+                              <strong style={{ color: "var(--text-main)" }}>
+                                {formatNumber(pl.followers)}
+                              </strong>
+                            </span>
+                            <span>
+                              Ranking:{" "}
+                              <strong style={{ color: "var(--text-main)" }}>
+                                #{pl.current_position || pl.rk}
+                              </strong>
+                            </span>
+                          </div>
+                          </div>
+                        </div>
+                        {user?.role === 'ADMIN' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAdminModal({
+                                open: true,
+                                targetType: 'playlist',
+                                targetKey: pl.spotify_id,
+                                targetName: pl.playlist_name,
+                              });
+                            }}
+                            className="btn-primary"
+                            style={{ marginTop: '0.8rem', fontSize: '0.75rem', padding: '5px 12px', width: '100%' }}
+                          >
+                            Administrar Curadores
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+{activeTab === "tiktok" && (
             <div className="animate-fade-in">
               <div
                 style={{

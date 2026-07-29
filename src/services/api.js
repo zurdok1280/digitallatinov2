@@ -352,6 +352,22 @@ export const getSongTopPlaylists = async (csSong, typePlaylist = 0) => {
 };
 
 /**
+ * Fetches the trending TikTok influencers for a specific song.
+ */
+export const getSongTopTiktokers = async (csSong) => {
+  if (!csSong) return [];
+  try {
+    const response = await authFetch(`${API_BASE_URL}/report/getTopTiktok/${encodeURIComponent(csSong)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching song top tiktokers:", error);
+    return [];
+  }
+};
+
+/**
  * Fetches the trending top platforms list
  */
 export const getTrendingTopPlatforms = async (platform, formatId = 0, countryId = 0) => {
