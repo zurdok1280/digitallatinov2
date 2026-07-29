@@ -945,7 +945,6 @@ export const updateCurator = async (id, contact) => {
     notes: contact.notes || '',
     lastContactDate: contact.lastContact || '',
     contactStatus: contact.status || 'nuevo',
-    playlists: contact.playlists || [],
   };
   const response = await authFetch(`${CONTACTS_API_BASE_URL}/contacts/curators/${id}`, {
     method: 'PUT',

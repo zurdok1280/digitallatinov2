@@ -266,6 +266,7 @@ const ContactForm = ({ type, initialData = EMPTY_CONTACT, onSave, onCancel, isSa
               ...form,
               phone: form.phone ? `${form.phoneDialCode} ${form.phone}`.trim() : ''
             };
+            delete finalForm.phoneDialCode;
             onSave(finalForm);
           }}
           className="btn-primary"
@@ -294,6 +295,7 @@ const AddContactRow = ({ type, onAdded, onOpenFull }) => {
     setIsSaving(true);
     try {
       const payload = { ...EMPTY_CONTACT, ...form };
+      delete payload.phoneDialCode;
       if (type === 'curators') await createCurator(payload);
       else await createTiktoker(payload);
       toast({ title: 'Agregado', description: `${form.name} fue agregado correctamente.` });
