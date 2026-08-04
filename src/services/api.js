@@ -1,8 +1,8 @@
 // ─── Backend URLs ─────────────────────────────────────────────────────────────
 // AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
 // ⚠️  Switch between production and local for development:
-// const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
-const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
+const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
+// const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
 
 // Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
 // ⚠️  Switch between production and local for development:
@@ -1393,6 +1393,38 @@ export const getChartByFormatoDigitalName = async (nombreFormatoDigital, country
       metadata: { meta_title: nombreFormatoDigital, meta_description: '', meta_keywords: '' },
       results: []
     };
+  }
+};
+
+/**
+ * GET /api/report/getLabelMarketShareDigitalVideo?format={format}&country={country}&crg={crg}&genre={genre}&city={city}&noradio={noradio}&top={top}
+ */
+export const getLabelMarketShareDigitalVideo = async ({
+  format = 0,
+  country = 0,
+  crg = 'C',
+  genre = 0,
+  city = 0,
+  noradio = 0,
+  top = 300
+} = {}) => {
+  try {
+    const params = new URLSearchParams({
+      format: String(format ?? 0),
+      country: String(country ?? 0),
+      crg: String(crg ?? 'C'),
+      genre: String(genre ?? 0),
+      city: String(city ?? 0),
+      noradio: String(noradio ?? 0),
+      top: String(top ?? 300)
+    });
+    const response = await authFetch(`${API_BASE_URL}/report/getLabelMarketShareDigitalVideo?${params}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || data?.results || []);
+  } catch (error) {
+    console.error('API Error fetching label market share digital video:', error);
+    return [];
   }
 };
 

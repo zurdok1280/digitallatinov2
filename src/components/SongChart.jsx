@@ -1,14 +1,171 @@
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X, PieChart as PieChartIcon, RefreshCw, Download, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
+import { getLabelMarketShareDigitalVideo } from '../services/api';
 
 import { useMemo, useState, useEffect, useRef, useId } from 'react';
+import { createPortal } from 'react-dom';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
   '#00e676', '#ff3366', '#74b9ff', '#a29bfe', '#fdcb6e',
   '#1db954', '#e056fd', '#00cec9', '#fd79a8', '#ffeaa7'
 ];
+
+const pieSliceColors = [
+  '#c193ff', '#00f0ff', '#ff3366', '#ffb700', '#00e676',
+  '#74b9ff', '#e056fd', '#fdcb6e', '#a29bfe', '#6c5ce7',
+  '#1db954', '#ff7675', '#00cec9', '#fd79a8', '#ffeaa7'
+];
+
+const MarketSharePieChart = ({ data }) => {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    if (data.length <= 8) {
+      return data.map((d, i) => ({
+        name: d.label,
+        value: Number(d.market_share_percent || 0),
+        songs: d.songs || 0,
+        color: pieSliceColors[i % pieSliceColors.length]
+      }));
+    }
+
+    const topItems = data.slice(0, 8).map((d, i) => ({
+      name: d.label,
+      value: Number(d.market_share_percent || 0),
+      songs: d.songs || 0,
+      color: pieSliceColors[i % pieSliceColors.length]
+    }));
+
+    const rest = data.slice(8);
+    const restShare = rest.reduce((acc, curr) => acc + Number(curr.market_share_percent || 0), 0);
+    const restSongs = rest.reduce((acc, curr) => acc + Number(curr.songs || 0), 0);
+
+    if (restShare > 0) {
+      topItems.push({
+        name: `Otros (${rest.length} disqueras)`,
+        value: Number(restShare.toFixed(2)),
+        songs: restSongs,
+        color: '#6b7280'
+      });
+    }
+
+    return topItems;
+  }, [data]);
+
+  const totalPercentage = useMemo(() => {
+    return chartData.reduce((acc, curr) => acc + curr.value, 0);
+  }, [chartData]);
+
+  const slices = useMemo(() => {
+    let cumulativeAngle = 0;
+    const radius = 90;
+    const innerRadius = 55;
+    const center = 110;
+
+    return chartData.map((item, idx) => {
+      const sliceAngle = (item.value / (totalPercentage || 100)) * 360;
+      const startAngle = cumulativeAngle;
+      const endAngle = cumulativeAngle + sliceAngle;
+      cumulativeAngle = endAngle;
+
+      const radStart = (startAngle - 90) * (Math.PI / 180);
+      const radEnd = (endAngle - 90) * (Math.PI / 180);
+
+      const x1 = center + radius * Math.cos(radStart);
+      const y1 = center + radius * Math.sin(radStart);
+      const x2 = center + radius * Math.cos(radEnd);
+      const y2 = center + radius * Math.sin(radEnd);
+
+      const ix1 = center + innerRadius * Math.cos(radEnd);
+      const iy1 = center + innerRadius * Math.sin(radEnd);
+      const ix2 = center + innerRadius * Math.cos(radStart);
+      const iy2 = center + innerRadius * Math.sin(radStart);
+
+      const largeArc = sliceAngle > 180 ? 1 : 0;
+
+      const pathData = [
+        `M ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+        `L ${ix1} ${iy1}`,
+        `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2} ${iy2}`,
+        'Z'
+      ].join(' ');
+
+      return {
+        ...item,
+        pathData,
+        idx
+      };
+    });
+  }, [chartData, totalPercentage]);
+
+  if (chartData.length === 0) return null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+      <div style={{ position: 'relative', width: '220px', height: '220px' }}>
+        <svg width="220" height="220" viewBox="0 0 220 220" style={{ overflow: 'visible' }}>
+          {slices.map((slice) => {
+            const isHovered = hoveredIdx === slice.idx;
+            return (
+              <path
+                key={slice.idx}
+                d={slice.pathData}
+                fill={slice.color}
+                opacity={hoveredIdx === null || isHovered ? 1 : 0.4}
+                style={{
+                  transition: 'all 0.25s ease',
+                  cursor: 'pointer',
+                  transformOrigin: '110px 110px',
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                }}
+                onMouseEnter={() => setHoveredIdx(slice.idx)}
+                onMouseLeave={() => setHoveredIdx(null)}
+              />
+            );
+          })}
+        </svg>
+
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          textAlign: 'center',
+        }}>
+          {hoveredIdx !== null ? (
+            <>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: slices[hoveredIdx].color, lineHeight: 1 }}>
+                {slices[hoveredIdx].value}%
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#d1d5db', maxWidth: '95px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '4px' }}>
+                {slices[hoveredIdx].name}
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#9ca3af' }}>
+                {slices[hoveredIdx].songs} canciones
+              </span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '1.15rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>
+                {data.reduce((a, b) => a + (b.songs || 0), 0)}
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '3px' }}>
+                Canciones
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 const Sparkline = ({ song, color }) => {
@@ -176,10 +333,293 @@ const Sparkline = ({ song, color }) => {
   );
 };
 
-const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+const getBase64ImageFromUrl = async (imageUrl) => {
+  try {
+    const res = await fetch(imageUrl);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return null;
+  }
+};
+
+const exportToExcel = (songs = [], filters = {}) => {
+  if (!songs || songs.length === 0) return;
+  const dateStr = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const metadataLines = [
+    'DIGITAL LATINO — REPORTE OFICIAL DE CHART',
+    `Fecha de exportación: ${dateStr}`,
+    'FILTROS SELECCIONADOS:',
+    `País: ${filters.country || 'Global'}`,
+    `Género: ${filters.genre || 'Todos los géneros'}`,
+    `Ciudad: ${filters.city || 'Todas las ciudades'}`,
+    `Clasificación CRG: ${filters.crg || 'Catalog'}`,
+    `Total de canciones: ${songs.length}`,
+    '', // Separator line
+  ];
+
+  const headers = ['Posición', 'Canción', 'Artista', 'Sello / Disquera', 'Reproducciones', 'Score', 'Posición Anterior'];
+  const rows = songs.map((s) => [
+    s.rk ?? s.posicion ?? '',
+    `"${(s.song || '').replace(/"/g, '""')}"`,
+    `"${(s.artists || '').replace(/"/g, '""')}"`,
+    `"${(s.label || '').replace(/"/g, '""')}"`,
+    s.spotify_streams ? Number(s.spotify_streams).toLocaleString('es-MX') : (s.spotify_streams_total ? Number(s.spotify_streams_total).toLocaleString('es-MX') : '0'),
+    s.score ?? s.spotify_score ?? '',
+    s.rk_lw ?? s.posicion_anterior ?? ''
+  ]);
+
+  const csvContent = '\uFEFF' + [...metadataLines, headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Chart_DigitalLatino_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const exportToPDF = async (songs = [], filters = {}) => {
+  if (!songs || songs.length === 0) return;
+  try {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Fetch official Digital Latino logo image
+    const logoBase64 = await getBase64ImageFromUrl('/logo.png');
+
+    // Header Background Banner
+    doc.setFillColor(18, 19, 28);
+    doc.rect(0, 0, pageWidth, 75, 'F');
+
+    // Render Logo Image or Text Fallback
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'PNG', 40, 15, 120, 45);
+      } catch (err) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(193, 147, 255);
+        doc.text('DIGITAL LATINO', 40, 44);
+      }
+    } else {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(193, 147, 255);
+      doc.text('DIGITAL LATINO', 40, 44);
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Reporte Oficial de Chart', pageWidth - 230, 36);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(160, 165, 185);
+    const dateStr = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.text(`Fecha: ${dateStr}`, pageWidth - 230, 52);
+
+    // Filters Summary Box
+    doc.setFillColor(28, 30, 45);
+    doc.roundedRect(40, 85, pageWidth - 80, 42, 6, 6, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(193, 147, 255);
+    doc.text('FILTROS SELECCIONADOS:', 55, 102);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(220, 225, 240);
+
+    const filterText = `País: ${filters.country || 'Global'}   |   Género: ${filters.genre || 'Todos'}   |   Ciudad: ${filters.city || 'Todas'}   |   CRG: ${filters.crg || 'Catalog'}   |   Total canciones: ${songs.length}`;
+    doc.text(filterText, 55, 118);
+
+    // Table Header setup
+    let startY = 152;
+    const colX = [40, 80, 280, 480, 650, 750];
+    const headers = ['#', 'Canción', 'Artista', 'Sello / Disquera', 'Reproducciones', 'Score'];
+
+    const renderTableHeader = (y) => {
+      doc.setFillColor(18, 19, 28);
+      doc.rect(40, y - 12, pageWidth - 80, 20, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      headers.forEach((h, i) => doc.text(h, colX[i], y + 2));
+    };
+
+    renderTableHeader(startY);
+    startY += 18;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+
+    songs.forEach((song, idx) => {
+      if (startY > pageHeight - 40) {
+        doc.addPage();
+        startY = 50;
+        renderTableHeader(startY);
+        startY += 18;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+      }
+
+      if (idx % 2 === 1) {
+        doc.setFillColor(245, 247, 252);
+        doc.rect(40, startY - 11, pageWidth - 80, 16, 'F');
+      }
+
+      doc.setTextColor(30, 30, 35);
+      const rk = String(song.rk ?? song.posicion ?? (idx + 1));
+      const songName = (song.song || '').length > 35 ? (song.song || '').substring(0, 33) + '...' : (song.song || '');
+      const artistName = (song.artists || '').length > 32 ? (song.artists || '').substring(0, 30) + '...' : (song.artists || '');
+      const labelName = (song.label || '').length > 25 ? (song.label || '').substring(0, 23) + '...' : (song.label || '');
+      const streams = song.spotify_streams ? Number(song.spotify_streams).toLocaleString('es-MX') : (song.spotify_streams_total ? Number(song.spotify_streams_total).toLocaleString('es-MX') : '-');
+      const score = song.score ? String(song.score) : (song.spotify_score ? String(song.spotify_score) : '-');
+
+      doc.text(rk, colX[0], startY);
+      doc.text(songName, colX[1], startY);
+      doc.text(artistName, colX[2], startY);
+      doc.text(labelName, colX[3], startY);
+      doc.text(streams, colX[4], startY);
+      doc.text(score, colX[5], startY);
+
+      startY += 16;
+    });
+
+    doc.save(`Chart_DigitalLatino_${new Date().toISOString().slice(0, 10)}.pdf`);
+  } catch (err) {
+    console.error('Error generating PDF:', err);
+  }
+};
+
+const SongChart = ({
+  songs,
+  isLoading,
+  onArtistClick,
+  onSongClick,
+  onLoginClick,
+  comparisonMode,
+  onSongSelect,
+  selectedSongs = [],
+  selectedCountry = '0',
+  selectedGenre = '0',
+  selectedCity = '0',
+  selectedCRG = 'C',
+  selectedFormat = '0',
+  countriesList = [],
+  genresList = [],
+  citiesList = [],
+}) => {
   const { token, user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Compute Readable Active Filters for Reports
+  const countryName = useMemo(() => {
+    if (!selectedCountry || selectedCountry === '0' || selectedCountry === 0) return 'Global';
+    const match = countriesList.find((c) => String(c.id) === String(selectedCountry));
+    return match?.country_name || match?.name || `País #${selectedCountry}`;
+  }, [selectedCountry, countriesList]);
+
+  const genreName = useMemo(() => {
+    if (!selectedGenre || selectedGenre === '0' || selectedGenre === 0) return 'Todos los géneros';
+    const match = genresList.find((g) => String(g.id) === String(selectedGenre));
+    return match?.genre || match?.name || match?.nombre || `Género #${selectedGenre}`;
+  }, [selectedGenre, genresList]);
+
+  const cityName = useMemo(() => {
+    if (!selectedCity || selectedCity === '0' || selectedCity === 0) return 'Todas las ciudades';
+    const match = citiesList.find((c) => String(c.id) === String(selectedCity));
+    return match?.name || match?.city || `Ciudad #${selectedCity}`;
+  }, [selectedCity, citiesList]);
+
+  const crgName = useMemo(() => {
+    if (selectedCRG === 'C') return 'Catalog (C)';
+    if (selectedCRG === 'R') return 'Current (R)';
+    if (selectedCRG === 'G') return 'General (G)';
+    return selectedCRG || 'General';
+  }, [selectedCRG]);
+
+  const activeFilters = useMemo(() => ({
+    country: countryName,
+    genre: genreName,
+    city: cityName,
+    crg: crgName,
+  }), [countryName, genreName, cityName, crgName]);
+
+  // Export Menu State
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Market Share Modal State
+  const [isMarketShareOpen, setIsMarketShareOpen] = useState(false);
+  const [marketShareTop, setMarketShareTop] = useState(300);
+  const [marketShareData, setMarketShareData] = useState([]);
+  const [marketShareLoading, setMarketShareLoading] = useState(false);
+  const [marketShareError, setMarketShareError] = useState(null);
+  const [marketShareSearch, setMarketShareSearch] = useState('');
+
+  // Fetch Market Share Data
+  useEffect(() => {
+    if (!isMarketShareOpen) return;
+    let isMounted = true;
+    setMarketShareLoading(true);
+    setMarketShareError(null);
+
+    getLabelMarketShareDigitalVideo({
+      format: selectedFormat || 0,
+      country: selectedCountry || 0,
+      crg: selectedCRG || 'C',
+      genre: selectedGenre || 0,
+      city: selectedCity || 0,
+      noradio: 0,
+      top: marketShareTop,
+    })
+      .then((data) => {
+        if (isMounted) {
+          setMarketShareData(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching market share data:', err);
+        if (isMounted) setMarketShareError('No se pudieron cargar los datos de Market Share.');
+      })
+      .finally(() => {
+        if (isMounted) setMarketShareLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [isMarketShareOpen, marketShareTop, selectedFormat, selectedCountry, selectedCRG, selectedGenre, selectedCity]);
+
+  const filteredMarketShareList = useMemo(() => {
+    if (!marketShareSearch.trim()) return marketShareData;
+    const q = marketShareSearch.toLowerCase().trim();
+    return marketShareData.filter((item) => (item.label || '').toLowerCase().includes(q));
+  }, [marketShareData, marketShareSearch]);
 
   useEffect(() => {
     setSearchQuery('');
@@ -677,6 +1117,187 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
         }
       `}</style>
 
+      {/* Toolbar / Actions Bar */}
+      <div className="song-chart-toolbar" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        marginBottom: '1rem',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {/* Exportar Button with Dropdown */}
+          <div ref={exportMenuRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (!user) {
+                  if (onLoginClick) onLoginClick();
+                  return;
+                }
+                setIsExportMenuOpen((prev) => !prev);
+              }}
+              title={!user ? 'Inicia sesión para exportar el chart' : 'Exportar reporte'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: !user ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.06)',
+                border: !user ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.15)',
+                color: !user ? '#6b7280' : 'white',
+                padding: '0.55rem 1.1rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                opacity: !user ? 0.6 : 1,
+                transition: 'all 0.2s ease',
+                boxShadow: !user ? 'none' : '0 4px 15px rgba(0, 0, 0, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                if (user) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (user) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                }
+              }}
+            >
+              {!user ? <Lock size={15} color="#6b7280" /> : <Download size={17} color="#00e5ff" />}
+              <span>Exportar</span>
+              {user && <ChevronDown size={14} style={{ opacity: 0.7, transform: isExportMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />}
+            </button>
+
+            {user && isExportMenuOpen && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: 0,
+                backgroundColor: '#181926',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '0.75rem',
+                padding: '0.4rem',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                zIndex: 100,
+                minWidth: '150px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.2rem',
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExportMenuOpen(false);
+                    exportToExcel(filteredSongs, activeFilters);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    width: '100%',
+                    padding: '0.6rem 0.85rem',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 229, 255, 0.15)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <FileSpreadsheet size={16} color="#00e676" />
+                  <span>Excel (.csv)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExportMenuOpen(false);
+                    exportToPDF(filteredSongs, activeFilters);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    width: '100%',
+                    padding: '0.6rem 0.85rem',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 51, 102, 0.15)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <FileText size={16} color="#ff3366" />
+                  <span>PDF (.pdf)</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Market Share Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                if (onLoginClick) onLoginClick();
+                return;
+              }
+              setIsMarketShareOpen(true);
+            }}
+            title={!user ? 'Inicia sesión para ver Market Share' : 'Ver Market Share'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: !user ? 'rgba(255, 255, 255, 0.03)' : 'rgba(193, 147, 255, 0.12)',
+              border: !user ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(193, 147, 255, 0.3)',
+              color: !user ? '#6b7280' : '#c193ff',
+              padding: '0.55rem 1.1rem',
+              borderRadius: '0.75rem',
+              fontSize: '0.85rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              opacity: !user ? 0.6 : 1,
+              transition: 'all 0.2s ease',
+              boxShadow: !user ? 'none' : '0 4px 15px rgba(193, 147, 255, 0.15)',
+            }}
+            onMouseEnter={(e) => {
+              if (user) {
+                e.currentTarget.style.background = '#c193ff';
+                e.currentTarget.style.color = '#000';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (user) {
+                e.currentTarget.style.background = 'rgba(193, 147, 255, 0.12)';
+                e.currentTarget.style.color = '#c193ff';
+                e.currentTarget.style.transform = 'none';
+              }
+            }}
+          >
+            {!user ? <Lock size={15} color="#6b7280" /> : <PieChartIcon size={17} />}
+            <span>Market Share</span>
+          </button>
+        </div>
+      </div>
+
       {/* Buscador de canciones */}
       <div className="song-search-container">
         <div className="song-search-wrapper">
@@ -821,6 +1442,223 @@ const SongChart = ({ songs, isLoading, onArtistClick, onSongClick, onLoginClick,
           <strong style={{ color: '#e5e7eb' }}>Nota:</strong> Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.
         </span>
       </div>
+
+      {/* Market Share Modal */}
+      {isMarketShareOpen && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          padding: '1rem',
+        }} onClick={(e) => {
+          if (e.target === e.currentTarget) setIsMarketShareOpen(false);
+        }}>
+          <div style={{
+            maxWidth: '920px',
+            width: '100%',
+            maxHeight: '88vh',
+            overflowY: 'auto',
+            backgroundColor: '#12131c',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '1.5rem',
+            padding: '1.75rem',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+            position: 'relative',
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <PieChartIcon size={24} color="#c193ff" />
+                  Market Share por Disquera / Sello
+                </h2>
+                <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                  Porcentaje de participación de mercado y volumen de canciones en video digital.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                {/* Top Selector (default 300) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Top:</label>
+                  <select
+                    value={marketShareTop}
+                    onChange={(e) => setMarketShareTop(Number(e.target.value))}
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '0.6rem',
+                      color: 'white',
+                      padding: '0.4rem 0.8rem',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value={20} style={{ background: '#12131c', color: 'white' }}>Top 20</option>
+                    <option value={50} style={{ background: '#12131c', color: 'white' }}>Top 50</option>
+                    <option value={100} style={{ background: '#12131c', color: 'white' }}>Top 100</option>
+                    <option value={200} style={{ background: '#12131c', color: 'white' }}>Top 200</option>
+                    <option value={300} style={{ background: '#12131c', color: 'white' }}>Top 300</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMarketShareOpen(false)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#9ca3af',
+                    borderRadius: '50%',
+                    width: '34px',
+                    height: '34px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            {marketShareLoading ? (
+              <div style={{ padding: '4rem', textAlign: 'center', color: '#c193ff' }}>
+                <Loader2 size={36} style={{ margin: '0 auto 1rem', animation: 'spin 1s linear infinite' }} />
+                <p style={{ fontWeight: 600 }}>Cargando datos de Market Share (Top {marketShareTop})...</p>
+              </div>
+            ) : marketShareError ? (
+              <div style={{ padding: '3rem', textAlign: 'center', color: '#ef4444' }}>
+                <p style={{ fontWeight: 700, marginBottom: '1rem' }}>{marketShareError}</p>
+                <button
+                  type="button"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: 'white',
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => setMarketShareTop(marketShareTop)}
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : marketShareData.length === 0 ? (
+              <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+                No se encontraron datos de Market Share para los filtros seleccionados.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
+                {/* Left: Donut Chart */}
+                <div style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '1.25rem',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#e5e7eb', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Distribución de Mercado
+                  </h3>
+                  <MarketSharePieChart data={marketShareData} />
+                </div>
+
+                {/* Right: Legend Table with search */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={15} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
+                    <input
+                      type="text"
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '0.75rem',
+                        padding: '0.65rem 1rem 0.65rem 2.5rem',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        outline: 'none',
+                      }}
+                      placeholder="Filtrar por disquera..."
+                      value={marketShareSearch}
+                      onChange={(e) => setMarketShareSearch(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{
+                    maxHeight: '380px',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    paddingRight: '0.3rem'
+                  }}>
+                    {filteredMarketShareList.map((item, idx) => {
+                      const color = pieSliceColors[idx % pieSliceColors.length];
+                      return (
+                        <div
+                          key={item.label || idx}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderRadius: '0.75rem',
+                            padding: '0.65rem 0.85rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.4rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden', paddingRight: '0.5rem' }}>
+                              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.label}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                              <span style={{ fontSize: '0.78rem', color: '#9ca3af' }}>{item.songs} {item.songs === 1 ? 'canción' : 'canciones'}</span>
+                              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#c193ff' }}>{item.market_share_percent}%</span>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.min(100, item.market_share_percent)}%`, height: '100%', background: color, borderRadius: '2px' }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

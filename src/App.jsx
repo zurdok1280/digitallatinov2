@@ -594,6 +594,13 @@ function Dashboard() {
           comparisonMode={comparisonMode}
           onSongSelect={handleSongSelect}
           selectedSongs={selectedSongs}
+          selectedCountry={selectedCountry}
+          selectedGenre={selectedGenre}
+          selectedCity={selectedCity}
+          selectedCRG={selectedCRG}
+          countriesList={countriesList}
+          genresList={genresList}
+          citiesList={citiesList}
           onArtistClick={(artist) => {
             if (!user) { setIsLoginModalOpen(true); return; }
             if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
@@ -627,6 +634,13 @@ function Dashboard() {
           comparisonMode={comparisonMode}
           onSongSelect={handleSongSelect}
           selectedSongs={selectedSongs}
+          selectedCountry={selectedCountry}
+          selectedGenre={selectedGenre}
+          selectedCity={selectedCity}
+          selectedCRG={selectedCRG}
+          countriesList={countriesList}
+          genresList={genresList}
+          citiesList={citiesList}
           onArtistClick={(artist) => {
             if (!user) { setIsLoginModalOpen(true); return; }
             if (!isAllowedForArtist(artist)) { showRestrictedToast(); return; }
