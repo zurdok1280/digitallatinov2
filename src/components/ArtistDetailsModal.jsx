@@ -22,7 +22,9 @@ import {
   Pause,
   Calendar,
   FileText,
+  Download,
 } from "lucide-react";
+import { exportReachReport } from "../utils/exportReachReport";
 import {
   AreaChart,
   Area,
@@ -340,6 +342,12 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
   const [isSongHistoricalLoading, setIsSongHistoricalLoading] = useState(false);
   const [isHistoricalChronological, setIsHistoricalChronological] =
     useState(true);
+  const [isGeneratingReachReport, setIsGeneratingReachReport] = useState(false);
+  const [generatingSection, setGeneratingSection] = useState(null);
+
+  const platformPanelRef = useRef(null);
+  const historicalChartRef = useRef(null);
+  const topSongsRef = useRef(null);
 
   const [similarArtists, setSimilarArtists] = useState([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
@@ -654,6 +662,33 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
 
   if (!artist) return null;
 
+  const handleGenerateReachReport = async () => {
+    if (isGeneratingReachReport) return;
+    setIsGeneratingReachReport(true);
+    setGeneratingSection(null);
+    try {
+      await exportReachReport({
+        songName: artist.songName || '',
+        artistName: artist.name || '',
+        songPlatformData,
+        songHistoricalData,
+        topSongsData,
+        platforms: SONG_PLATFORMS,
+        currentPlatformKey: selectedPlatformKey,
+        setSelectedPlatformKey,
+        platformPanelRef,
+        historicalChartRef,
+        topSongsRef,
+        onProgress: (name, color) => setGeneratingSection({ name, color })
+      });
+    } catch (err) {
+      console.error("Error generating reach report", err);
+    } finally {
+      setIsGeneratingReachReport(false);
+      setGeneratingSection(null);
+    }
+  };
+
   const containerStyle = isModal ? {
     position: "fixed",
     inset: 0,
@@ -671,7 +706,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
     width: "100%",
     maxWidth: "min(1200px, 95vw)",
     maxHeight: "92vh",
-    overflowY: "auto",
+    overflowY: isGeneratingReachReport ? "hidden" : "auto",
     background: "rgba(10,10,18,0.98)",
     display: "flex",
     flexDirection: "column",
@@ -1498,23 +1533,55 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
           {activeTab === "detalles_cancion" && (
             <div
               className="animate-fade-in"
-              style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+              style={{ display: "flex", flexDirection: "column", gap: "2rem", position: "relative" }}
             >
               {/* ── Platform Metrics Panel ────────────────────────────────── */}
               <div>
                 {/* Section Title */}
-                <h3
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginBottom: "1rem",
-                    fontSize: "1rem",
-                  }}
-                >
-                  <TrendingUp size={18} color="var(--accent-primary)" />{" "}
-                  Estadísticas por Plataformas
-                </h3>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", gap: "1rem" }}>
+                  <h3
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "1rem",
+                      margin: 0,
+                    }}
+                  >
+                    <TrendingUp size={18} color="var(--accent-primary)" />{" "}
+                    Estadísticas por Plataformas
+                  </h3>
+                  {user?.role === 'ADMIN' && (
+                    <button
+                      onClick={handleGenerateReachReport}
+                      disabled={isGeneratingReachReport}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        background: isGeneratingReachReport
+                          ? "rgba(168,85,247,0.3)"
+                          : "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)",
+                        color: "white",
+                        border: "none",
+                        padding: "0.4rem 1rem",
+                        borderRadius: "20px",
+                        fontWeight: "bold",
+                        fontSize: "0.8rem",
+                        cursor: isGeneratingReachReport ? "wait" : "pointer",
+                        transition: "all 0.3s ease",
+                        boxShadow: isGeneratingReachReport ? "none" : "0 4px 15px rgba(168,85,247,0.4)",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => { if (!isGeneratingReachReport) { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 8px 25px rgba(168,85,247,0.6)"; } }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = isGeneratingReachReport ? "none" : "0 4px 15px rgba(168,85,247,0.4)"; }}
+                    >
+                      <Download size={14} color="white" />
+                      {isGeneratingReachReport ? "Generando..." : "Resumen"}
+                    </button>
+                  )}
+                </div>
 
                 {/* Platform Pills — flex-wrap so they form at most 2 rows */}
                 <div
@@ -1600,6 +1667,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                     : null;
                   return (
                     <div
+                      ref={platformPanelRef}
                       className="glass-panel"
                       style={{
                         padding: "1.5rem",
@@ -1832,12 +1900,24 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
               {/* ── Spotify Historical Streams Chart ──────────────────────── */}
               {selectedPlatformKey === "spotify" && (
                 <div
-                  className="glass-panel"
-                  style={{
-                    padding: "1.5rem",
-                    background: "rgba(255,255,255,0.02)",
+                  style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+                  onMouseEnter={(e) => {
+                    const btn = e.currentTarget.querySelector('.chart-dl-btn');
+                    if (btn) btn.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    const btn = e.currentTarget.querySelector('.chart-dl-btn');
+                    if (btn) btn.style.opacity = '0';
                   }}
                 >
+                  <div
+                    ref={historicalChartRef}
+                    className="glass-panel"
+                    style={{
+                      padding: "1.5rem",
+                      background: "rgba(255,255,255,0.02)",
+                    }}
+                  >
                   <div
                     style={{
                       display: "flex",
@@ -2024,17 +2104,75 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                       </ResponsiveContainer>
                     </div>
                   )}
+                  </div>
+                  {/* Download-as-image button — hidden, reveals on hover */}
+                  {songHistoricalData.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '0.2rem' }}>
+                      <button
+                        className="chart-dl-btn"
+                        title="Descargar gráfica como imagen"
+                        onClick={async () => {
+                          const el = historicalChartRef.current;
+                          if (!el) return;
+                          const { toPng } = await import('html-to-image');
+                          try {
+                            const dataUrl = await toPng(el, {
+                              pixelRatio: 3,
+                              backgroundColor: '#0C0D1A',
+                              fontEmbedCSS: '',
+                              style: { transform: 'none' },
+                            });
+                            const link = document.createElement('a');
+                            const safeName = (artist.songName || 'grafica').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 40);
+                            link.download = `Rendimiento_Spotify_${safeName}_${new Date().toISOString().slice(0,10)}.png`;
+                            link.href = dataUrl;
+                            link.click();
+                          } catch (err) {
+                            console.error('Error al descargar imagen de la gráfica:', err);
+                          }
+                        }}
+                        style={{
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease, transform 0.2s ease, background 0.2s ease',
+                          background: 'rgba(29, 185, 84, 0.12)',
+                          border: '1px solid rgba(29, 185, 84, 0.35)',
+                          borderRadius: '10px',
+                          padding: '0.35rem 0.65rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          color: '#1DB954',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(29,185,84,0.22)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(29,185,84,0.12)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        <Download size={12} color="#1DB954" />
+                        Descargar imagen
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Lista de Recomendación Top 5 */}
-              <div>
+              <div ref={topSongsRef} style={{ paddingTop: '1rem', paddingBottom: '1rem' }}>
                 <h3
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    marginBottom: "1.5rem",
+                    marginBottom: "2.5rem",
                   }}
                 >
                   <Trophy size={20} color="#ffb700" /> Top 5 Canciones
@@ -2060,7 +2198,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: "1rem",
                     }}
                   >
                     {topSongsData.slice(0, 5).map((song, i) => (
@@ -2073,6 +2210,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                           gap: "1.5rem",
                           padding: "1rem",
                           flexWrap: "wrap",
+                          marginBottom: "2rem",
                         }}
                       >
                         <div
@@ -2302,6 +2440,35 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                 spotifyId={artist?.spotifyid}
                 onOpen={() => setShowRecommendations(true)}
               />
+
+              {isGeneratingReachReport && (
+                <div style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(12, 13, 26, 0.75)",
+                  backdropFilter: "blur(6px)",
+                  zIndex: 999999,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  paddingTop: "15vh",
+                  color: "white",
+                  cursor: "wait"
+                }}>
+                  <Loader2 size={48} className="loading-spinner" color={generatingSection?.color || "#a855f7"} />
+                  {generatingSection && (
+                    <div style={{ marginTop: "1.5rem", fontSize: "1.2rem", fontWeight: "bold", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                      Agregando <span style={{ color: generatingSection.color }}>{generatingSection.name}</span>...
+                    </div>
+                  )}
+                  {!generatingSection && (
+                    <div style={{ marginTop: "1.5rem", fontSize: "1.2rem", fontWeight: "bold", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                      Iniciando reporte...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
