@@ -2,6 +2,7 @@ import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Searc
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getLabelMarketShareDigitalVideo } from '../services/api';
+import { exportToXLSX, exportToPDF } from '../utils/exportChart';
 
 import { useMemo, useState, useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
@@ -333,178 +334,6 @@ const Sparkline = ({ song, color }) => {
   );
 };
 
-const getBase64ImageFromUrl = async (imageUrl) => {
-  try {
-    const res = await fetch(imageUrl);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch (e) {
-    return null;
-  }
-};
-
-const exportToExcel = (songs = [], filters = {}) => {
-  if (!songs || songs.length === 0) return;
-  const dateStr = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-
-  const metadataLines = [
-    'DIGITAL LATINO — REPORTE OFICIAL DE CHART',
-    `Fecha de exportación: ${dateStr}`,
-    'FILTROS SELECCIONADOS:',
-    `País: ${filters.country || 'Global'}`,
-    `Género: ${filters.genre || 'Todos los géneros'}`,
-    `Ciudad: ${filters.city || 'Todas las ciudades'}`,
-    `Clasificación CRG: ${filters.crg || 'Catalog'}`,
-    `Total de canciones: ${songs.length}`,
-    '', // Separator line
-  ];
-
-  const headers = ['Posición', 'Canción', 'Artista', 'Sello / Disquera', 'Reproducciones', 'Score', 'Posición Anterior'];
-  const rows = songs.map((s) => [
-    s.rk ?? s.posicion ?? '',
-    `"${(s.song || '').replace(/"/g, '""')}"`,
-    `"${(s.artists || '').replace(/"/g, '""')}"`,
-    `"${(s.label || '').replace(/"/g, '""')}"`,
-    s.spotify_streams ? Number(s.spotify_streams).toLocaleString('es-MX') : (s.spotify_streams_total ? Number(s.spotify_streams_total).toLocaleString('es-MX') : '0'),
-    s.score ?? s.spotify_score ?? '',
-    s.rk_lw ?? s.posicion_anterior ?? ''
-  ]);
-
-  const csvContent = '\uFEFF' + [...metadataLines, headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `Chart_DigitalLatino_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-const exportToPDF = async (songs = [], filters = {}) => {
-  if (!songs || songs.length === 0) return;
-  try {
-    const { jsPDF } = await import('jspdf');
-    const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    // Fetch official Digital Latino logo image
-    const logoBase64 = await getBase64ImageFromUrl('/logo.png');
-
-    // Header Background Banner
-    doc.setFillColor(18, 19, 28);
-    doc.rect(0, 0, pageWidth, 75, 'F');
-
-    // Render Logo Image or Text Fallback
-    if (logoBase64) {
-      try {
-        doc.addImage(logoBase64, 'PNG', 40, 15, 120, 45);
-      } catch (err) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(20);
-        doc.setTextColor(193, 147, 255);
-        doc.text('DIGITAL LATINO', 40, 44);
-      }
-    } else {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20);
-      doc.setTextColor(193, 147, 255);
-      doc.text('DIGITAL LATINO', 40, 44);
-    }
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(255, 255, 255);
-    doc.text('Reporte Oficial de Chart', pageWidth - 230, 36);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(160, 165, 185);
-    const dateStr = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-    doc.text(`Fecha: ${dateStr}`, pageWidth - 230, 52);
-
-    // Filters Summary Box
-    doc.setFillColor(28, 30, 45);
-    doc.roundedRect(40, 85, pageWidth - 80, 42, 6, 6, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(193, 147, 255);
-    doc.text('FILTROS SELECCIONADOS:', 55, 102);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(220, 225, 240);
-
-    const filterText = `País: ${filters.country || 'Global'}   |   Género: ${filters.genre || 'Todos'}   |   Ciudad: ${filters.city || 'Todas'}   |   CRG: ${filters.crg || 'Catalog'}   |   Total canciones: ${songs.length}`;
-    doc.text(filterText, 55, 118);
-
-    // Table Header setup
-    let startY = 152;
-    const colX = [40, 80, 280, 480, 650, 750];
-    const headers = ['#', 'Canción', 'Artista', 'Sello / Disquera', 'Reproducciones', 'Score'];
-
-    const renderTableHeader = (y) => {
-      doc.setFillColor(18, 19, 28);
-      doc.rect(40, y - 12, pageWidth - 80, 20, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(255, 255, 255);
-      headers.forEach((h, i) => doc.text(h, colX[i], y + 2));
-    };
-
-    renderTableHeader(startY);
-    startY += 18;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-
-    songs.forEach((song, idx) => {
-      if (startY > pageHeight - 40) {
-        doc.addPage();
-        startY = 50;
-        renderTableHeader(startY);
-        startY += 18;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.5);
-      }
-
-      if (idx % 2 === 1) {
-        doc.setFillColor(245, 247, 252);
-        doc.rect(40, startY - 11, pageWidth - 80, 16, 'F');
-      }
-
-      doc.setTextColor(30, 30, 35);
-      const rk = String(song.rk ?? song.posicion ?? (idx + 1));
-      const songName = (song.song || '').length > 35 ? (song.song || '').substring(0, 33) + '...' : (song.song || '');
-      const artistName = (song.artists || '').length > 32 ? (song.artists || '').substring(0, 30) + '...' : (song.artists || '');
-      const labelName = (song.label || '').length > 25 ? (song.label || '').substring(0, 23) + '...' : (song.label || '');
-      const streams = song.spotify_streams ? Number(song.spotify_streams).toLocaleString('es-MX') : (song.spotify_streams_total ? Number(song.spotify_streams_total).toLocaleString('es-MX') : '-');
-      const score = song.score ? String(song.score) : (song.spotify_score ? String(song.spotify_score) : '-');
-
-      doc.text(rk, colX[0], startY);
-      doc.text(songName, colX[1], startY);
-      doc.text(artistName, colX[2], startY);
-      doc.text(labelName, colX[3], startY);
-      doc.text(streams, colX[4], startY);
-      doc.text(score, colX[5], startY);
-
-      startY += 16;
-    });
-
-    doc.save(`Chart_DigitalLatino_${new Date().toISOString().slice(0, 10)}.pdf`);
-  } catch (err) {
-    console.error('Error generating PDF:', err);
-  }
-};
 
 const SongChart = ({
   songs,
@@ -1193,7 +1022,7 @@ const SongChart = ({
                   type="button"
                   onClick={() => {
                     setIsExportMenuOpen(false);
-                    exportToExcel(filteredSongs, activeFilters);
+                    exportToXLSX(filteredSongs, activeFilters);
                   }}
                   style={{
                     display: 'flex',
@@ -1215,7 +1044,7 @@ const SongChart = ({
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   <FileSpreadsheet size={16} color="#00e676" />
-                  <span>Excel (.csv)</span>
+                  <span>Excel (.xlsx)</span>
                 </button>
 
                 <button
