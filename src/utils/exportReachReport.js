@@ -8,16 +8,17 @@
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
-// ─── Brand palette ─────────────────────────────────────────────────────────────
+// ─── Brand & Print palette ───────────────────────────────────────────────────
 const C = {
-  bgPrimary:    '#0C0D1A',
-  bgSecondary:  '#12131C',
-  bgCard:       '#1C1E2D',
-  accentPurple: '#C193FF',
-  accentBlue:   '#8A88FF',
-  textMain:     '#FFFFFF',
-  textMuted:    '#A0A5B9',
-  textDim:      '#6B7280',
+  bgCard:       '#1C1E2D',   // Fondo oscuro original para captureEl
+  bgPage:       '#FFFFFF',   // Fondo de hoja de impresión
+  bgSection:    '#F3F4F6',   // Banda de encabezado de sección
+  accentPurple: '#7C3AED',
+  accentBlue:   '#3B5BDB',
+  textMain:     '#111827',   // Texto principal oscuro
+  textMuted:    '#4B5563',   // Texto secundario gris medio
+  textDim:      '#9CA3AF',
+  border:       '#D1D5DB',
 };
 
 const h2r = (hex) => [
@@ -66,37 +67,40 @@ const fetchLogoBase64 = async () => {
 };
 
 // ─── Draw footer ──────────────────────────────────────────────────────────────
-const drawFooter = (pdf, pw, ph) => {
+const drawFooter = (pdf, pw, ph, MARGIN) => {
   const pg = pdf.internal.getCurrentPageInfo().pageNumber;
-  pdf.setDrawColor(...h2r(C.accentBlue));
+  pdf.setDrawColor(...h2r(C.border));
   pdf.setLineWidth(0.5);
-  pdf.line(28, ph - 22, pw - 28, ph - 22);
+  pdf.line(MARGIN, ph - 24, pw - MARGIN, ph - 24);
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7);
   pdf.setTextColor(...h2r(C.textDim));
-  pdf.text('Digital Latino  \u2022  digital-latino.com', 28, ph - 10);
-  pdf.text(`P\u00e1gina ${pg}`, pw - 28, ph - 10, { align: 'right' });
+  pdf.text('Digital Latino  \u2022  digital-latino.com', MARGIN, ph - 12);
+  pdf.text(`P\u00e1gina ${pg}`, pw - MARGIN, ph - 12, { align: 'right' });
 };
 
 // ─── Draw section title bar ───────────────────────────────────────────────────
-const drawSectionTitle = (pdf, pw, ph, title, subtitle, accentColor, yOffset = 0) => {
-  // Full-width dark header band
-  pdf.setFillColor(...h2r(C.bgSecondary));
-  pdf.rect(0, yOffset, pw, 56, 'F');
-  // Accent left strip
+const drawSectionTitle = (pdf, pw, ph, title, subtitle, accentColor, yOffset = 0, MARGIN, USABLE_W) => {
+  const BAND_H = 44;
+  
+  // Fondo claro de la banda
+  pdf.setFillColor(...h2r(C.bgSection));
+  pdf.rect(MARGIN, yOffset, USABLE_W, BAND_H, 'F');
+  
+  // Franja de acento izquierda
   pdf.setFillColor(...h2r(accentColor || C.accentBlue));
-  pdf.rect(0, yOffset, 4, 56, 'F');
+  pdf.rect(MARGIN, yOffset, 3, BAND_H, 'F');
 
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(14);
+  pdf.setFontSize(11);
   pdf.setTextColor(...h2r(C.textMain));
-  pdf.text(title, 20, yOffset + 28);
+  pdf.text(title, MARGIN + 10, yOffset + 18);
 
   if (subtitle) {
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
+    pdf.setFontSize(8);
     pdf.setTextColor(...h2r(C.textMuted));
-    pdf.text(subtitle, 20, yOffset + 44);
+    pdf.text(subtitle, MARGIN + 10, yOffset + 32);
   }
 };
 
@@ -132,6 +136,8 @@ export const exportReachReport = async ({
   // Letter: 612 x 792 pt
   const pw = 612;
   const ph = 792;
+  const MARGIN = 36;
+  const USABLE_W = pw - MARGIN * 2;
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
 
   const dateStr = new Date().toLocaleDateString('es-MX', {
@@ -151,17 +157,17 @@ export const exportReachReport = async ({
   // ── Pages: Content ────────────────────────────────────────────────────────
   let isFirstContentPage = true;
   let currentY = 0;
-  const marginBottom = 40;
+  const marginBottom = 50;
 
   const startNewPage = () => {
     if (!isFirstContentPage) {
       pdf.addPage('letter', 'portrait');
     }
     isFirstContentPage = false;
-    pdf.setFillColor(...h2r(C.bgPrimary));
+    pdf.setFillColor(...h2r(C.bgPage));
     pdf.rect(0, 0, pw, ph, 'F');
-    drawFooter(pdf, pw, ph);
-    currentY = 20; // Start slightly lower than 0 to have a top margin
+    drawFooter(pdf, pw, ph, MARGIN);
+    currentY = MARGIN; // Start from margin
   };
 
   const getImgDimensions = (dataUrl) => {
@@ -177,27 +183,40 @@ export const exportReachReport = async ({
 
   // ── Draw Main Header on First Page ────────────────────────────────────────
   if (logoBase64) {
-    try { pdf.addImage(logoBase64, 'PNG', 20, currentY, 100, 38); } catch {}
+    try { 
+      const { width: logoNW, height: logoNH } = await getImgDimensions(logoBase64);
+      const logoTargetH = 40;
+      const logoAspect = logoNW / logoNH;
+      const logoW = logoTargetH * logoAspect;
+      
+      // Tira oscura estilo componente para el logo
+      const padX = 16;
+      const padY = 8;
+      pdf.setFillColor(...h2r(C.bgCard));
+      pdf.roundedRect(MARGIN, currentY, logoW + padX * 2, logoTargetH + padY * 2, 8, 8, 'F');
+      
+      pdf.addImage(logoBase64, 'PNG', MARGIN + padX, currentY + padY, logoW, logoTargetH); 
+    } catch {}
   }
   
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(8);
   pdf.setTextColor(...h2r(C.textMuted));
-  pdf.text(`Fecha: ${dateStr}`, pw - 20, currentY + 15, { align: 'right' });
+  pdf.text(`Fecha: ${dateStr}`, pw - MARGIN, currentY + 15, { align: 'right' });
 
-  currentY += 85;
+  currentY += 95; // Espacio ajustado para asegurar un gap limpio debajo de la tira del logo
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(22);
   pdf.setTextColor(...h2r(C.textMain));
-  pdf.text(`Alcance de ${songName}`, 20, currentY);
+  pdf.text(`Alcance de ${songName}`, MARGIN, currentY);
 
   currentY += 22;
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(12);
   pdf.setTextColor(...h2r(C.textMuted));
-  pdf.text('Estadísticas por Plataformas', 20, currentY);
+  pdf.text('Estadísticas por Plataformas', MARGIN, currentY);
 
   currentY += 35; // Space before the first platform block
 
@@ -211,17 +230,18 @@ export const exportReachReport = async ({
     const dataUrl = await captureEl(platformPanelRef);
     if (dataUrl) {
       const { width: natW, height: natH } = await getImgDimensions(dataUrl);
-      const scale = pw / (natW / 2); // since we used pixelRatio: 2
+      const scale = USABLE_W / (natW / 2); // since we used pixelRatio: 2
       const imgH = (natH / 2) * scale;
-      const blockHeight = 56 + imgH + 20; // 56 for title, 20 padding
+      const BAND_H = 44;
+      const blockHeight = BAND_H + imgH + 12;
 
-      if (currentY + blockHeight > ph - marginBottom && currentY > 50) {
+      if (currentY + blockHeight > ph - marginBottom && currentY > MARGIN + BAND_H) {
         startNewPage();
       }
 
-      drawSectionTitle(pdf, pw, ph, platform.name, 'Métricas de la canción', platform.accentColor, currentY);
-      pdf.addImage(dataUrl, 'PNG', 0, currentY + 56, pw, imgH);
-      currentY += blockHeight;
+      drawSectionTitle(pdf, pw, ph, platform.name, 'Métricas de la canción', platform.accentColor, currentY, MARGIN, USABLE_W);
+      pdf.addImage(dataUrl, 'PNG', MARGIN, currentY + BAND_H, USABLE_W, imgH);
+      currentY += blockHeight + 8;
     }
 
     // After Spotify metrics, also capture the historical chart
@@ -231,17 +251,18 @@ export const exportReachReport = async ({
       const chartUrl = await captureEl(historicalChartRef);
       if (chartUrl) {
         const { width: natW, height: natH } = await getImgDimensions(chartUrl);
-        const scale = pw / (natW / 2);
+        const scale = USABLE_W / (natW / 2);
         const imgH = (natH / 2) * scale;
-        const blockHeight = 56 + imgH + 20;
+        const BAND_H = 44;
+        const blockHeight = BAND_H + imgH + 12;
 
-        if (currentY + blockHeight > ph - marginBottom && currentY > 50) {
+        if (currentY + blockHeight > ph - marginBottom && currentY > MARGIN + BAND_H) {
           startNewPage();
         }
 
-        drawSectionTitle(pdf, pw, ph, 'Rendimiento en Spotify', `${songHistoricalData.length} semanas de historial de streams`, '#1DB954', currentY);
-        pdf.addImage(chartUrl, 'PNG', 0, currentY + 56, pw, imgH);
-        currentY += blockHeight;
+        drawSectionTitle(pdf, pw, ph, 'Rendimiento en Spotify', `${songHistoricalData.length} semanas de historial de streams`, '#1DB954', currentY, MARGIN, USABLE_W);
+        pdf.addImage(chartUrl, 'PNG', MARGIN, currentY + BAND_H, USABLE_W, imgH);
+        currentY += blockHeight + 8;
       }
     }
   }
@@ -252,17 +273,18 @@ export const exportReachReport = async ({
     const top5Url = await captureEl(topSongsRef);
     if (top5Url) {
       const { width: natW, height: natH } = await getImgDimensions(top5Url);
-      const scale = pw / (natW / 2);
+      const scale = USABLE_W / (natW / 2);
       const imgH = (natH / 2) * scale;
-      const blockHeight = 56 + imgH + 20;
+      const BAND_H = 44;
+      const blockHeight = BAND_H + imgH + 12;
 
-      if (currentY + blockHeight > ph - marginBottom && currentY > 50) {
+      if (currentY + blockHeight > ph - marginBottom && currentY > MARGIN + BAND_H) {
         startNewPage();
       }
 
-      drawSectionTitle(pdf, pw, ph, 'Top 5 Canciones', `Mejores canciones de ${artistName}`, '#FFB700', currentY);
-      pdf.addImage(top5Url, 'PNG', 0, currentY + 56, pw, imgH);
-      currentY += blockHeight;
+      drawSectionTitle(pdf, pw, ph, 'Top 5 Canciones', `Mejores canciones de ${artistName}`, '#FFB700', currentY, MARGIN, USABLE_W);
+      pdf.addImage(top5Url, 'PNG', MARGIN, currentY + BAND_H, USABLE_W, imgH);
+      currentY += blockHeight + 8;
     }
   }
 
