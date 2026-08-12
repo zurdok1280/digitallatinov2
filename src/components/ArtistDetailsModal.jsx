@@ -23,6 +23,10 @@ import {
   Calendar,
   FileText,
   Download,
+  Globe,
+  Target,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { exportReachReport } from "../utils/exportReachReport";
 import {
@@ -282,11 +286,58 @@ const FacebookIcon = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
+const TAB_GROUPS = [
+  {
+    id: 'presencia',
+    label: 'Presencia',
+    icon: Globe,
+    accentColor: '#8a88ff',
+    tabs: (artist) => [
+      { id: 'mapa',              label: 'Mapa',                         icon: Map },
+      ...(artist?.songName ? [{ id: 'detalles_cancion', label: `Alcance de ${artist.songName}`, icon: Music }] : []),
+      { id: 'historial_eventos', label: 'Historial de Eventos',         icon: Calendar },
+      ...(artist?.cs_song || artist?.csSong ? [{ id: 'song_playlists', label: 'Playlist con presencia', icon: Music }] : []),
+      ...(artist?.cs_song || artist?.csSong ? [{ id: 'song_tiktok',    label: 'TikTokers habituales',   icon: Users }] : []),
+      { id: 'overview',          label: 'Panorama',                     icon: Activity },
+    ],
+  },
+  {
+    id: 'oportunidades',
+    label: 'Oportunidades',
+    icon: Target,
+    accentColor: '#FFB700',
+    tabs: () => [
+      { id: 'playlists', label: 'Playlists Recomendadas',    icon: Music },
+      { id: 'tiktok',    label: 'Recomendaciones TikTokers', icon: Users },
+      { id: 'radio',     label: 'Emisoras Gap',              icon: Radio },
+      { id: 'ciudades',  label: 'Ciudades',                  icon: MapPin },
+    ],
+  },
+  {
+    id: 'graficas',
+    label: 'Gráficas',
+    icon: BarChart2,
+    accentColor: '#C193FF',
+    tabs: () => [
+      { id: 'neuronal',  label: 'Grafo Neuronal',      icon: Activity },
+      { id: 'sunburst',  label: 'Grafo v2 (Sunburst)', icon: Activity },
+    ],
+  },
+];
+
 const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, setUnavailableItem }) => {
   const { isClosing, handleClose } = useModalClose(onClose, 240);
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
+  
+  // Initialize openGroup based on the initial tab — runs only once on mount
+  const [openGroup, setOpenGroup] = useState(() => {
+    const initialTab = artist?.initialTab || "mapa";
+    const group = TAB_GROUPS.find(g => g.tabs(artist).some(t => t.id === initialTab));
+    return group ? group.id : 'presencia';
+  });
+
   const [artistData, setArtistData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -356,20 +407,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
   const [showPhasesModal, setShowPhasesModal] = useState(false);
   const [showDiagnosticsReport, setShowDiagnosticsReport] = useState(false);
   const scrollRef = useRef(null);
-  const tabsRef = useRef(null);
-
-  useEffect(() => {
-    const el = tabsRef.current;
-    if (!el) return;
-    const handleWheel = (e) => {
-      if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
-        el.scrollLeft += e.deltaY;
-        e.preventDefault();
-      }
-    };
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
-  }, []);
 
   useEffect(() => {
     if (isModal) {
@@ -890,92 +927,98 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
           </div>
         </div>
 
-        {/* Tabs */}
-        <div
-          ref={tabsRef}
-          className="custom-scrollbar modal-tab-bar"
-          style={{
-            display: "flex",
-            borderBottom: "1px solid var(--glass-border)",
-            padding: "0 2rem",
-            gap: "2rem",
-            overflowX: "auto",
-            flexShrink: 0,
-            position: "sticky",
-            top: 0,
-            background: "var(--bg-dark)",
-            zIndex: 100,
-          }}
-        >
-          <style>{`
-            .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-            .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-            .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-          `}</style>
-          {[
-            { id: "mapa", label: "Mapa", icon: Map },
-            ...(artist?.songName
-              ? [
-                {
-                  id: "detalles_cancion",
-                  label: `Alcance de ${artist.songName}`,
-                  icon: Music,
-                },
-              ]
-              : []),
-            { id: "playlists", label: "Playlists Recomendadas", icon: Music },
-            ...(artist?.cs_song || artist?.csSong
-              ? [
-                  { id: "song_playlists", label: "Playlist con presencia", icon: Music },
-                ]
-              : []),
-            { id: "tiktok", label: "Recomendaciones TikTokers", icon: Users },
-            ...(artist?.cs_song || artist?.csSong
-              ? [
-                  { id: "song_tiktok", label: "TikTokers habituales", icon: Users },
-                ]
-              : []),
-            { id: "overview", label: "Panorama", icon: Activity },
-            { id: "radio", label: "Emisoras Gap", icon: Radio },
-            { id: "ciudades", label: "Ciudades", icon: MapPin },
-            { id: "neuronal", label: "Grafo Neuronal", icon: Activity },
-            { id: "sunburst", label: "Grafo v2 (Sunburst)", icon: Activity },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: "1.5rem 0",
-                color:
-                  activeTab === tab.id
-                    ? "var(--text-main)"
-                    : "var(--text-muted)",
-                borderBottom:
-                  activeTab === tab.id
-                    ? "2px solid var(--accent-primary)"
-                    : "2px solid transparent",
-                fontWeight: activeTab === tab.id ? 600 : 400,
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                transition: "all 0.2s",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
-            >
-              <tab.icon size={18} />
-              {tab.label}
-            </button>
-          ))}
+        {/* Horizontal Tab Bar (Desktop) */}
+        <div className="htab-bar custom-scrollbar">
+          {TAB_GROUPS.map((group, index) => {
+            const isOpen = openGroup === group.id;
+            const hasActiveTab = group.tabs(artist).some((t) => t.id === activeTab);
+            const headerColor = hasActiveTab ? group.accentColor : "var(--text-main)";
+
+            return (
+              <React.Fragment key={group.id}>
+                {index > 0 && <div className="htab-separator" />}
+                
+                <button
+                  className={`htab-group-btn ${isOpen ? "active" : ""}`}
+                  onClick={() => setOpenGroup(isOpen ? null : group.id)}
+                  style={isOpen ? {
+                    color: group.accentColor,
+                    borderBottom: `2px solid ${group.accentColor}`,
+                    background: `${group.accentColor}20`,
+                  } : {}}
+                >
+                  <group.icon size={16} />
+                  <span>{group.label}</span>
+                  <span className="htab-chevron-wrapper">
+                    <ChevronDown size={14} />
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div className="htab-tabs-inline-area">
+                    {group.tabs(artist).map((tab) => {
+                      const isActive = activeTab === tab.id;
+                      const groupColor = group.accentColor || '#8a88ff';
+
+                      return (
+                        <button
+                          key={tab.id}
+                          className={`htab-tab-btn ${isActive ? "active" : ""}`}
+                          onClick={() => setActiveTab(tab.id)}
+                          style={isActive ? { color: groupColor, borderBottomColor: groupColor } : {}}
+                        >
+                          <tab.icon size={16} />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
 
-        {/* Content */}
+        {/* Mobile Select Container */}
+        <div className="mobile-tabs-select-container">
+          <select
+            value={activeTab}
+            onChange={(e) => {
+              setActiveTab(e.target.value);
+              // Set the open group to match the selected tab
+              const group = TAB_GROUPS.find(g => g.tabs(artist).some(t => t.id === e.target.value));
+              if (group) setOpenGroup(group.id);
+            }}
+            style={{ width: "100%", padding: "10px", fontSize: "1rem" }}
+          >
+            {TAB_GROUPS.map((group) => (
+              <optgroup key={group.id} label={group.label}>
+                {group.tabs(artist).map((tab) => (
+                  <option key={tab.id} value={tab.id}>
+                    {tab.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+
+        {/* Content Area */}
         <div
-          className="modal-content-area"
-          style={{ padding: "2rem", flex: 1 }}
+          className="modal-content-area custom-scrollbar"
+          style={{ padding: "2rem", flex: 1, overflowY: "auto" }}
         >
           
+          {/* Historial de Eventos (Nuevo Tab) */}
+          {activeTab === "historial_eventos" && (
+            <div className="animate-fade-in flex-center" style={{ height: 300, flexDirection: 'column', gap: '1rem' }}>
+              <Calendar size={48} style={{ opacity: 0.2 }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
+                Próximamente — Historial de Eventos
+              </span>
+            </div>
+          )}
+
           {activeTab === "song_tiktok" && (
             <div className="animate-fade-in">
               <div

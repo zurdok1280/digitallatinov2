@@ -1320,3 +1320,136 @@ select:focus:not(:disabled) {
   border-color: rgba(138, 136, 255, 0.5) !important;
   box-shadow: 0 0 0 3px rgba(138, 136, 255, 0.1) !important;
 }
+
+/* ============================================================ */
+/* HORIZONTAL TAB BAR (htab)                                    */
+/* ============================================================ */
+.htab-bar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--bg-dark);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: clip;
+  scrollbar-width: none;
+  padding: 0 1rem;
+  gap: 0.25rem;
+}
+
+.htab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.htab-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(138, 136, 255, 0.05); /* Fondo morado tenue */
+  font-size: 1rem; /* Texto aún más grande */
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  margin-bottom: 3px;
+}
+
+.htab-group-btn:hover {
+  background: rgba(138, 136, 255, 0.1); /* Fondo más notorio al hacer hover */
+  color: var(--text-main);
+}
+
+.htab-group-btn.active {
+  color: var(--text-main);
+  font-weight: 600;
+  margin-bottom: 0; /* Quitamos el gap inferior para que se asiente sobre la barra si tiene borde activo */
+}
+
+.htab-chevron-wrapper {
+  display: inline-flex;
+  align-items: center;
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-10px);
+  /* Duración ajustada a 1s con curva de rebote (1.85) */
+  transition: all 1s cubic-bezier(0.34, 1.85, 0.64, 1);
+  overflow: hidden;
+}
+.htab-chevron-wrapper svg {
+  transform: rotate(-90deg); /* Hace que la flecha apunte hacia la derecha */
+}
+.htab-group-btn.active .htab-chevron-wrapper {
+  max-width: 20px;
+  opacity: 1;
+  transform: translateX(2px);
+  margin-left: 2px;
+}
+
+.htab-separator {
+  width: 1px;
+  align-self: stretch;
+  background: var(--glass-border);
+  flex-shrink: 0;
+  margin: 0.8rem 0.5rem;
+}
+
+.htab-tabs-inline-area {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  /* Duración ajustada a 1s con curva de rebote (1.85) */
+  animation: htabSlideIn 1s cubic-bezier(0.34, 1.85, 0.64, 1) forwards;
+}
+
+@keyframes htabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.htab-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.2rem 0.75rem;           /* Vertical para la barra + horizontal para legibilidad */
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: stretch;               /* Permite que el border-bottom llegue al fondo de la barra */
+}
+
+.htab-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.htab-tab-btn.active {
+  font-weight: 600;
+}
+
+.mobile-tabs-select-container {
+  display: none;
+  padding: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--bg-dark);
+}
+
+@media (max-width: 768px) {
+  .htab-bar { display: none; }
+  .mobile-tabs-select-container { display: block; }
+}
