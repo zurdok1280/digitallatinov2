@@ -1429,5 +1429,19 @@ export const getLabelMarketShareDigitalVideo = async ({
 };
 
 
-
-
+// ─── Song Timeline ──────────────────────────────────────────────────────────
+/**
+ * Fetches the unified event timeline for a given cs_song.
+ * GET /api/report/getSongTimeline/{csSong}
+ */
+export const getSongTimeline = async (csSong) => {
+  try {
+    const response = await authFetch(`${API_BASE_URL}/report/getSongTimeline/${csSong}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error('API Error fetching song timeline:', error);
+    return [];
+  }
+};

@@ -67,6 +67,7 @@ import RecommendationsModal, {
 import ArtistContextModal from "./ArtistContextModal";
 import ArtistContextPhasesModal from "./ArtistContextPhasesModal";
 import DiagnosticsReportModal from "./DiagnosticsReportModal";
+import HistorialEventos from "./HistorialEventos";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 import { useModalClose } from "../hooks/useModalClose";
@@ -1009,14 +1010,9 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
           style={{ padding: "2rem", flex: 1, overflowY: "auto" }}
         >
           
-          {/* Historial de Eventos (Nuevo Tab) */}
+          {/* Historial de Eventos */}
           {activeTab === "historial_eventos" && (
-            <div className="animate-fade-in flex-center" style={{ height: 300, flexDirection: 'column', gap: '1rem' }}>
-              <Calendar size={48} style={{ opacity: 0.2 }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
-                Próximamente — Historial de Eventos
-              </span>
-            </div>
+            <HistorialEventos artist={artist} />
           )}
 
           {activeTab === "song_tiktok" && (
