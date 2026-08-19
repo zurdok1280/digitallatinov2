@@ -406,7 +406,7 @@ const SongChart = ({
 
   // Market Share Modal State
   const [isMarketShareOpen, setIsMarketShareOpen] = useState(false);
-  const [marketShareTop, setMarketShareTop] = useState(300);
+  const [marketShareTop, setMarketShareTop] = useState(500);
   const [marketShareData, setMarketShareData] = useState([]);
   const [marketShareLoading, setMarketShareLoading] = useState(false);
   const [marketShareError, setMarketShareError] = useState(null);
@@ -420,10 +420,10 @@ const SongChart = ({
     setMarketShareError(null);
 
     getLabelMarketShareDigitalVideo({
-      format: selectedFormat || 0,
+      format: selectedGenre || 0,
       country: selectedCountry || 0,
       crg: selectedCRG || 'C',
-      genre: selectedGenre || 0,
+      genre: 0,
       city: selectedCity || 0,
       noradio: 0,
       top: marketShareTop,
@@ -1318,7 +1318,7 @@ const SongChart = ({
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {/* Top Selector (default 300) */}
+                {/* Top Selector (default 500) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Top:</label>
                   <select
@@ -1339,7 +1339,7 @@ const SongChart = ({
                     <option value={50} style={{ background: '#12131c', color: 'white' }}>Top 50</option>
                     <option value={100} style={{ background: '#12131c', color: 'white' }}>Top 100</option>
                     <option value={200} style={{ background: '#12131c', color: 'white' }}>Top 200</option>
-                    <option value={300} style={{ background: '#12131c', color: 'white' }}>Top 300</option>
+                    <option value={500} style={{ background: '#12131c', color: 'white' }}>Top 500</option>
                   </select>
                 </div>
 

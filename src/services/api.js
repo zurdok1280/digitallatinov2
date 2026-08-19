@@ -1425,7 +1425,7 @@ export const getLabelMarketShareDigitalVideo = async ({
   genre = 0,
   city = 0,
   noradio = 0,
-  top = 300
+  top = 500
 } = {}) => {
   try {
     const params = new URLSearchParams({
@@ -1435,7 +1435,7 @@ export const getLabelMarketShareDigitalVideo = async ({
       genre: String(genre ?? 0),
       city: String(city ?? 0),
       noradio: String(noradio ?? 0),
-      top: String(top ?? 300)
+      top: String(top ?? 500)
     });
     const response = await authFetch(`${API_BASE_URL}/report/getLabelMarketShareDigitalVideo?${params}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
