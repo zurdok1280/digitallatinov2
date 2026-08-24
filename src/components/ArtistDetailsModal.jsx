@@ -68,6 +68,7 @@ import ArtistContextModal from "./ArtistContextModal";
 import ArtistContextPhasesModal from "./ArtistContextPhasesModal";
 import DiagnosticsReportModal from "./DiagnosticsReportModal";
 import HistorialEventos from "./HistorialEventos";
+import DigitalVsRadioChart from "./DigitalVsRadioChart";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 import { useModalClose } from "../hooks/useModalClose";
@@ -296,7 +297,7 @@ const TAB_GROUPS = [
     tabs: (artist) => [
       { id: 'mapa',              label: 'Mapa',                         icon: Map },
       ...(artist?.songName ? [{ id: 'detalles_cancion', label: `Alcance de ${artist.songName}`, icon: Music }] : []),
-      { id: 'historial_eventos', label: 'Historial de Eventos',         icon: Calendar },
+      { id: 'historial_eventos', label: 'Historial de Sucesos',         icon: Calendar },
       ...(artist?.cs_song || artist?.csSong ? [{ id: 'song_playlists', label: 'Playlist con presencia', icon: Music }] : []),
       ...(artist?.cs_song || artist?.csSong ? [{ id: 'song_tiktok',    label: 'TikTokers habituales',   icon: Users }] : []),
       { id: 'overview',          label: 'Panorama',                     icon: Activity },
@@ -320,8 +321,9 @@ const TAB_GROUPS = [
     icon: BarChart2,
     accentColor: '#C193FF',
     tabs: () => [
-      { id: 'neuronal',  label: 'Grafo Neuronal',      icon: Activity },
-      { id: 'sunburst',  label: 'Grafo v2 (Sunburst)', icon: Activity },
+      { id: 'neuronal',         label: 'Grafo Neuronal',      icon: Activity },
+      { id: 'sunburst',         label: 'Grafo v2 (Sunburst)', icon: Activity },
+      { id: 'digital_vs_radio', label: 'Digital vs Radio',    icon: BarChart2 },
     ],
   },
 ];
@@ -4475,6 +4477,14 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
               </p>
               <SunburstGraph artistId={artist.id} />
             </div>
+          )}
+
+          {/* Digital vs Radio */}
+          {activeTab === "digital_vs_radio" && (
+            <DigitalVsRadioChart
+              csSong={artist?.cs_song || artist?.csSong}
+              countries={countries}
+            />
           )}
         </div>
       </div>

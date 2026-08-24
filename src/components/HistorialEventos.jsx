@@ -63,7 +63,7 @@ const EVENT_CONFIG = {
 const DEFAULT_CONFIG = {
   icon: Calendar,
   color: "#8a88ff",
-  label: "Evento",
+  label: "Suceso",
 };
 
 // ─── Medal Colors ────────────────────────────────────────────────────────────
@@ -358,7 +358,7 @@ const HistorialEventos = ({ artist }) => {
       <div className="animate-fade-in flex-center" style={{ height: 300, flexDirection: "column", gap: "1rem" }}>
         <Calendar size={48} style={{ opacity: 0.2 }} />
         <span style={{ color: "var(--text-muted)", fontSize: "1rem" }}>
-          Selecciona una canción para ver su historial de eventos
+          Selecciona una canción para ver su historial de sucesos
         </span>
       </div>
     );
@@ -397,7 +397,7 @@ const HistorialEventos = ({ artist }) => {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
               <span style={{ color: "var(--text-main)", fontSize: "0.95rem", fontWeight: 600 }}>
-                Obteniendo los eventos de{" "}
+                Obteniendo los sucesos de{" "}
                 <span className="text-gradient" style={{ fontWeight: 700 }}>
                   "{songTitle}"
                 </span>
@@ -433,7 +433,7 @@ const HistorialEventos = ({ artist }) => {
     return (
       <div className="animate-fade-in flex-center" style={{ height: 300, flexDirection: "column", gap: "1rem" }}>
         <Calendar size={48} style={{ opacity: 0.2 }} />
-        <span style={{ color: "var(--text-muted)", fontSize: "1rem" }}>Sin eventos registrados aún</span>
+        <span style={{ color: "var(--text-muted)", fontSize: "1rem" }}>Sin sucesos registrados aún</span>
       </div>
     );
   }
@@ -448,10 +448,10 @@ const HistorialEventos = ({ artist }) => {
       <div style={{ marginBottom: "1rem" }}>
         <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: 0, flexWrap: "wrap" }}>
           <Calendar size={20} color="#8a88ff" />
-          <span>Historial de los últimos Eventos Relevantes</span>
+          <span>Historial de los últimos Sucesos Relevantes</span>
           {hasMore && (
             <span style={{ color: "var(--text-muted)", fontSize: "0.85rem", fontWeight: 400, opacity: 0.7, marginLeft: "0.25rem" }}>
-              — {visibleCount} eventos cargados
+              — {visibleCount} sucesos cargados
             </span>
           )}
         </h3>
@@ -467,7 +467,7 @@ const HistorialEventos = ({ artist }) => {
             <div className="timeline-month-header">
               <span className="timeline-month-title">{monthLabel}</span>
               <span className="timeline-month-count">
-                {monthEvents.length} evento{monthEvents.length !== 1 ? "s" : ""}
+                {monthEvents.length} suceso{monthEvents.length !== 1 ? "s" : ""}
               </span>
             </div>
 

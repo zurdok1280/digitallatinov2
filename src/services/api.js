@@ -336,6 +336,25 @@ export const getCityDataForSong = async (csSong, countryId = 0) => {
 };
 
 /**
+ * Fetches radio market audience data for a song by country.
+ * @param {number|string} csSong - The cs_song identifier.
+ * @param {number|string} countryId - 0 = global, or specific country ID.
+ * @returns {Promise<Array<{market:string, audience:number, spins:number, rank:number}>>}
+ */
+export const getTopMarketRadio = async (csSong, countryId = 0) => {
+  if (!csSong) return [];
+  try {
+    const response = await authFetch(`${API_BASE_URL}/report/getTopMarketRadio/${csSong}/${countryId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data?.data || []);
+  } catch (error) {
+    console.error("API Error fetching top market radio:", error);
+    return [];
+  }
+};
+
+/**
  * Fetches the list of playlists where the song is included, by playlist type.
  */
 export const getSongTopPlaylists = async (csSong, typePlaylist = 0) => {
@@ -1436,7 +1455,7 @@ export const getLabelMarketShareDigitalVideo = async ({
  */
 export const getSongTimeline = async (csSong) => {
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getSongTimeline/${csSong}`);
+    const response = await authFetch(`${LOCAL_API_BASE_URL_ACR}/report/getSongTimeline/${csSong}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
