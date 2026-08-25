@@ -1455,7 +1455,7 @@ export const getLabelMarketShareDigitalVideo = async ({
  */
 export const getSongTimeline = async (csSong) => {
   try {
-    const response = await authFetch(`${LOCAL_API_BASE_URL_ACR}/report/getSongTimeline/${csSong}`);
+    const response = await authFetch(`${API_BASE_URL}/report/getSongTimeline/${csSong}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
