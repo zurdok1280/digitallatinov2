@@ -4,6 +4,7 @@ import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Search, Music2, Headph
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getChartByFormatoDigitalName } from '../services/api';
+import { slugify } from '../utils/seoFilters.js';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -49,32 +50,96 @@ const FormatDigitalChartPage = ({ onSongClick }) => {
     fetchChart();
   }, [formatName]);
 
-  // Inject dynamic SEO Metadata into document head
-  useEffect(() => {
-    const titleText = metadata?.meta_title || formatName || 'Chart Digital';
-    document.title = `${titleText} | DigitalLatino`;
-
-    if (metadata) {
-      if (metadata.meta_description) {
-        let descMeta = document.querySelector('meta[name="description"]');
-        if (!descMeta) {
-          descMeta = document.createElement('meta');
-          descMeta.setAttribute('name', 'description');
-          document.head.appendChild(descMeta);
-        }
-        descMeta.setAttribute('content', metadata.meta_description);
-      }
-      if (metadata.meta_keywords) {
-        let keyMeta = document.querySelector('meta[name="keywords"]');
-        if (!keyMeta) {
-          keyMeta = document.createElement('meta');
-          keyMeta.setAttribute('name', 'keywords');
-          document.head.appendChild(keyMeta);
-        }
-        keyMeta.setAttribute('content', metadata.meta_keywords);
-      }
+  // Helper function to set or update <meta> tags
+  const setMetaTag = (attrName, attrValue, content) => {
+    let meta = document.querySelector(`meta[${attrName}="${attrValue}"]`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute(attrName, attrValue);
+      document.head.appendChild(meta);
     }
-  }, [metadata, formatName]);
+    meta.setAttribute('content', content || '');
+  };
+
+  // Helper function to set or update <link rel="canonical">
+  const setCanonicalLink = (href) => {
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
+    }
+    link.setAttribute('href', href || window.location.href);
+  };
+
+  // Inject dynamic SEO Metadata, Canonical link & Open Graph into document head
+  useEffect(() => {
+    const chartName = metadata?.chart_name || metadata?.format || formatName || 'Chart Digital';
+    const metaTitle = metadata?.meta_title;
+    const fullTitle = metaTitle || `${chartName}: los que más suenan | Digital Latino`;
+    document.title = fullTitle;
+
+    const metaDescription = metadata?.meta_description || `Ranking oficial de canciones en el formato ${chartName}.`;
+    const cleanSlug = slugify(chartName || formatName);
+    const canonicalUrl = metadata?.canonical_url || `${window.location.origin}/chart/${cleanSlug}`;
+
+    // Standard Meta Tags
+    setMetaTag('name', 'description', metaDescription);
+    if (metadata?.meta_keywords) {
+      setMetaTag('name', 'keywords', metadata.meta_keywords);
+    }
+
+    // Canonical URL
+    setCanonicalLink(canonicalUrl);
+
+    // Open Graph Meta Tags
+    const topSong = songs[0];
+    const topSongImgRaw = topSong ? (topSong.avatar || topSong.img || topSong.image_url || '/logo.png') : '/logo.png';
+    const ogImage = topSongImgRaw.startsWith('http')
+      ? topSongImgRaw
+      : `${window.location.origin}${topSongImgRaw.startsWith('/') ? '' : '/'}${topSongImgRaw}`;
+
+    setMetaTag('property', 'og:title', fullTitle);
+    setMetaTag('property', 'og:description', metaDescription);
+    setMetaTag('property', 'og:image', ogImage);
+    setMetaTag('property', 'og:url', canonicalUrl);
+    setMetaTag('property', 'og:type', 'music.playlist');
+
+    // Dynamic Schema MusicPlaylist JSON-LD
+    let schemaScript = document.getElementById('music-playlist-schema');
+    if (!schemaScript) {
+      schemaScript = document.createElement('script');
+      schemaScript.id = 'music-playlist-schema';
+      schemaScript.type = 'application/ld+json';
+      document.head.appendChild(schemaScript);
+    }
+
+    const playlistSchema = {
+      "@context": "https://schema.org",
+      "@type": "MusicPlaylist",
+      "name": `${chartName} — Digital Latino`,
+      "description": metaDescription,
+      "numTracks": songs.length,
+      "track": songs.map((song, idx) => ({
+        "@type": "MusicRecording",
+        "position": song.posicion || song.rk || (idx + 1),
+        "name": song.song || song.cancion || song.title || '',
+        "byArtist": {
+          "@type": "MusicGroup",
+          "name": song.artists || song.artista || song.artist || ''
+        }
+      }))
+    };
+
+    schemaScript.textContent = JSON.stringify(playlistSchema, null, 2);
+
+    return () => {
+      const existingScript = document.getElementById('music-playlist-schema');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, [metadata, formatName, songs]);
 
   // Filter songs by search query
   const filteredSongs = useMemo(() => {
