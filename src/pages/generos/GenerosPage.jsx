@@ -27,6 +27,7 @@ import {
   assignGenreToFormat,
   deleteGenreFromFormat
 } from '../../services/api';
+import { slugify } from '../../utils/seoFilters';
 import './GenerosPage.css';
 
 const GenerosPage = () => {
@@ -491,7 +492,7 @@ const GenerosPage = () => {
                         </td>
                         <td>
                           <a
-                            href={`/Chart/${encodeURIComponent(itemFormat)}`}
+                            href={`/chart/${slugify(itemFormat)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -602,7 +603,7 @@ const GenerosPage = () => {
                     </span>
                   </div>
                   <a
-                    href={`/Chart/${encodeURIComponent(currentSelectedFormatObj.digitalformat || currentSelectedFormatObj.format)}`}
+                    href={`/chart/${slugify(currentSelectedFormatObj.digitalformat || currentSelectedFormatObj.format)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

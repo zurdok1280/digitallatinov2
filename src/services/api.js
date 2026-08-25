@@ -1,3 +1,5 @@
+import { slugify } from '../utils/seoFilters.js';
+
 // ─── Backend URLs ─────────────────────────────────────────────────────────────
 // AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
 // ⚠️  Switch between production and local for development:
@@ -1379,8 +1381,28 @@ export const deleteGenreFromFormat = async (fkFormat, fkGenre) => {
  */
 export const getChartByFormatoDigitalName = async (nombreFormatoDigital, country = 0, top = 100) => {
   try {
+    let targetFormatName = nombreFormatoDigital;
+    let catalogMeta = null;
+
+    try {
+      const formatsList = await getFormatosDigitales();
+      if (Array.isArray(formatsList) && formatsList.length > 0) {
+        const targetSlug = slugify(nombreFormatoDigital);
+        const matched = formatsList.find(f => {
+          const name = f.format || f.digitalformat || f.name || '';
+          return slugify(name) === targetSlug || name.toLowerCase() === nombreFormatoDigital.toLowerCase();
+        });
+        if (matched) {
+          targetFormatName = matched.format || matched.digitalformat || matched.name || nombreFormatoDigital;
+          catalogMeta = matched;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not resolve formato digital slug from catalog:', e);
+    }
+
     const params = new URLSearchParams({
-      nombreFormatoDigital: nombreFormatoDigital,
+      nombreFormatoDigital: targetFormatName,
       country: String(country),
       top: String(top)
     });
@@ -1389,10 +1411,12 @@ export const getChartByFormatoDigitalName = async (nombreFormatoDigital, country
     const data = await response.json();
 
     const rawResults = Array.isArray(data) ? data : (data?.results || data?.data || []);
-    const metadata = data?.metadata || {
-      meta_title: nombreFormatoDigital,
-      meta_description: '',
-      meta_keywords: ''
+    const metadata = {
+      chart_name: catalogMeta?.format || catalogMeta?.digitalformat || targetFormatName,
+      meta_title: catalogMeta?.meta_title || data?.metadata?.meta_title || targetFormatName,
+      meta_description: catalogMeta?.meta_description || data?.metadata?.meta_description || '',
+      meta_keywords: catalogMeta?.meta_keywords || data?.metadata?.meta_keywords || '',
+      ...data?.metadata,
     };
 
     const songs = deduplicateSongs(rawResults.map(s => ({

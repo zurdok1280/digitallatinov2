@@ -299,6 +299,8 @@ function Dashboard() {
 
   // ─── 3. DYNAMIC DOCUMENT TITLE FOR SEO ───
   useEffect(() => {
+    if (!isDashboardRoute) return;
+
     const VIEW_CONFIG_LOCAL = {
       Artists:            'Artist Analytics',
       Platforms:          'Platforms',
@@ -330,7 +332,7 @@ function Dashboard() {
     }
     
     document.title = `${viewLabel} ${countryLabel}${cityLabel}${genreLabel} | DigitalLatino`;
-  }, [activeView, selectedCountry, selectedGenre, selectedCity, countriesList, genresList, citiesList]);
+  }, [isDashboardRoute, activeView, selectedCountry, selectedGenre, selectedCity, countriesList, genresList, citiesList]);
   const { user, logout, updateUser } = useAuth();
   const [showArtistSelection, setShowArtistSelection] = useState(false);
 
