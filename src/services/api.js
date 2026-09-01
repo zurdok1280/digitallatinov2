@@ -3,8 +3,8 @@ import { slugify } from '../utils/seoFilters.js';
 // ─── Backend URLs ─────────────────────────────────────────────────────────────
 // AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
 // ⚠️  Switch between production and local for development:
-// const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
-const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
+const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
+// const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
 
 // Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
 // ⚠️  Switch between production and local for development:
