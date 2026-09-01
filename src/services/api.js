@@ -3,8 +3,8 @@ import { slugify } from '../utils/seoFilters.js';
 // ─── Backend URLs ─────────────────────────────────────────────────────────────
 // AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
 // ⚠️  Switch between production and local for development:
-const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
-// const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
+// const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
+const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
 
 // Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
 // ⚠️  Switch between production and local for development:
@@ -1487,4 +1487,92 @@ export const getSongTimeline = async (csSong) => {
     console.error('API Error fetching song timeline:', error);
     return [];
   }
+};
+
+// ─── Digital vs Radio Market Intelligence ──────────────────────────────────
+/**
+ * Resolves ISO-2 country code from country ID, name, or code.
+ */
+export const resolveCountryCode = (country) => {
+  if (!country) return 'US';
+  if (typeof country === 'string' && country.trim().length === 2) {
+    return country.trim().toUpperCase();
+  }
+
+  const str = String(country?.description || country?.name || country?.country_code || country || '').toLowerCase().trim();
+  const id = Number(country?.id ?? country);
+
+  // By ID mapping
+  if (id === 1) return 'US';
+  if (id === 2) return 'MX';
+  if (id === 3) return 'CO';
+  if (id === 4) return 'GT';
+  if (id === 5) return 'DO';
+  if (id === 6) return 'EC';
+  if (id === 7) return 'VE';
+  if (id === 8) return 'CL';
+  if (id === 9) return 'AR';
+  if (id === 10) return 'PA';
+  if (id === 11) return 'CR';
+  if (id === 12) return 'PE';
+  if (id === 13) return 'HN';
+  if (id === 14) return 'SV';
+  if (id === 15) return 'NI';
+  if (id === 16) return 'BO';
+  if (id === 17) return 'PR';
+  if (id === 18) return 'PY';
+  if (id === 19) return 'UY';
+  if (id === 20) return 'ES';
+
+  // By string name matching
+  if (str.includes('usa') || str.includes('estados unidos') || str.includes('united states')) return 'US';
+  if (str.includes('mex') || str.includes('méx')) return 'MX';
+  if (str.includes('colomb')) return 'CO';
+  if (str.includes('guat')) return 'GT';
+  if (str.includes('dominic') || str.includes('rd')) return 'DO';
+  if (str.includes('ecuad')) return 'EC';
+  if (str.includes('venez')) return 'VE';
+  if (str.includes('chil')) return 'CL';
+  if (str.includes('argen')) return 'AR';
+  if (str.includes('panam')) return 'PA';
+  if (str.includes('costa')) return 'CR';
+  if (str.includes('per') || str.includes('perú')) return 'PE';
+  if (str.includes('hond')) return 'HN';
+  if (str.includes('salvad')) return 'SV';
+  if (str.includes('nicar')) return 'NI';
+  if (str.includes('boliv')) return 'BO';
+  if (str.includes('puerto')) return 'PR';
+  if (str.includes('parag')) return 'PY';
+  if (str.includes('urug')) return 'UY';
+  if (str.includes('españ') || str.includes('spain')) return 'ES';
+  if (str.includes('brasil') || str.includes('brazil')) return 'BR';
+
+  return 'US';
+};
+
+/**
+ * Fetches the combined Digital vs Radio Market Intelligence for a given cs_song and country.
+ * GET /api/report/getDigitalVsRadio/{csSong}/{idCountry}/{countryCode}?alcanceKm={alcanceKm}
+ */
+export const getDigitalVsRadioMarkets = async (csSong, idCountry = 0, countryCode = 'ALL', alcanceKm = 200) => {
+  if (!csSong) return [];
+  const safeCountryId = Number(idCountry) || 0;
+  const safeCountryCode = safeCountryId === 0
+    ? 'ALL'
+    : (countryCode && countryCode !== 'ALL' ? countryCode : resolveCountryCode(safeCountryId)).toUpperCase();
+  const cacheKey = `dvr_markets_${csSong}_${safeCountryId}_${safeCountryCode}_${alcanceKm}`;
+
+  return withCache(cacheKey, async () => {
+    try {
+      const url = `${API_BASE_URL}/report/getDigitalVsRadio/${csSong}/${safeCountryId}/${safeCountryCode}?alcanceKm=${alcanceKm}`;
+      const response = await authFetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      const result = Array.isArray(data) ? data : (data?.data || []);
+      return result;
+    } catch (error) {
+      console.error('API Error fetching digital vs radio markets:', error);
+      return [];
+    }
+  });
 };

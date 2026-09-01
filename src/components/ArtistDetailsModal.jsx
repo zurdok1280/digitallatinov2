@@ -69,6 +69,7 @@ import ArtistContextPhasesModal from "./ArtistContextPhasesModal";
 import DiagnosticsReportModal from "./DiagnosticsReportModal";
 import HistorialEventos from "./HistorialEventos";
 import DigitalVsRadioChart from "./DigitalVsRadioChart";
+import RadioVsDigitalTable from "./RadioVsDigitalTable";
 import { useAuth } from "../hooks/useAuth";
 import { useAudioPreview } from "../hooks/useAudioPreview.jsx";
 import { useModalClose } from "../hooks/useModalClose";
@@ -300,6 +301,7 @@ const TAB_GROUPS = [
       { id: 'historial_eventos', label: 'Historial de Sucesos',         icon: Calendar },
       ...(artist?.cs_song || artist?.csSong ? [{ id: 'song_playlists', label: 'Playlist con presencia', icon: Music }] : []),
       ...(artist?.cs_song || artist?.csSong ? [{ id: 'song_tiktok',    label: 'TikTokers habituales',   icon: Users }] : []),
+      ...(artist?.cs_song || artist?.csSong ? [{ id: 'radio_vs_digital', label: 'Radio vs Digital',     icon: BarChart2 }] : []),
       { id: 'overview',          label: 'Panorama',                     icon: Activity },
     ],
   },
@@ -323,7 +325,7 @@ const TAB_GROUPS = [
     tabs: () => [
       { id: 'neuronal',         label: 'Grafo Neuronal',      icon: Activity },
       { id: 'sunburst',         label: 'Grafo v2 (Sunburst)', icon: Activity },
-      { id: 'digital_vs_radio', label: 'Digital vs Radio',    icon: BarChart2 },
+      // { id: 'digital_vs_radio', label: 'Digital vs Radio',    icon: BarChart2 }, // HIDDEN TEMPORARILY
     ],
   },
 ];
@@ -2387,6 +2389,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                           )}
                         </div>
 
+                        {/* HIDDEN TEMPORARILY — Ver Campaña button (Top 5 en Alcance)
                         <div style={{ marginLeft: "auto" }}>
                           <button
                             className="btn-primary"
@@ -2415,7 +2418,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                             onClick={() => {
                               if (!song.spotifyid) return;
                               if (!user) {
-                                // Require login — same pattern as legacy searchArtist.tsx
                                 import("../hooks/use-toast").then(
                                   ({ toast }) => {
                                     toast({
@@ -2427,7 +2429,6 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                                 );
                                 return;
                               }
-                              // Build URL with full song metadata — same as legacy handleSearchResultSelect
                               const params = new URLSearchParams({
                                 spotifyId: song.spotifyid,
                               });
@@ -2468,6 +2469,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                             {user ? "Ver Campaña" : "🔒 Campaña"}
                           </button>
                         </div>
+                        */}
                       </div>
                     ))}
                   </div>
@@ -4479,7 +4481,15 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
             </div>
           )}
 
-          {/* Digital vs Radio */}
+          {/* Radio vs Digital (Tabla de Diagnóstico en Presencia) */}
+          {activeTab === "radio_vs_digital" && (
+            <RadioVsDigitalTable
+              csSong={artist?.cs_song || artist?.csSong}
+              countries={countries}
+            />
+          )}
+
+          {/* Digital vs Radio (Gráfica Polar Original en Gráficas) */}
           {activeTab === "digital_vs_radio" && (
             <DigitalVsRadioChart
               csSong={artist?.cs_song || artist?.csSong}

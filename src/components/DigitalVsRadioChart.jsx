@@ -45,7 +45,7 @@ const isCityMatch = (nameA, nameB) => {
 
 const DigitalVsRadioChart = ({ csSong, countries = [] }) => {
   const [selectedCountry, setSelectedCountry] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Boolean(csSong));
   const [error, setError] = useState(null);
 
   const [digitalList, setDigitalList] = useState([]);
@@ -56,11 +56,8 @@ const DigitalVsRadioChart = ({ csSong, countries = [] }) => {
 
   // ── 1. Fetch data from both endpoints ──────────────────────────────────────
   useEffect(() => {
+    if (!csSong) return;
     let isMounted = true;
-    if (!csSong) {
-      setIsLoading(false);
-      return;
-    }
 
     const fetchData = async () => {
       setIsLoading(true);

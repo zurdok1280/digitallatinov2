@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { User, ArrowUp, ArrowDown, Minus, Loader2, Info, Users, Activity, Headphones, ListMusic } from 'lucide-react';
+import { User, ArrowUp, ArrowDown, Minus, Loader2, Info, Users, Activity, Headphones, ListMusic, Search, X } from 'lucide-react';
 import { getTrendingTopArtists } from '../services/api';
 
 const rankColors = [
@@ -111,6 +111,7 @@ const Sparkline = ({ data, color }) => {
 const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
   const [artists, setArtists] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -143,6 +144,18 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
     });
   }, [artists]);
 
+  const filteredArtists = useMemo(() => {
+    if (!searchQuery.trim()) return enrichedArtists;
+    const q = searchQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return enrichedArtists.filter(a =>
+      (a.artist || a.name || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .includes(q)
+    );
+  }, [enrichedArtists, searchQuery]);
+
   if (isLoading) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '5rem', flexDirection: 'column', minHeight: '300px' }}>
@@ -171,6 +184,82 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
 
   return (
     <div className="glass-panel" style={{ padding: '1rem' }}>
+      {/* ── Artist Search Bar ─────────────────────────────────── */}
+      <div style={{
+        position: 'relative',
+        marginBottom: '1rem',
+      }}>
+        <Search
+          size={16}
+          style={{
+            position: 'absolute',
+            left: '0.85rem',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: searchQuery ? 'var(--accent-primary)' : 'var(--text-dim)',
+            pointerEvents: 'none',
+            transition: 'color 0.2s',
+          }}
+        />
+        <input
+          id="artist-analytics-search"
+          type="text"
+          placeholder="Buscar artista..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          style={{
+            width: '100%',
+            background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${searchQuery ? 'rgba(138,136,255,0.45)' : 'var(--glass-border)'}`,
+            borderRadius: '10px',
+            color: 'var(--text-main)',
+            fontSize: '0.92rem',
+            padding: '0.65rem 2.4rem 0.65rem 2.4rem',
+            outline: 'none',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            boxSizing: 'border-box',
+            boxShadow: searchQuery ? '0 0 0 2px rgba(138,136,255,0.15)' : 'none',
+          }}
+          onFocus={e => {
+            e.currentTarget.style.borderColor = 'rgba(138,136,255,0.6)';
+            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(138,136,255,0.2)';
+          }}
+          onBlur={e => {
+            if (!searchQuery) {
+              e.currentTarget.style.borderColor = 'var(--glass-border)';
+              e.currentTarget.style.boxShadow = 'none';
+            }
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            title="Limpiar búsqueda"
+            style={{
+              position: 'absolute',
+              right: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(255,255,255,0.08)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '20px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              padding: 0,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
       <style>{`
         .sparkline-wrapper { display: none; margin: 0 3rem 0 auto; pointer-events: auto; flex-shrink: 0; }
         @media (min-width: 900px) {
@@ -217,8 +306,21 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
           transform: translateY(0);
         }
       `}</style>
+      {/* Empty state when search yields no results */}
+      {filteredArtists.length === 0 && !isLoading && (
+        <div style={{
+          textAlign: 'center',
+          padding: '3rem 1rem',
+          color: 'var(--text-muted)',
+          fontSize: '0.95rem',
+        }}>
+          <Search size={36} style={{ opacity: 0.25, marginBottom: '0.75rem', display: 'block', margin: '0 auto 0.75rem' }} />
+          No se encontró ningún artista con <strong style={{ color: 'var(--text-main)' }}>"{ searchQuery }"</strong>
+        </div>
+      )}
+
       <div className="grid-base" style={{ gap: '0.5rem' }}>
-        {enrichedArtists.map((artist, index) => {
+        {filteredArtists.map((artist, index) => {
           const rowColor = rankColors[index % rankColors.length];
           return (
             <div
