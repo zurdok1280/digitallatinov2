@@ -3,14 +3,15 @@ import { slugify } from '../utils/seoFilters.js';
 // ─── Backend URLs ─────────────────────────────────────────────────────────────
 // AcrData: serves all /report/* endpoints (charts, artists, playlists, tiktokers…)
 // ⚠️  Switch between production and local for development:
-const API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN
-// const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData
+const PROD_API_BASE_URL = 'https://backend.digital-latino.com/api';   // ← PRODUCCIÓN (charts, trending, playlists, tiktokers)
+export const API_BASE_URL = 'https://backend.digital-latino.com/api'; // ← PRODUCCIÓN
+// export const API_BASE_URL = 'http://localhost:8084/api';              // ← LOCAL AcrData (artist detail, song detail, search…)
 
 // Login-DigitalLatino: serves /auth /contacts /admin /users /subscriptions /payment
 // ⚠️  Switch between production and local for development:
 const LOGIN_API_BASE_URL = 'https://security.digital-latino.com/api'; // ← PRODUCCIÓN
 // const LOGIN_API_BASE_URL = 'http://localhost:8085/api';                // ← LOCAL
-const authFetch = async (url, options = {}) => {
+export const authFetch = async (url, options = {}) => {
   const token = localStorage.getItem('authToken');
   const headers = {
     ...options.headers,
@@ -123,7 +124,7 @@ export const getChartDigital = async (genreId, countryId, cityId, crg = 'C') => 
   const ctyId = cityId === 'All' ? 0 : cityId;
 
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/${crg}/${ctyId}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getChartDigital/${gId}/${cId}/${crg}/${ctyId}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -145,7 +146,7 @@ export const getChartDigitalHitsRadio = async (genreId, countryId, cityId) => {
   const ctyId = cityId === 'All' ? 0 : cityId;
 
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getChartDigital/${gId}/${cId}/C/${ctyId}?radiooff=1`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getChartDigital/${gId}/${cId}/C/${ctyId}?radiooff=1`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -397,7 +398,7 @@ export const getTrendingTopPlatforms = async (platform, formatId = 0, countryId 
   const cId = countryId === 'All' ? 0 : countryId;
 
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getTopPlatform/${encodeURIComponent(pId)}/${fId}/${cId}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getTopPlatform/${encodeURIComponent(pId)}/${fId}/${cId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     // Many endpoints return { data: [...] }, ensure we return an array
@@ -417,7 +418,7 @@ export const getTrendingTopArtists = async (formatId = 0, countryId = 0, cityId 
   const ctyId = cityId === 'All' ? 0 : cityId;
 
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getTopArtist/${fId}/${cId}/${ctyId}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getTopArtist/${fId}/${cId}/${ctyId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.data || []);
@@ -535,7 +536,7 @@ export const getDebutSongs = async (formatId = 0, countryId = 0) => {
   const cId = countryId === 'All' ? 0 : countryId;
 
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getTrendingDebut/${fId}/${cId}/C/0`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rawArray = Array.isArray(data) ? data : (data?.data || []);
@@ -554,7 +555,7 @@ export const getCuratorPics = async (formatId = 0, typeId = 0) => {
   const tId = typeId === 'All' ? 0 : typeId;
 
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getCuratorPics/${fId}/${tId}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getCuratorPics/${fId}/${tId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rawArray = Array.isArray(data) ? data : (data?.data || []);
@@ -590,7 +591,7 @@ export const getTiktokPics = async (formatId = 0) => {
 
   try {
 
-    const response = await authFetch(`${API_BASE_URL}/report/getTiktokPics/${fId}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getTiktokPics/${fId}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rawArray = Array.isArray(data) ? data : (data?.data || []);
@@ -1100,7 +1101,7 @@ export const updateTiktokerCurators = async (userHandle, userName, curatorIds) =
  */
 export const getPlaylistData = async (type = 0, offset = 0, pageSize = 100) => {
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getPlaylistData/${type}/${offset}/${pageSize}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getPlaylistData/${type}/${offset}/${pageSize}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     if (Array.isArray(data)) return { playlists: data, total_records: data.length };
@@ -1118,7 +1119,7 @@ export const getPlaylistData = async (type = 0, offset = 0, pageSize = 100) => {
  */
 export const getTiktokData = async (genre = 0, offset = 0, pageSize = 300) => {
   try {
-    const response = await authFetch(`${API_BASE_URL}/report/getTiktokData/${genre}/${offset}/${pageSize}`);
+    const response = await authFetch(`${PROD_API_BASE_URL}/report/getTiktokData/${genre}/${offset}/${pageSize}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     if (Array.isArray(data)) return { tiktok_users: data, total_records: data.length };
@@ -1564,7 +1565,7 @@ export const getDigitalVsRadioMarkets = async (csSong, idCountry = 0, countryCod
 
   return withCache(cacheKey, async () => {
     try {
-      const url = `${API_BASE_URL}/report/getDigitalVsRadio/${csSong}/${safeCountryId}/${safeCountryCode}?alcanceKm=${alcanceKm}`;
+      const url = `${PROD_API_BASE_URL}/report/getDigitalVsRadio/${csSong}/${safeCountryId}/${safeCountryCode}?alcanceKm=${alcanceKm}`;
       const response = await authFetch(url);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();

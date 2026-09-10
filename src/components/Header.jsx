@@ -3,6 +3,7 @@ import { Search, Menu, MapPin, Globe, ListMusic, AudioLines, AudioWaveform, User
 import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
 import AccountModal from './AccountModal';
+import AiChatPanel from './AiChatPanel';
 
 /* View accent colors map */
 const VIEW_CONFIG = {
@@ -138,6 +139,18 @@ const Header = ({
               <Search size={20} strokeWidth={1.75} />
             </button>
           )}
+        </div>
+      
+        {/* Center: DigitalLatino AI Chat */}
+        <div className="header-center-ai" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <AiChatPanel
+            user={user}
+            onLoginClick={onLoginClick}
+            selectedCountryCode={
+              countries.find(c => String(c.id) === String(selectedCountry))?.country ||
+              (selectedCountry !== 'All' ? selectedCountry : 'MX')
+            }
+          />
         </div>
 
         {/* Right: view indicator + auth */}
