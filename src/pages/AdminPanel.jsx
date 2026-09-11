@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useToast } from "../hooks/use-toast";
 import { useAuth } from "../hooks/useAuth";
 import { UserPlus, Pencil, Trash2, ShieldAlert, KeyRound, Loader2, AlertTriangle, Search, ArrowUpDown } from "lucide-react";
+import DatePickerField from "../components/shared/DatePickerField";
 import './AdminPanel.css';
 
 // Modal de confirmación genérico para acciones críticas
 const ConfirmDialog = ({ isOpen, title, description, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDestructive = false, isLoading = false }) => {
     if (!isOpen) return null;
-    return (
-        <div className="modal-overlay">
+    return createPortal(
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget && !isLoading) onCancel(); }}>
             <div className="modal-content modal-content-small">
                 <div className="modal-header" style={{ marginBottom: '1rem' }}>
                     <h3 className="modal-title">
@@ -28,7 +30,8 @@ const ConfirmDialog = ({ isOpen, title, description, onConfirm, onCancel, confir
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
@@ -52,6 +55,7 @@ const AdminPanel = () => {
         email: "",
         password: "",
         role: "UNVERIFIED",
+        expiresAtUtc: "",
     });
     const [isCreating, setIsCreating] = useState(false);
 
@@ -60,6 +64,7 @@ const AdminPanel = () => {
         firstName: "",
         lastName: "",
         email: "",
+        expiresAtUtc: "",
     });
     const [isEditing, setIsEditing] = useState(false);
 
@@ -68,7 +73,11 @@ const AdminPanel = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
-    const LOCAL_API_URL = "https://security.digital-latino.com/admin/users";
+    // ⚠️ Alternar entre backend local y producción:
+    // const SECURITY_BASE_URL = "https://security.digital-latino.com"; // ← PRODUCCIÓN
+    const SECURITY_BASE_URL = "http://localhost:8085";                // ← LOCAL
+
+    const LOCAL_API_URL = `${SECURITY_BASE_URL}/admin/users`;
     const getToken = () => localStorage.getItem("authToken");
 
     const filteredAndSortedUsers = useMemo(() => {
@@ -81,14 +90,15 @@ const AdminPanel = () => {
                 (u.lastName || '').toLowerCase().includes(query) ||
                 (u.email || '').toLowerCase().includes(query) ||
                 (u.role || '').toLowerCase().includes(query) ||
-                (u.id || u.userId || '').toString().includes(query)
+                (u.id || '').toString().includes(query)
             );
         }
 
         result.sort((a, b) => {
             const getVal = (u, key) => {
                 if (key === 'name') return `${u.firstName} ${u.lastName}`.toLowerCase();
-                if (key === 'id') return u.id || u.userId;
+                if (key === 'id') return u.id;
+                if (key === 'expiresAtUtc') return u.expiresAtUtc || '9999-99-99';
                 return (u[key] || '').toString().toLowerCase();
             };
 
@@ -234,7 +244,7 @@ const AdminPanel = () => {
                 description: "El usuario ha sido creado correctamente.",
             });
             setShowAddModal(false);
-            setNewUser({ firstName: "", lastName: "", email: "", password: "", role: "UNVERIFIED" });
+            setNewUser({ firstName: "", lastName: "", email: "", password: "", role: "UNVERIFIED", expiresAtUtc: "" });
             fetchUsers();
         } catch (err) {
             toast({
@@ -253,6 +263,7 @@ const AdminPanel = () => {
             firstName: u.firstName || "",
             lastName: u.lastName || "",
             email: u.email || "",
+            expiresAtUtc: u.expiresAtUtc ? u.expiresAtUtc.substring(0, 10) : "",
         });
     };
 
@@ -261,7 +272,7 @@ const AdminPanel = () => {
         if (!userToEdit) return;
         setIsEditing(true);
 
-        const realId = userToEdit.id || userToEdit.userId;
+        const realId = userToEdit.id;
         try {
             const response = await fetch(`${LOCAL_API_URL}/${realId}`, {
                 method: "PUT",
@@ -298,7 +309,7 @@ const AdminPanel = () => {
         if (!editFormData.email) return;
         setIsSendingReset(true);
         try {
-            const response = await fetch("https://security.digital-latino.com/api/auth/forgot-password", {
+            const response = await fetch(`${SECURITY_BASE_URL}/api/auth/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: editFormData.email }),
@@ -341,12 +352,44 @@ const AdminPanel = () => {
         return "U";
     };
 
-    const SortableHeader = ({ label, sortKey }) => (
-        <th className="table-th" onClick={() => handleSort(sortKey)}>
+    const ExpiryBadge = ({ dateStr }) => {
+        const expiry = new Date(dateStr);
+        const now = new Date();
+        const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+        const isExpired = diffDays < 0;
+        const isWarning = !isExpired && diffDays <= 7;
+
+        const styles = {
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            padding: '2px 8px',
+            borderRadius: '999px',
+            background: isExpired ? 'rgba(239, 68, 68, 0.18)'
+                      : isWarning ? 'rgba(245, 158, 11, 0.18)'
+                      : 'rgba(34, 197, 94, 0.15)',
+            color: isExpired ? '#ef4444'
+                 : isWarning ? '#f59e0b'
+                 : '#22c55e',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+        };
+
+        const label = isExpired
+            ? '⛔ Expirado'
+            : isWarning
+                ? `⚠️ ${diffDays}d restantes`
+                : expiry.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' });
+
+        return <span style={styles} title={expiry.toLocaleString('es-MX')}>{label}</span>;
+    };
+
+    const SortableHeader = ({ label, sortKey, className = "" }) => (
+        <th className={`table-th ${className}`} onClick={() => handleSort(sortKey)}>
             <div className="th-content">
                 {label}
                 <ArrowUpDown
-                    size={14}
+                    size={13}
                     style={{ color: sortConfig.key === sortKey ? '#c193ff' : 'currentColor', opacity: sortConfig.key === sortKey ? 1 : 0.5 }}
                 />
             </div>
@@ -403,100 +446,216 @@ const AdminPanel = () => {
                 </div>
             )}
 
-            <div className="table-container">
-                <table className="admin-table">
-                    <thead className="table-head">
-                        <tr>
-                            <SortableHeader label="ID" sortKey="id" />
-                            <SortableHeader label="Nombre" sortKey="name" />
-                            <SortableHeader label="Email" sortKey="email" />
-                            <SortableHeader label="Rol Actual" sortKey="role" />
-                            <th className="table-th text-center" style={{ textAlign: 'center' }}>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredAndSortedUsers.map((u) => {
-                            const realId = u.id || u.userId;
-                            return (
-                                <tr key={realId} className="table-row">
-                                    <td className="table-td table-td-id cursor-pointer">
-                                        #{realId}
-                                    </td>
-                                    <td className="table-td">
-                                        <div className="user-cell">
-                                            <div className="user-avatar">
-                                                {getInitials(u.firstName, u.lastName, u.email)}
-                                            </div>
-                                            <div>
-                                                <p className="user-name">{u.firstName} {u.lastName}</p>
-                                                <p className="user-type">Miembro</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="table-td" style={{ color: '#d1d5db' }}>
-                                        {u.email}
-                                    </td>
-                                    <td className="table-td">
-                                        <span className={getRoleBadgeClass(u.role)}>
-                                            {u.role}
-                                        </span>
-                                    </td>
-                                    <td className="table-td">
-                                        <div className="actions-container">
-                                            <div className="select-wrapper">
-                                                <select
-                                                    className="select-dark"
-                                                    value={u.role}
-                                                    onChange={(e) => setRoleChangeData({ id: realId, role: e.target.value })}
-                                                >
-                                                    <option value="UNVERIFIED">UNVERIFIED</option>
-                                                    <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
-                                                    <option value="PREMIUM">PREMIUM</option>
-                                                    <option value="ARTIST">ARTIST</option>
-                                                    <option value="ADMIN">ADMIN</option>
-                                                </select>
-                                                <div className="select-icon">
-                                                    <ArrowUpDown size={12} />
+            {/* DESKTOP TABLE VIEW (> 768px) */}
+            <div className="desktop-table-view">
+                <div className="table-container">
+                    <table className="admin-table">
+                        <thead className="table-head">
+                            <tr>
+                                <SortableHeader label="ID" sortKey="id" className="th-id" />
+                                <SortableHeader label="Nombre" sortKey="name" className="th-name" />
+                                <SortableHeader label="Email" sortKey="email" className="th-email" />
+                                <SortableHeader label="Rol Actual" sortKey="role" className="th-role" />
+                                <SortableHeader label="Expira" sortKey="expiresAtUtc" className="th-expiry" />
+                                <th className="table-th text-center th-actions" style={{ textAlign: 'center' }}>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredAndSortedUsers.map((u) => {
+                                const realId = u.id;
+                                return (
+                                    <tr key={realId} className="table-row">
+                                        <td className="table-td table-td-id cursor-pointer">
+                                            #{realId}
+                                        </td>
+                                        <td className="table-td">
+                                            <div className="user-cell">
+                                                <div className="user-avatar">
+                                                    {getInitials(u.firstName, u.lastName, u.email)}
+                                                </div>
+                                                <div>
+                                                    <p className="user-name">{u.firstName} {u.lastName}</p>
+                                                    <p className="user-type">Miembro</p>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="table-td table-td-email" title={u.email}>
+                                            {u.email}
+                                        </td>
+                                        <td className="table-td">
+                                            <span className={getRoleBadgeClass(u.role)}>
+                                                {u.role}
+                                            </span>
+                                        </td>
+                                        <td className="table-td">
+                                            {u.expiresAtUtc ? (
+                                                <ExpiryBadge dateStr={u.expiresAtUtc} />
+                                            ) : (
+                                                <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>Sin límite</span>
+                                            )}
+                                        </td>
+                                        <td className="table-td">
+                                            <div className="actions-container">
+                                                <div className="select-wrapper">
+                                                    <select
+                                                        className="select-dark"
+                                                        value={u.role}
+                                                        onChange={(e) => setRoleChangeData({ id: realId, role: e.target.value })}
+                                                    >
+                                                        <option value="UNVERIFIED">UNVERIFIED</option>
+                                                        <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
+                                                        <option value="PREMIUM">PREMIUM</option>
+                                                        <option value="ARTIST">ARTIST</option>
+                                                        <option value="ADMIN">ADMIN</option>
+                                                    </select>
+                                                    <div className="select-icon">
+                                                        <ArrowUpDown size={12} />
+                                                    </div>
+                                                </div>
 
-                                            <button
-                                                onClick={() => openEditModal(u)}
-                                                className="btn-icon"
-                                                title="Editar datos"
-                                            >
-                                                <Pencil size={18} />
-                                            </button>
+                                                <button
+                                                    onClick={() => openEditModal(u)}
+                                                    className="btn-icon"
+                                                    title="Editar datos"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
 
-                                            <button
-                                                onClick={() => setUserToDelete(realId)}
-                                                className="btn-danger"
-                                                title="Eliminar usuario"
-                                            >
-                                                Eliminar
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-
-                {users.length === 0 && !error && (
-                    <div className="empty-state">
-                        <div className="empty-icon">
-                            <UserPlus size={32} />
-                        </div>
-                        <h3 className="empty-title">Sin usuarios encontrados</h3>
-                        <p className="empty-desc">No hay registros que coincidan con la búsqueda actual.</p>
-                    </div>
-                )}
+                                                <button
+                                                    onClick={() => setUserToDelete(realId)}
+                                                    className="btn-danger"
+                                                    title="Eliminar usuario"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+            {/* MOBILE SORT BAR (<= 768px) */}
+            <div className="mobile-sort-bar">
+                <div className="mobile-user-count">
+                    <span>{filteredAndSortedUsers.length}</span> {filteredAndSortedUsers.length === 1 ? 'usuario' : 'usuarios'}
+                </div>
+                <div className="mobile-sort-select-wrapper">
+                    <ArrowUpDown size={13} className="mobile-sort-icon" />
+                    <select
+                        className="mobile-sort-select"
+                        value={`${sortConfig.key}-${sortConfig.direction}`}
+                        onChange={(e) => {
+                            const [key, direction] = e.target.value.split('-');
+                            setSortConfig({ key, direction });
+                        }}
+                    >
+                        <option value="id-asc">ID (1 → 9)</option>
+                        <option value="id-desc">ID (9 → 1)</option>
+                        <option value="name-asc">Nombre (A → Z)</option>
+                        <option value="name-desc">Nombre (Z → A)</option>
+                        <option value="email-asc">Email (A → Z)</option>
+                        <option value="role-asc">Rol</option>
+                        <option value="expiresAtUtc-asc">Expiración</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* MOBILE CARD VIEW (<= 768px) */}
+            <div className="mobile-card-view">
+                {filteredAndSortedUsers.map((u) => {
+                    const realId = u.id;
+                    return (
+                        <div key={realId} className="admin-user-card">
+                            <div className="card-top-row">
+                                <div className="card-user-info">
+                                    <div className="user-avatar">
+                                        {getInitials(u.firstName, u.lastName, u.email)}
+                                    </div>
+                                    <div className="card-user-details">
+                                        <h4 className="card-user-name">{u.firstName} {u.lastName}</h4>
+                                        <span className="card-user-email">{u.email}</span>
+                                    </div>
+                                </div>
+                                <div className="card-id-badge">#{realId}</div>
+                            </div>
+
+                            <div className="card-badges-row">
+                                <div className="card-badge-item">
+                                    <span className="card-badge-label">Rol</span>
+                                    <span className={getRoleBadgeClass(u.role)}>{u.role}</span>
+                                </div>
+                                <div className="card-badge-item">
+                                    <span className="card-badge-label">Expira</span>
+                                    {u.expiresAtUtc ? (
+                                        <ExpiryBadge dateStr={u.expiresAtUtc} />
+                                    ) : (
+                                        <span style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 600 }}>Sin límite</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="card-actions-row">
+                                <div className="select-wrapper card-select-wrapper">
+                                    <select
+                                        className="select-dark card-role-select"
+                                        value={u.role}
+                                        onChange={(e) => setRoleChangeData({ id: realId, role: e.target.value })}
+                                    >
+                                        <option value="UNVERIFIED">UNVERIFIED</option>
+                                        <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
+                                        <option value="PREMIUM">PREMIUM</option>
+                                        <option value="ARTIST">ARTIST</option>
+                                        <option value="ADMIN">ADMIN</option>
+                                    </select>
+                                    <div className="select-icon">
+                                        <ArrowUpDown size={12} />
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => openEditModal(u)}
+                                    className="card-btn-edit"
+                                    title="Editar datos"
+                                >
+                                    <Pencil size={15} />
+                                    <span>Editar</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setUserToDelete(realId)}
+                                    className="card-btn-delete"
+                                    title="Eliminar usuario"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {filteredAndSortedUsers.length === 0 && !error && (
+                <div className="empty-state">
+                    <div className="empty-icon">
+                        <UserPlus size={32} />
+                    </div>
+                    <h3 className="empty-title">Sin usuarios encontrados</h3>
+                    <p className="empty-desc">No hay registros que coincidan con la búsqueda actual.</p>
+                </div>
+            )}
+
             {/* MODAL: AGREGAR USUARIO */}
-            {showAddModal && (
-                <div className="modal-overlay">
+            {showAddModal && createPortal(
+                <div className="modal-overlay" onClick={(e) => {
+                    if (e.target === e.currentTarget && !isCreating) {
+                        setShowAddModal(false);
+                        setNewUser({ firstName: "", lastName: "", email: "", password: "", role: "UNVERIFIED", expiresAtUtc: "" });
+                    }
+                }}>
                     <div className="modal-content">
                         <div className="modal-header">
                             <h2 className="modal-title">
@@ -540,20 +699,42 @@ const AdminPanel = () => {
                                 </select>
                             </div>
 
+                            <div className="form-group">
+                                <label className="form-label">
+                                    Fecha de expiración
+                                    <span style={{ color: '#9ca3af', marginLeft: '0.4rem', fontSize: '0.75rem' }}>
+                                        (opcional — vacío = sin límite)
+                                    </span>
+                                </label>
+                                <DatePickerField
+                                    value={newUser.expiresAtUtc}
+                                    onChange={(val) => setNewUser({ ...newUser, expiresAtUtc: val })}
+                                    placeholder="AAAA-MM-DD (o selecciona en calendario)"
+                                />
+                            </div>
+
                             <div className="modal-footer">
-                                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary">Cancelar</button>
+                                <button type="button" onClick={() => {
+                                    setShowAddModal(false);
+                                    setNewUser({ firstName: "", lastName: "", email: "", password: "", role: "UNVERIFIED", expiresAtUtc: "" });
+                                }} className="btn-secondary">Cancelar</button>
                                 <button type="submit" disabled={isCreating} className="btn-confirm">
                                     {isCreating ? <Loader2 className="loader-spin" size={20} /> : "Crear Usuario"}
                                 </button>
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* MODAL: EDITAR USUARIO */}
-            {userToEdit && (
-                <div className="modal-overlay">
+            {userToEdit && createPortal(
+                <div className="modal-overlay" onClick={(e) => {
+                    if (e.target === e.currentTarget && !isEditing) {
+                        setUserToEdit(null);
+                    }
+                }}>
                     <div className="modal-content">
                         <div className="modal-header">
                             <h2 className="modal-title">
@@ -588,6 +769,20 @@ const AdminPanel = () => {
                                 </div>
                             </div>
 
+                            <div className="form-group">
+                                <label className="form-label">
+                                    Fecha de expiración
+                                    <span style={{ color: '#9ca3af', marginLeft: '0.4rem', fontSize: '0.75rem' }}>
+                                        (vacío = sin límite)
+                                    </span>
+                                </label>
+                                <DatePickerField
+                                    value={editFormData.expiresAtUtc}
+                                    onChange={(val) => setEditFormData({ ...editFormData, expiresAtUtc: val })}
+                                    placeholder="AAAA-MM-DD (o selecciona en calendario)"
+                                />
+                            </div>
+
                             <div className="modal-footer">
                                 <button type="button" onClick={() => setUserToEdit(null)} className="btn-secondary">Cancelar</button>
                                 <button type="submit" disabled={isEditing} className="btn-confirm" style={{ background: '#3b82f6', boxShadow: 'none', color: 'white' }}>
@@ -596,7 +791,8 @@ const AdminPanel = () => {
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             <ConfirmDialog

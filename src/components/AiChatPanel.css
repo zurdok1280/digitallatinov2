@@ -474,3 +474,10 @@
   text-align: center;
   margin-top: 0.4rem;
 }
+
+/* Hide AI Chat button on mobile devices */
+@media (max-width: 768px) {
+  .dl-ai-trigger-btn {
+    display: none !important;
+  }
+}

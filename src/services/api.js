@@ -1565,7 +1565,7 @@ export const getDigitalVsRadioMarkets = async (csSong, idCountry = 0, countryCod
 
   return withCache(cacheKey, async () => {
     try {
-      const url = `${PROD_API_BASE_URL}/report/getDigitalVsRadio/${csSong}/${safeCountryId}/${safeCountryCode}?alcanceKm=${alcanceKm}`;
+      const url = `${API_BASE_URL}/report/getDigitalVsRadio/${csSong}/${safeCountryId}/${safeCountryCode}?alcanceKm=${alcanceKm}`;
       const response = await authFetch(url);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();

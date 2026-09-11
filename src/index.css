@@ -1195,10 +1195,22 @@ select option {
   }
 }
 
+.header-center-ai {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ============================================================ */
 /* HEADER — Mobile-specific class-based overrides               */
 /* ============================================================ */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
+  /* Hides DigitalLatino AI Chat button in the header on mobile devices */
+  .header-center-ai,
+  .dl-ai-trigger-btn {
+    display: none !important;
+  }
+
   /* Hides view name pill (e.g. "Charts", "Platforms") on small screens */
   /* Using max-width:0 trick because inline style="display:flex" overrides display:none from CSS */
   .header-view-indicator {

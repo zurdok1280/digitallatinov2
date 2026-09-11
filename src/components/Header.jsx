@@ -142,7 +142,7 @@ const Header = ({
         </div>
       
         {/* Center: DigitalLatino AI Chat */}
-        <div className="header-center-ai" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="header-center-ai">
           <AiChatPanel
             user={user}
             onLoginClick={onLoginClick}

@@ -1,0 +1,285 @@
+/* DatePickerField.css - DigitalLatino Custom Date Picker */
+
+.dl-datepicker-container {
+    position: relative;
+    width: 100%;
+}
+
+.dl-datepicker-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.dl-datepicker-input {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.75rem 4.75rem 0.75rem 1rem;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.dl-datepicker-input:focus {
+    border-color: #c193ff;
+    box-shadow: 0 0 0 3px rgba(193, 147, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dl-datepicker-input::placeholder {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.dl-datepicker-actions {
+    position: absolute;
+    right: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    z-index: 2;
+}
+
+.dl-datepicker-btn-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.375rem;
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.dl-datepicker-btn-clear:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+.dl-datepicker-btn-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 0.5rem;
+    background: rgba(193, 147, 255, 0.12);
+    border: 1px solid rgba(193, 147, 255, 0.25);
+    color: #c193ff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.dl-datepicker-btn-toggle:hover,
+.dl-datepicker-btn-toggle.active {
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Dropdown Calendar Popover (Deploys Upwards by default) */
+.dl-datepicker-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    top: auto;
+    left: 0;
+    right: 0;
+    background: #191b22;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1.25rem;
+    box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.7),
+                0 0 20px rgba(193, 147, 255, 0.12);
+    padding: 1.15rem;
+    z-index: 10000;
+    animation: dl-popover-in-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+}
+
+.dl-datepicker-popover.drop-down {
+    bottom: auto;
+    top: calc(100% + 8px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7),
+                0 0 20px rgba(193, 147, 255, 0.12);
+    animation: dl-popover-in-down 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dl-popover-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes dl-popover-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Calendar Header */
+.dl-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.85rem;
+}
+
+.dl-calendar-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+    text-transform: capitalize;
+}
+
+.dl-calendar-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #d1d5db;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.dl-calendar-nav-btn:hover {
+    background: rgba(193, 147, 255, 0.2);
+    color: #ffffff;
+    border-color: rgba(193, 147, 255, 0.4);
+}
+
+/* Days of Week Header */
+.dl-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 0.4rem;
+    text-align: center;
+}
+
+.dl-calendar-weekday {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0;
+}
+
+/* Days Grid */
+.dl-calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.dl-calendar-day-btn {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #e5e7eb;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.dl-calendar-day-btn:hover:not(.disabled):not(.selected) {
+    background: rgba(193, 147, 255, 0.18);
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+.dl-calendar-day-btn.other-month {
+    color: #4b5563;
+    opacity: 0.45;
+}
+
+.dl-calendar-day-btn.today {
+    border-color: rgba(193, 147, 255, 0.6);
+    color: #c193ff;
+    font-weight: 700;
+}
+
+.dl-calendar-day-btn.selected {
+    background: linear-gradient(135deg, #a855f7, #ec4899) !important;
+    color: #ffffff !important;
+    font-weight: 800;
+    box-shadow: 0 4px 10px rgba(168, 85, 247, 0.45);
+    border-color: transparent;
+}
+
+/* Quick Preset Chips */
+.dl-calendar-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dl-preset-chip {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.28rem 0.6rem;
+    border-radius: 0.45rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #c193ff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.dl-preset-chip:hover {
+    background: rgba(193, 147, 255, 0.18);
+    border-color: rgba(193, 147, 255, 0.35);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.dl-preset-chip-clear {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.15);
+    margin-left: auto;
+}
+
+.dl-preset-chip-clear:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ffffff;
+}
