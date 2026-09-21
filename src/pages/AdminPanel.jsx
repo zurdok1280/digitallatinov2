@@ -74,8 +74,8 @@ const AdminPanel = () => {
     const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
     // ⚠️ Alternar entre backend local y producción:
-    // const SECURITY_BASE_URL = "https://security.digital-latino.com"; // ← PRODUCCIÓN
-    const SECURITY_BASE_URL = "http://localhost:8085";                // ← LOCAL
+    const SECURITY_BASE_URL = "https://security.digital-latino.com"; // ← PRODUCCIÓN
+    // const SECURITY_BASE_URL = "http://localhost:8085";             // ← LOCAL
 
     const LOCAL_API_URL = `${SECURITY_BASE_URL}/admin/users`;
     const getToken = () => localStorage.getItem("authToken");
