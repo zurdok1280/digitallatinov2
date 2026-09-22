@@ -293,21 +293,20 @@ export default function AiChatPanel({ selectedCountryCode = 'MX', user: userProp
       <button
         ref={buttonRef}
         type="button"
-        className={`dl-ai-trigger-btn ${!user ? 'locked' : ''}`}
+        disabled
+        className="dl-ai-trigger-btn disabled"
         onClick={handleTriggerClick}
-        title={!user ? 'Debes loguearte para desbloquear más funcionalidades' : 'Abrir DigitalLatino AI'}
+        title="DigitalLatino AI (Deshabilitado)"
+        style={{
+          opacity: 0.5,
+          cursor: 'not-allowed',
+          pointerEvents: 'none',
+          boxShadow: 'none',
+          filter: 'grayscale(0.3)'
+        }}
       >
-        {!user ? (
-          <Lock size={14} className="dl-ai-lock-icon" />
-        ) : (
-          <Sparkles size={16} className="dl-ai-sparkle-icon" />
-        )}
+        <Sparkles size={16} className="dl-ai-sparkle-icon" style={{ opacity: 0.6, animation: 'none' }} />
         <span>DigitalLatino AI</span>
-        {!user && (
-          <span className="dl-ai-locked-tooltip">
-            Debes loguearte para desbloquear más funcionalidades
-          </span>
-        )}
       </button>
 
       {createPortal(

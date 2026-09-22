@@ -576,7 +576,7 @@ function Dashboard() {
       <div className="filter-header" style={{ justifyContent: 'flex-start', marginBottom: '0.5rem' }}>
         <div className="filter-controls">
           {/* Comparison Toggle Button */}
-          {['Charts', 'HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
+          {['HeavyHitters', 'CuratorPicks', 'TiktokerPicks', 'DigitalHitsForRadio'].includes(activeView) && (
             <button
               className={`btn-toggle-compare ${comparisonMode ? 'active' : ''}`}
               onClick={handleToggleComparisonMode}
@@ -594,6 +594,7 @@ function Dashboard() {
           songs={songs}
           isLoading={isLoading}
           comparisonMode={comparisonMode}
+          onToggleComparison={handleToggleComparisonMode}
           onSongSelect={handleSongSelect}
           selectedSongs={selectedSongs}
           selectedCountry={selectedCountry}

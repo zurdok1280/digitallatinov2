@@ -1,4 +1,4 @@
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X, PieChart as PieChartIcon, RefreshCw, Download, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X, PieChart as PieChartIcon, RefreshCw, Download, FileSpreadsheet, FileText, ChevronDown, BarChart3 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getLabelMarketShareDigitalVideo } from '../services/api';
@@ -342,6 +342,7 @@ const SongChart = ({
   onSongClick,
   onLoginClick,
   comparisonMode,
+  onToggleComparison,
   onSongSelect,
   selectedSongs = [],
   selectedCountry = '0',
@@ -956,6 +957,53 @@ const SongChart = ({
         flexWrap: 'wrap'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {/* Comparar Button */}
+          {onToggleComparison && (
+            <button
+              type="button"
+              onClick={onToggleComparison}
+              title={comparisonMode ? "Cerrar modo comparación" : "Activar modo comparación"}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: comparisonMode
+                  ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(193, 147, 255, 0.25))'
+                  : 'rgba(255, 255, 255, 0.06)',
+                border: comparisonMode
+                  ? '1px solid rgba(0, 240, 255, 0.5)'
+                  : '1px solid rgba(255, 255, 255, 0.15)',
+                color: comparisonMode ? '#00f0ff' : 'white',
+                padding: '0.55rem 1.1rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: comparisonMode
+                  ? '0 0 15px rgba(0, 240, 255, 0.3)'
+                  : '0 4px 15px rgba(0, 0, 0, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                if (!comparisonMode) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'none';
+                if (!comparisonMode) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                }
+              }}
+            >
+              <BarChart3 size={17} color={comparisonMode ? '#00f0ff' : '#00e5ff'} />
+              <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
+            </button>
+          )}
+
           {/* Exportar Button with Dropdown */}
           <div ref={exportMenuRef} style={{ position: 'relative' }}>
             <button
