@@ -1,8 +1,8 @@
-import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X, PieChart as PieChartIcon, RefreshCw, Download, FileSpreadsheet, FileText, ChevronDown, BarChart3 } from 'lucide-react';
+import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X, PieChart as PieChartIcon, RefreshCw, Download, FileSpreadsheet, FileText, ChevronDown, BarChart3, Camera } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getLabelMarketShareDigitalVideo } from '../services/api';
-import { exportToXLSX, exportToPDF } from '../utils/exportChart';
+import { exportToXLSX, exportToPDF, exportMarketShareToXLSX, exportMarketShareToPDF, exportMarketShareToPNG } from '../utils/exportChart';
 
 import { useMemo, useState, useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
@@ -19,7 +19,7 @@ const pieSliceColors = [
   '#1db954', '#ff7675', '#00cec9', '#fd79a8', '#ffeaa7'
 ];
 
-const MarketSharePieChart = ({ data }) => {
+const MarketSharePieChart = ({ data, size = 330 }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const chartData = useMemo(() => {
@@ -60,11 +60,12 @@ const MarketSharePieChart = ({ data }) => {
     return chartData.reduce((acc, curr) => acc + curr.value, 0);
   }, [chartData]);
 
+  const center = size / 2;
+  const radius = center * 0.82;
+  const innerRadius = center * 0.52;
+
   const slices = useMemo(() => {
     let cumulativeAngle = 0;
-    const radius = 90;
-    const innerRadius = 55;
-    const center = 110;
 
     return chartData.map((item, idx) => {
       const sliceAngle = (item.value / (totalPercentage || 100)) * 360;
@@ -101,14 +102,14 @@ const MarketSharePieChart = ({ data }) => {
         idx
       };
     });
-  }, [chartData, totalPercentage]);
+  }, [chartData, totalPercentage, center, radius, innerRadius]);
 
   if (chartData.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-      <div style={{ position: 'relative', width: '220px', height: '220px' }}>
-        <svg width="220" height="220" viewBox="0 0 220 220" style={{ overflow: 'visible' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1.5rem' }}>
+      <div style={{ position: 'relative', width: `${size}px`, height: `${size}px`, flexShrink: 0 }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
           {slices.map((slice) => {
             const isHovered = hoveredIdx === slice.idx;
             return (
@@ -116,12 +117,13 @@ const MarketSharePieChart = ({ data }) => {
                 key={slice.idx}
                 d={slice.pathData}
                 fill={slice.color}
-                opacity={hoveredIdx === null || isHovered ? 1 : 0.4}
+                opacity={hoveredIdx === null || isHovered ? 1 : 0.35}
                 style={{
-                  transition: 'all 0.25s ease',
+                  transition: 'all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                   cursor: 'pointer',
-                  transformOrigin: '110px 110px',
-                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                  transformOrigin: `${center}px ${center}px`,
+                  transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+                  filter: isHovered ? `drop-shadow(0 0 14px ${slice.color}90)` : 'none'
                 }}
                 onMouseEnter={() => setHoveredIdx(slice.idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
@@ -139,30 +141,64 @@ const MarketSharePieChart = ({ data }) => {
           justifyContent: 'center',
           pointerEvents: 'none',
           textAlign: 'center',
+          padding: '1.25rem',
         }}>
           {hoveredIdx !== null ? (
             <>
-              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: slices[hoveredIdx].color, lineHeight: 1 }}>
+              <span style={{ fontSize: '2.2rem', fontWeight: 900, color: slices[hoveredIdx].color, lineHeight: 1, textShadow: `0 0 16px ${slices[hoveredIdx].color}60` }}>
                 {slices[hoveredIdx].value}%
               </span>
-              <span style={{ fontSize: '0.72rem', color: '#d1d5db', maxWidth: '95px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '4px' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f3f4f6', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '6px' }}>
                 {slices[hoveredIdx].name}
               </span>
-              <span style={{ fontSize: '0.68rem', color: '#9ca3af' }}>
+              <span style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '2px' }}>
                 {slices[hoveredIdx].songs} canciones
               </span>
             </>
           ) : (
             <>
-              <span style={{ fontSize: '1.15rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>
+              <span style={{ fontSize: '2rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>
                 {data.reduce((a, b) => a + (b.songs || 0), 0)}
               </span>
-              <span style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '3px' }}>
-                Canciones
+              <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>
+                Canciones Totales
               </span>
             </>
           )}
         </div>
+      </div>
+
+      {/* Chips visuales de las principales disqueras */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '0.6rem',
+        maxWidth: '850px'
+      }}>
+        {chartData.map((item, idx) => (
+          <div
+            key={item.name || idx}
+            onMouseEnter={() => setHoveredIdx(idx)}
+            onMouseLeave={() => setHoveredIdx(null)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.4rem 0.85rem',
+              borderRadius: '9999px',
+              background: hoveredIdx === idx ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${hoveredIdx === idx ? item.color : 'rgba(255, 255, 255, 0.08)'}`,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              transform: hoveredIdx === idx ? 'scale(1.04)' : 'none',
+            }}
+          >
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'white' }}>{item.name}</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: item.color }}>{item.value}%</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -395,16 +431,6 @@ const SongChart = ({
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
-        setIsExportMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Market Share Modal State
   const [isMarketShareOpen, setIsMarketShareOpen] = useState(false);
   const [marketShareTop, setMarketShareTop] = useState(500);
@@ -412,6 +438,23 @@ const SongChart = ({
   const [marketShareLoading, setMarketShareLoading] = useState(false);
   const [marketShareError, setMarketShareError] = useState(null);
   const [marketShareSearch, setMarketShareSearch] = useState('');
+  const [isMarketShareExportOpen, setIsMarketShareExportOpen] = useState(false);
+
+  const marketShareExportMenuRef = useRef(null);
+  const marketShareChartCardRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setIsExportMenuOpen(false);
+      }
+      if (marketShareExportMenuRef.current && !marketShareExportMenuRef.current.contains(event.target)) {
+        setIsMarketShareExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch Market Share Data
   useEffect(() => {
@@ -1342,30 +1385,162 @@ const SongChart = ({
           if (e.target === e.currentTarget) setIsMarketShareOpen(false);
         }}>
           <div style={{
-            maxWidth: '920px',
-            width: '100%',
-            maxHeight: '88vh',
+            maxWidth: '1180px',
+            width: '95%',
+            maxHeight: '92vh',
             overflowY: 'auto',
             backgroundColor: '#12131c',
             border: '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: '1.5rem',
-            padding: '1.75rem',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+            padding: '2rem',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.85)',
             position: 'relative',
           }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1.25rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <PieChartIcon size={24} color="#c193ff" />
+                <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <PieChartIcon size={26} color="#c193ff" />
                   Market Share por Disquera / Sello
                 </h2>
-                <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                <p style={{ color: '#9ca3af', fontSize: '0.88rem', margin: '0.3rem 0 0' }}>
                   Porcentaje de participación de mercado y volumen de canciones en video digital.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {/* Exportar Button with Dropdown */}
+                <div ref={marketShareExportMenuRef} style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsMarketShareExportOpen(prev => !prev)}
+                    title="Exportar reporte de Market Share"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      background: 'rgba(0, 229, 255, 0.12)',
+                      border: '1px solid rgba(0, 229, 255, 0.3)',
+                      color: '#00e5ff',
+                      padding: '0.45rem 0.95rem',
+                      borderRadius: '0.65rem',
+                      fontSize: '0.82rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(0, 229, 255, 0.15)',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#00e5ff'; e.currentTarget.style.color = '#000'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0, 229, 255, 0.12)'; e.currentTarget.style.color = '#00e5ff'; }}
+                  >
+                    <Download size={15} />
+                    <span>Exportar</span>
+                    <ChevronDown size={13} style={{ transform: isMarketShareExportOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+                  </button>
+
+                  {isMarketShareExportOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      backgroundColor: '#181926',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: '0.75rem',
+                      padding: '0.4rem',
+                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)',
+                      zIndex: 1000,
+                      minWidth: '160px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.2rem',
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMarketShareExportOpen(false);
+                          exportMarketShareToXLSX(marketShareData, { ...activeFilters, top: marketShareTop });
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          width: '100%',
+                          padding: '0.55rem 0.8rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: '0.5rem',
+                          color: 'white',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 229, 255, 0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <FileSpreadsheet size={15} color="#00e676" />
+                        <span>Excel (.xlsx)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMarketShareExportOpen(false);
+                          exportMarketShareToPDF(marketShareData, { ...activeFilters, top: marketShareTop });
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          width: '100%',
+                          padding: '0.55rem 0.8rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: '0.5rem',
+                          color: 'white',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 51, 102, 0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <FileText size={15} color="#ff3366" />
+                        <span>PDF (.pdf)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMarketShareExportOpen(false);
+                          exportMarketShareToPNG(marketShareChartCardRef.current);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          width: '100%',
+                          padding: '0.55rem 0.8rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: '0.5rem',
+                          color: 'white',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(193, 147, 255, 0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Camera size={15} color="#c193ff" />
+                        <span>Imagen (.png)</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Top Selector (default 500) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Top:</label>
@@ -1377,7 +1552,7 @@ const SongChart = ({
                       border: '1px solid rgba(255, 255, 255, 0.15)',
                       borderRadius: '0.6rem',
                       color: 'white',
-                      padding: '0.4rem 0.8rem',
+                      padding: '0.45rem 0.85rem',
                       fontSize: '0.85rem',
                       outline: 'none',
                       cursor: 'pointer',
@@ -1396,21 +1571,21 @@ const SongChart = ({
                   onClick={() => setIsMarketShareOpen(false)}
                   style={{
                     background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
                     color: '#9ca3af',
                     borderRadius: '50%',
-                    width: '34px',
-                    height: '34px',
+                    width: '36px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
             </div>
@@ -1418,11 +1593,11 @@ const SongChart = ({
             {/* Body */}
             {marketShareLoading ? (
               <div style={{ padding: '4rem', textAlign: 'center', color: '#c193ff' }}>
-                <Loader2 size={36} style={{ margin: '0 auto 1rem', animation: 'spin 1s linear infinite' }} />
-                <p style={{ fontWeight: 600 }}>Cargando datos de Market Share (Top {marketShareTop})...</p>
+                <Loader2 size={38} style={{ margin: '0 auto 1rem', animation: 'spin 1s linear infinite' }} />
+                <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>Cargando datos de Market Share (Top {marketShareTop})...</p>
               </div>
             ) : marketShareError ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: '#ef4444' }}>
+              <div style={{ padding: '3.5rem', textAlign: 'center', color: '#ef4444' }}>
                 <p style={{ fontWeight: 700, marginBottom: '1rem' }}>{marketShareError}</p>
                 <button
                   type="button"
@@ -1441,89 +1616,163 @@ const SongChart = ({
                 </button>
               </div>
             ) : marketShareData.length === 0 ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+              <div style={{ padding: '3.5rem', textAlign: 'center', color: '#9ca3af' }}>
                 No se encontraron datos de Market Share para los filtros seleccionados.
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
-                {/* Left: Donut Chart */}
-                <div style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: '1.25rem',
-                  padding: '1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#e5e7eb', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Distribución de Mercado
-                  </h3>
-                  <MarketSharePieChart data={marketShareData} />
-                </div>
-
-                {/* Right: Legend Table with search */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ position: 'relative' }}>
-                    <Search size={15} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
-                    <input
-                      type="text"
-                      style={{
-                        width: '100%',
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '0.75rem',
-                        padding: '0.65rem 1rem 0.65rem 2.5rem',
-                        color: 'white',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                      }}
-                      placeholder="Filtrar por disquera..."
-                      value={marketShareSearch}
-                      onChange={(e) => setMarketShareSearch(e.target.value)}
-                    />
-                  </div>
-
-                  <div style={{
-                    maxHeight: '380px',
-                    overflowY: 'auto',
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {/* Top Section: Gráfica de Pastel Grande Centrada */}
+                <div
+                  ref={marketShareChartCardRef}
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '1.25rem',
+                    padding: '2rem 1.5rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.5rem',
-                    paddingRight: '0.3rem'
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)',
+                  }}
+                >
+                  <h3 style={{
+                    fontSize: '0.9rem',
+                    fontWeight: 800,
+                    color: '#c193ff',
+                    marginBottom: '1.5rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <PieChartIcon size={18} />
+                    Distribución de Mercado por Disqueras
+                  </h3>
+
+                  <MarketSharePieChart data={marketShareData} size={340} />
+                </div>
+
+                {/* Bottom Section: Detalle de las Disqueras */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    paddingBottom: '0.85rem'
+                  }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', margin: 0 }}>
+                        Detalle de Disqueras / Sellos
+                      </h3>
+                      <p style={{ color: '#9ca3af', fontSize: '0.82rem', margin: '0.2rem 0 0' }}>
+                        Mostrando {filteredMarketShareList.length} de {marketShareData.length} resultados
+                      </p>
+                    </div>
+
+                    <div style={{ position: 'relative', width: '320px', maxWidth: '100%' }}>
+                      <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
+                      <input
+                        type="text"
+                        style={{
+                          width: '100%',
+                          backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '0.75rem',
+                          padding: '0.65rem 2.2rem 0.65rem 2.5rem',
+                          color: 'white',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                        }}
+                        placeholder="Buscar por disquera..."
+                        value={marketShareSearch}
+                        onChange={(e) => setMarketShareSearch(e.target.value)}
+                      />
+                      {marketShareSearch && (
+                        <button
+                          onClick={() => setMarketShareSearch('')}
+                          style={{
+                            position: 'absolute',
+                            right: '0.6rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#9ca3af',
+                            cursor: 'pointer',
+                            padding: '0.2rem'
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Grid de Disqueras */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+                    gap: '0.85rem',
+                    maxHeight: '440px',
+                    overflowY: 'auto',
+                    paddingRight: '0.4rem'
                   }}>
                     {filteredMarketShareList.map((item, idx) => {
                       const color = pieSliceColors[idx % pieSliceColors.length];
+                      const maxPercent = marketShareData[0]?.market_share_percent || 100;
+                      const relativeBarWidth = Math.min(100, (item.market_share_percent / maxPercent) * 100);
+
                       return (
                         <div
                           key={item.label || idx}
                           style={{
                             background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            borderRadius: '0.75rem',
-                            padding: '0.65rem 0.85rem',
+                            border: '1px solid rgba(255, 255, 255, 0.07)',
+                            borderRadius: '0.85rem',
+                            padding: '0.85rem 1rem',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '0.4rem',
+                            gap: '0.55rem',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.16)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden', paddingRight: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', overflow: 'hidden', paddingRight: '0.5rem' }}>
+                              <span style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                color: '#6b7280',
+                                minWidth: '24px'
+                              }}>
+                                #{idx + 1}
+                              </span>
                               <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {item.label}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-                              <span style={{ fontSize: '0.78rem', color: '#9ca3af' }}>{item.songs} {item.songs === 1 ? 'canción' : 'canciones'}</span>
-                              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#c193ff' }}>{item.market_share_percent}%</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexShrink: 0 }}>
+                              <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>{item.songs} {item.songs === 1 ? 'canción' : 'canciones'}</span>
+                              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#c193ff' }}>{item.market_share_percent}%</span>
                             </div>
                           </div>
 
-                          {/* Progress bar */}
-                          <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-                            <div style={{ width: `${Math.min(100, item.market_share_percent)}%`, height: '100%', background: color, borderRadius: '2px' }} />
+                          {/* Barra de Progreso Relativa */}
+                          <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${relativeBarWidth}%`, height: '100%', background: `linear-gradient(90deg, ${color}, #c193ff)`, borderRadius: '3px', transition: 'width 0.4s ease' }} />
                           </div>
                         </div>
                       );
