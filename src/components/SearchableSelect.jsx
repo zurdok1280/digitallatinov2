@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * SearchableSelect — A premium dropdown with keyboard search via React Portals.
  */
-const SearchableSelect = ({ options = [], value, onChange, placeholder = 'Selecciona...', disabled = false, searchable = true, style = {} }) => {
+const SearchableSelect = ({ options = [], value, onChange, placeholder, disabled = false, searchable = true, style = {} }) => {
+  const { language, t } = useLanguage();
+  const defaultPlaceholder = placeholder || t('search', 'Selecciona...');
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -172,8 +175,8 @@ const SearchableSelect = ({ options = [], value, onChange, placeholder = 'Selecc
             className="ss-search-input"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Buscar..."
-            aria-label="Buscar opción"
+            placeholder={t('search', 'Buscar...')}
+            aria-label={t('search', 'Buscar...')}
             autoFocus
           />
           {query && (
@@ -194,7 +197,7 @@ const SearchableSelect = ({ options = [], value, onChange, placeholder = 'Selecc
       {/* Options list */}
       <div ref={listRef} className="ss-list">
         {filtered.length === 0 ? (
-          <div className="ss-empty">Sin resultados para "{query}"</div>
+          <div className="ss-empty">{language === 'en' ? `No results for "${query}"` : `Sin resultados para "${query}"`}</div>
         ) : (
           filtered.map((opt, idx) => (
             <div
@@ -387,7 +390,7 @@ const SearchableSelect = ({ options = [], value, onChange, placeholder = 'Selecc
         aria-expanded={isOpen}
       >
         <span className="ss-trigger-label">
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : defaultPlaceholder}
         </span>
         <ChevronDown size={14} className={`ss-chevron ${isOpen ? 'open' : ''}`} />
       </button>

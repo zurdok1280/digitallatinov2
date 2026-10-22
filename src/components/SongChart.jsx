@@ -1,6 +1,7 @@
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap, Lock, Search, X, PieChart as PieChartIcon, RefreshCw, Download, FileSpreadsheet, FileText, ChevronDown, BarChart3, Camera } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
+import { useLanguage } from '../context/LanguageContext';
 import { getLabelMarketShareDigitalVideo } from '../services/api';
 import { exportToXLSX, exportToPDF, exportMarketShareToXLSX, exportMarketShareToPDF, exportMarketShareToPNG } from '../utils/exportChart';
 
@@ -391,6 +392,7 @@ const SongChart = ({
   citiesList = [],
 }) => {
   const { token, user } = useAuth();
+  const { t, language } = useLanguage();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -545,9 +547,9 @@ const SongChart = ({
   const renderMovement = (mo) => {
     if (!mo) return null;
     const mov = String(mo).toLowerCase();
-    if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title="Subió" />;
-    if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title="Bajó" />;
-    return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+    if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title={t('rankUp', 'Subió')} />;
+    if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title={t('rankDown', 'Bajó')} />;
+    return <Minus size={16} color="var(--text-muted)" title={t('noChange', 'Sin cambio')} />;
   };
 
   const renderRow = (song, index, isTeaser = false) => {
@@ -731,8 +733,8 @@ const SongChart = ({
                   if (String(song.spotifyartistid || song.cs_song) !== allowedId && (!allowedName || !songArtistsStr.includes(allowedName))) {
                     const { toast } = await import('../hooks/use-toast');
                     toast({
-                      title: "🔒 Acceso Restringido",
-                      description: "Acceso restringido, este artista no pertenece a tu selección actual.",
+                      title: t('restrictedAccess', '🔒 Acceso Restringido'),
+                      description: t('restrictedAccessDesc', 'Acceso restringido, este artista no pertenece a tu selección actual.'),
                       className: "bg-red-500/10 border-red-500/50 text-white backdrop-blur-md rounded-xl",
                     });
                     return;
@@ -775,7 +777,11 @@ const SongChart = ({
           </span>
 
           <div className="score-tooltip">
-            El <strong style={{ color: '#fff' }}>Score Digital</strong> es una métrica del 1 al 100 que mide la exposición de canciones en español a partir de señales de consumo en plataformas digitales y su alcance geográfico. Se enfoca únicamente en canciones recientes.
+            {language === 'en' ? (
+              <>The <strong style={{ color: '#fff' }}>Digital Score</strong> is a 1-to-100 metric measuring Spanish song exposure based on digital streaming consumer signals and geographic reach. Focused exclusively on recent tracks.</>
+            ) : (
+              <>El <strong style={{ color: '#fff' }}>Score Digital</strong> es una métrica del 1 al 100 que mide la exposición de canciones en español a partir de señales de consumo en plataformas digitales y su alcance geográfico. Se enfoca únicamente en canciones recientes.</>
+            )}
           </div>
         </div>
       </div>
@@ -1005,7 +1011,7 @@ const SongChart = ({
             <button
               type="button"
               onClick={onToggleComparison}
-              title={comparisonMode ? "Cerrar modo comparación" : "Activar modo comparación"}
+              title={comparisonMode ? (language === 'en' ? 'Close compare mode' : 'Cerrar modo comparación') : (language === 'en' ? 'Enable compare mode' : 'Activar modo comparación')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1043,7 +1049,7 @@ const SongChart = ({
               }}
             >
               <BarChart3 size={17} color={comparisonMode ? '#00f0ff' : '#00e5ff'} />
-              <span>{comparisonMode ? 'Cerrar Comparar' : 'Comparar'}</span>
+              <span>{comparisonMode ? t('closeCompare', 'Cerrar Comparar') : t('compare', 'Comparar')}</span>
             </button>
           )}
 
@@ -1058,7 +1064,7 @@ const SongChart = ({
                 }
                 setIsExportMenuOpen((prev) => !prev);
               }}
-              title={!user ? 'Inicia sesión para exportar el chart' : 'Exportar reporte'}
+              title={!user ? (language === 'en' ? 'Sign in to export chart' : 'Inicia sesión para exportar el chart') : (language === 'en' ? 'Export report' : 'Exportar reporte')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1089,7 +1095,7 @@ const SongChart = ({
               }}
             >
               {!user ? <Lock size={15} color="#6b7280" /> : <Download size={17} color="#00e5ff" />}
-              <span>Exportar</span>
+              <span>{t('export', 'Exportar')}</span>
               {user && <ChevronDown size={14} style={{ opacity: 0.7, transform: isExportMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />}
             </button>
 
@@ -1180,7 +1186,7 @@ const SongChart = ({
               }
               setIsMarketShareOpen(true);
             }}
-            title={!user ? 'Inicia sesión para ver Market Share' : 'Ver Market Share'}
+            title={!user ? (language === 'en' ? 'Sign in to view Market Share' : 'Inicia sesión para ver Market Share') : (language === 'en' ? 'View Market Share' : 'Ver Market Share')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -1213,7 +1219,7 @@ const SongChart = ({
             }}
           >
             {!user ? <Lock size={15} color="#6b7280" /> : <PieChartIcon size={17} />}
-            <span>Market Share</span>
+            <span>{t('marketShare', 'Market Share')}</span>
           </button>
         </div>
       </div>
@@ -1225,7 +1231,7 @@ const SongChart = ({
           <input
             type="text"
             className="song-search-input"
-            placeholder="Buscar por canción, artista o disquera..."
+            placeholder={t('searchPlaceholder', 'Buscar por canción, artista o disquera...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -1233,7 +1239,7 @@ const SongChart = ({
             <button
               className="song-search-clear"
               onClick={() => setSearchQuery('')}
-              title="Limpiar búsqueda"
+              title={t('clearSearch', 'Limpiar búsqueda')}
             >
               <X size={16} />
             </button>
@@ -1241,7 +1247,7 @@ const SongChart = ({
         </div>
         {searchQuery.trim() && (
           <div className="search-results-badge">
-            {filteredSongs.length} {filteredSongs.length === 1 ? 'resultado' : 'resultados'}
+            {filteredSongs.length} {filteredSongs.length === 1 ? t('result', 'resultado') : t('results', 'resultados')}
           </div>
         )}
       </div>
@@ -1359,7 +1365,7 @@ const SongChart = ({
       }}>
         <Info size={15} color="#c193ff" style={{ flexShrink: 0 }} />
         <span>
-          <strong style={{ color: '#e5e7eb' }}>Nota:</strong> Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.
+          <strong style={{ color: '#e5e7eb' }}>{language === 'en' ? 'Note:' : 'Nota:'}</strong> {language === 'en' ? 'Charts exclusively consider Spanish-language songs released less than one year ago.' : 'Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.'}
         </span>
       </div>
 
@@ -1401,10 +1407,10 @@ const SongChart = ({
               <div>
                 <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                   <PieChartIcon size={26} color="#c193ff" />
-                  Market Share por Disquera / Sello
+                  {language === 'en' ? 'Record Label Market Share' : 'Market Share por Disquera / Sello'}
                 </h2>
                 <p style={{ color: '#9ca3af', fontSize: '0.88rem', margin: '0.3rem 0 0' }}>
-                  Porcentaje de participación de mercado y volumen de canciones en video digital.
+                  {language === 'en' ? 'Market share percentage and song volume across digital video platforms.' : 'Porcentaje de participación de mercado y volumen de canciones en video digital.'}
                 </p>
               </div>
 

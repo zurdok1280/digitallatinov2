@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, BarChart3, ListMusic, Video, TrendingUp, MapPin, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
 import { getVsSongs, getVsSongPlaylists, getVsSongTiktoks } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState('table');
   const [loading, setLoading] = useState(true);
   const [vsData, setVsData] = useState([]);
@@ -117,14 +119,15 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
     <div className={`compare-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
       <div className="compare-modal-glass slide-up" onClick={e => e.stopPropagation()}>
         {/* Header */}
+        {/* Header */}
         <div className="compare-header">
           <div className="header-titles">
             <div className="tab-icon-box">
               <BarChart3 size={24} />
             </div>
             <div>
-              <h3>Comparación de Track por Streams</h3>
-              <p>Analizando métricas cruzadas en tiempo real</p>
+              <h3>{t('trackComparison', 'Comparación de Track por Streams')}</h3>
+              <p>{t('analyzingMetrics', 'Analizando métricas cruzadas en tiempo real')}</p>
             </div>
           </div>
           <button className="close-btn-circle" onClick={onClose}>
@@ -167,11 +170,11 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
         {metrics && (
           <div className="vs-metrics-strip">
             <div className="metric-item">
-              <span>Streams Total S1</span>
+              <span>{language === 'en' ? 'S1 Total Streams' : 'Streams Total S1'}</span>
               <p className="song1-text">{formatNum(metrics.s1Total)}</p>
             </div>
             <div className="metric-item">
-              <span>Diferencia</span>
+              <span>{t('difference', 'Diferencia')}</span>
               <p>
                 <span className={metrics.diff >= 0 ? 'vs-pos' : 'vs-neg'} style={{ fontSize: '1.2rem', fontWeight: 800 }}>
                   {metrics.diff > 0 ? '+' : metrics.diff < 0 ? '-' : ''}{formatNum(Math.abs(metrics.diff))}
@@ -179,7 +182,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
               </p>
             </div>
             <div className="metric-item">
-              <span>Streams Total S2</span>
+              <span>{language === 'en' ? 'S2 Total Streams' : 'Streams Total S2'}</span>
               <p className="song2-text">{formatNum(metrics.s2Total)}</p>
             </div>
           </div>
@@ -188,16 +191,16 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
         {/* Tabs Navigation */}
         <div className="compare-tabs-nav">
           <button className={activeTab === 'table' ? 'active' : ''} onClick={() => setActiveTab('table')}>
-            <MapPin size={16} /> Ciudades
+            <MapPin size={16} /> {t('cities', 'Ciudades')}
           </button>
           <button className={activeTab === 'playlists' ? 'active' : ''} onClick={() => setActiveTab('playlists')}>
-            <ListMusic size={16} /> Playlists
+            <ListMusic size={16} /> {t('playlists', 'Playlists')}
           </button>
           <button className={activeTab === 'tiktok' ? 'active' : ''} onClick={() => setActiveTab('tiktok')}>
             <Video size={16} /> TikTok
           </button>
           <button className={activeTab === 'charts' ? 'active' : ''} onClick={() => setActiveTab('charts')}>
-            <TrendingUp size={16} /> Gráfico
+            <TrendingUp size={16} /> {language === 'en' ? 'Chart' : 'Gráfico'}
           </button>
         </div>
 
@@ -206,7 +209,7 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
           {loading ? (
             <div className="compare-loading-state">
               <div className="loading-pulse-ring" />
-              <p>Analizando datos comparativos...</p>
+              <p>{language === 'en' ? 'Analyzing comparative data...' : 'Analizando datos comparativos...'}</p>
             </div>
           ) : (
             <>
@@ -215,11 +218,11 @@ const SongCompareModal = ({ isOpen, onClose, song1, song2 }) => {
                   <table className="vs-table">
                     <thead>
                       <tr>
-                        <th>Ciudad</th>
+                        <th>{t('city', 'Ciudad')}</th>
                         <th className="song1-text">{song1.song}</th>
                         <th className="song2-text">{song2.song}</th>
-                        <th>Dif.</th>
-                        <th>Más Popular</th>
+                        <th>{language === 'en' ? 'Diff.' : 'Dif.'}</th>
+                        <th>{t('mostPopular', 'Más Popular')}</th>
                       </tr>
                     </thead>
                     <tbody>

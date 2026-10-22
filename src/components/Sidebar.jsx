@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings, Contact, ListMusic, Tags } from 'lucide-react';
+import { Home, ChartBarBig, Headphones, Sparkles, Camera, Wand2, Radio, X, Mic2, Settings, Contact, ListMusic, Tags, Briefcase } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 
 /* View-specific accent colors */
 const ITEM_COLORS = {
@@ -12,9 +13,11 @@ const ITEM_COLORS = {
   CuratorPicks:        '#ff3366',
   TiktokerPicks:       '#ff0050',
   DigitalHitsForRadio: '#00e5ff',
+  Servicios:           '#00e5ff',
 };
 
 const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -68,38 +71,39 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) =
       isVIP: true,
       color: '#ffd166',
     }] : []),
-    { icon: Home,         label: 'Charts',                  active: location.pathname === '/' && activeView === 'Charts',              onClick: () => handleItemClick('Charts'),              color: ITEM_COLORS.Charts },
-    { icon: ChartBarBig,  label: 'Platforms',               active: activeView === 'Platforms',                                        onClick: () => handleItemClick('Platforms'),           color: ITEM_COLORS.Platforms },
-    { icon: Headphones,   label: 'Artists Analytics',       active: activeView === 'Artists',                                          onClick: () => handleItemClick('Artists'),             color: ITEM_COLORS.Artists },
-    { icon: Sparkles,     label: 'Heavy Hitters',           active: activeView === 'HeavyHitters',                                     onClick: () => handleItemClick('HeavyHitters'),        color: ITEM_COLORS.HeavyHitters },
-    { icon: Camera,       label: 'Curator Picks',           active: activeView === 'CuratorPicks',                                     onClick: () => handleItemClick('CuratorPicks'),        color: ITEM_COLORS.CuratorPicks },
-    { icon: Wand2,        label: 'Tiktoker Picks',          active: activeView === 'TiktokerPicks',                                    onClick: () => handleItemClick('TiktokerPicks'),       color: ITEM_COLORS.TiktokerPicks },
-    { icon: Radio,        label: 'Digital Hits for Radio',  active: activeView === 'DigitalHitsForRadio',                              onClick: () => handleItemClick('DigitalHitsForRadio'), color: ITEM_COLORS.DigitalHitsForRadio },
+    { icon: Home,         label: t('charts', 'Charts'),                     active: location.pathname === '/' && activeView === 'Charts',              onClick: () => handleItemClick('Charts'),              color: ITEM_COLORS.Charts },
+    { icon: ChartBarBig,  label: t('platforms', 'Platforms'),               active: activeView === 'Platforms',                                        onClick: () => handleItemClick('Platforms'),           color: ITEM_COLORS.Platforms },
+    { icon: Headphones,   label: t('artistsAnalytics', 'Artists Analytics'), active: activeView === 'Artists',                                          onClick: () => handleItemClick('Artists'),             color: ITEM_COLORS.Artists },
+    { icon: Sparkles,     label: t('heavyHitters', 'Heavy Hitters'),           active: activeView === 'HeavyHitters',                                     onClick: () => handleItemClick('HeavyHitters'),        color: ITEM_COLORS.HeavyHitters },
+    { icon: Camera,       label: t('curatorPicks', 'Curator Picks'),           active: activeView === 'CuratorPicks',                                     onClick: () => handleItemClick('CuratorPicks'),        color: ITEM_COLORS.CuratorPicks },
+    { icon: Wand2,        label: t('tiktokerPicks', 'Tiktoker Picks'),          active: activeView === 'TiktokerPicks',                                    onClick: () => handleItemClick('TiktokerPicks'),       color: ITEM_COLORS.TiktokerPicks },
+    { icon: Radio,        label: t('digitalHitsForRadio', 'Digital Hits for Radio'), active: activeView === 'DigitalHitsForRadio',                        onClick: () => handleItemClick('DigitalHitsForRadio'), color: ITEM_COLORS.DigitalHitsForRadio },
+    { icon: Briefcase,    label: t('ourServices', 'Nuestros Servicios'),     active: location.pathname === '/servicios',                                onClick: () => handleNavigate('/servicios'),           color: ITEM_COLORS.Servicios },
     ...(user?.role === 'ADMIN' ? [
       {
         icon: Settings,
-        label: 'Panel Admin',
+        label: t('adminPanel', 'Panel Admin'),
         active: location.pathname === '/admin',
         onClick: () => handleLinkClick('/admin'),
         color: '#94a3b8',
       },
       {
         icon: ListMusic,
-        label: 'Playlists',
+        label: t('playlists', 'Playlists'),
         active: location.pathname === '/playlists',
         onClick: () => handleLinkClick('/playlists'),
         color: '#8a88ff',
       },
       {
         icon: Contact,
-        label: 'TikTokers',
+        label: t('tiktokers', 'TikTokers'),
         active: location.pathname === '/tiktokers',
         onClick: () => handleLinkClick('/tiktokers'),
         color: '#ff0050',
       },
       {
         icon: Tags,
-        label: 'Géneros',
+        label: t('genres', 'Géneros'),
         active: location.pathname === '/generos',
         onClick: () => handleLinkClick('/generos'),
         color: '#c193ff',
@@ -233,7 +237,7 @@ const Sidebar = ({ isOpen, onClose, activeView, setActiveView, onLoginClick }) =
             padding: '0 0.5rem',
             marginBottom: '0.5rem',
           }}>
-            Navegación
+            {t('navigation', 'Navegación')}
           </p>
 
           {navItems.map((item, i) => (

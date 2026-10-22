@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Video, Zap } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
+import { useLanguage } from '../context/LanguageContext';
 
 const rankColors = [
   '#ff0050', '#ff2a6d', '#ff5a8d', '#ff7eb3', '#ffb700',
@@ -110,6 +111,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+  const { language } = useLanguage();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
@@ -138,7 +140,7 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron elementos para este género.</p>
+        <p style={{ color: 'var(--text-muted)' }}>{language === 'en' ? 'No items found for this genre.' : 'No se encontraron elementos para este género.'}</p>
       </div>
     );
   }
@@ -371,7 +373,11 @@ const TiktokerPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onS
                 </span>
 
                 <div className="score-tooltip">
-                  Este número representa las <strong style={{ color: '#fff' }}>Views Totales</strong> del track en TikTok bajo este género.
+                  {language === 'en' ? (
+                    <>This number represents the <strong style={{ color: '#fff' }}>Total Views</strong> of the track on TikTok under this genre.</>
+                  ) : (
+                    <>Este número representa las <strong style={{ color: '#fff' }}>Views Totales</strong> del track en TikTok bajo este género.</>
+                  )}
                 </div>
               </div>
             </div>

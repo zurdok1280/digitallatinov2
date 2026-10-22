@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Music, Zap } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getDebutSongs } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -103,6 +104,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+  const { language, t } = useLanguage();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
@@ -131,7 +133,7 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones debutantes en este género/país.</p>
+        <p style={{ color: 'var(--text-muted)' }}>{language === 'en' ? 'No debuting songs found for this genre/country.' : 'No se encontraron canciones debutantes en este género/país.'}</p>
       </div>
     );
   }
@@ -139,10 +141,10 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
   const renderMovement = (mo) => {
     if (!mo) return null;
     const mov = String(mo).toUpperCase();
-    if (mov.includes('UP')) return <ArrowUp size={16} color="#00e676" title="Subió" />;
-    if (mov.includes('DOWN')) return <ArrowDown size={16} color="#ff3366" title="Bajó" />;
+    if (mov.includes('UP')) return <ArrowUp size={16} color="#00e676" title={t('rankUp', 'Subió')} />;
+    if (mov.includes('DOWN')) return <ArrowDown size={16} color="#ff3366" title={t('rankDown', 'Bajó')} />;
     if (mov.includes('NEW')) return <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-primary)', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px' }}>NEW</span>;
-    return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+    return <Minus size={16} color="var(--text-muted)" title={t('noChange', 'Sin cambio')} />;
   };
 
   return (
@@ -365,7 +367,11 @@ const HeavyHittersChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
                 </span>
 
                 <div className="score-tooltip">
-                  El <strong style={{ color: '#fff' }}>Score</strong> de Heavy Hitters representa el impacto de debut y la velocidad de crecimiento de la canción.
+                  {language === 'en' ? (
+                    <>The Heavy Hitters <strong style={{ color: '#fff' }}>Score</strong> represents the debut impact and growth velocity of the song.</>
+                  ) : (
+                    <>El <strong style={{ color: '#fff' }}>Score</strong> de Heavy Hitters representa el impacto de debut y la velocidad de crecimiento de la canción.</>
+                  )}
                 </div>
               </div>
             </div>

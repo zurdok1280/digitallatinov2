@@ -4,9 +4,11 @@ import { Mail, Lock, User, Sparkles, Music, Phone, X } from "lucide-react";
 import { PasswordStrength } from "./PasswordStrength";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import "./LoginForm.css";
 
 export function LoginForm({ onClose }) {
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState("signin");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -151,7 +153,7 @@ export function LoginForm({ onClose }) {
           className="login-logo"
         />
         <p className="login-subtitle">
-          Accede a tu cuenta para gestionar tus campañas musicales
+          {language === 'en' ? 'Access your account to manage your music campaigns' : 'Accede a tu cuenta para gestionar tus campañas musicales'}
         </p>
       </div>
 
@@ -163,14 +165,14 @@ export function LoginForm({ onClose }) {
             onClick={() => setActiveTab("signin")}
             className={`login-tab-trigger ${activeTab === "signin" ? "active" : ""}`}
           >
-            Iniciar Sesión
+            {t('signInTitle', 'Iniciar Sesión')}
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("signup")}
             className={`login-tab-trigger ${activeTab === "signup" ? "active" : ""}`}
           >
-            Crear Cuenta
+            {t('signUpTitle', 'Crear Cuenta')}
           </button>
         </div>
 
@@ -198,7 +200,7 @@ export function LoginForm({ onClose }) {
 
               <div className="login-form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor="signin-password" className="login-label">
-                  Contraseña
+                  {language === 'en' ? 'Password' : 'Contraseña'}
                 </label>
                 <div className="login-input-wrapper">
                   <Lock className="login-input-icon" />
@@ -221,7 +223,7 @@ export function LoginForm({ onClose }) {
                   onClick={onClose}
                   className="login-forgot-link"
                 >
-                  ¿Olvidaste tu contraseña?
+                  {t('forgotPassword', '¿Olvidaste tu contraseña?')}
                 </Link>
               </div>
 
@@ -233,12 +235,12 @@ export function LoginForm({ onClose }) {
                 {loading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div className="login-loading-spinner"></div>
-                    <span>Iniciando...</span>
+                    <span>{t('signingIn', 'Iniciando...')}</span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Sparkles style={{ width: '1rem', height: '1rem' }} />
-                    <span>Iniciar Sesión</span>
+                    <span>{t('signInTitle', 'Iniciar Sesión')}</span>
                   </div>
                 )}
               </button>
@@ -253,7 +255,7 @@ export function LoginForm({ onClose }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="login-form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="signup-firstname" className="login-label">
-                    Nombre
+                    {t('firstName', 'Nombre')}
                   </label>
                   <div className="login-input-wrapper">
                     <User className="login-input-icon" />
@@ -263,7 +265,7 @@ export function LoginForm({ onClose }) {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="login-input"
-                      placeholder="Nombre"
+                      placeholder={t('firstName', 'Nombre')}
                       required
                     />
                   </div>
@@ -271,7 +273,7 @@ export function LoginForm({ onClose }) {
 
                 <div className="login-form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="signup-lastname" className="login-label">
-                    Apellidos
+                    {t('lastName', 'Apellidos')}
                   </label>
                   <div className="login-input-wrapper">
                     <User className="login-input-icon" />
@@ -281,7 +283,7 @@ export function LoginForm({ onClose }) {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="login-input"
-                      placeholder="Apellidos"
+                      placeholder={t('lastName', 'Apellidos')}
                       required
                     />
                   </div>
@@ -291,7 +293,7 @@ export function LoginForm({ onClose }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="login-form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="signup-phone" className="login-label">
-                    Teléfono (Opcional)
+                    {t('phoneOptional', 'Teléfono (Opcional)')}
                   </label>
                   <div className="login-input-wrapper">
                     <Phone className="login-input-icon" />
@@ -301,7 +303,7 @@ export function LoginForm({ onClose }) {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="login-input"
-                      placeholder="Tu número de teléfono"
+                      placeholder={language === 'en' ? 'Your phone number' : 'Tu número de teléfono'}
                     />
                   </div>
                 </div>
@@ -328,7 +330,7 @@ export function LoginForm({ onClose }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="login-form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="signup-password" className="login-label">
-                    Contraseña
+                    {language === 'en' ? 'Password' : 'Contraseña'}
                   </label>
                   <div className="login-input-wrapper">
                     <Lock className="login-input-icon" />
@@ -347,7 +349,7 @@ export function LoginForm({ onClose }) {
 
                 <div className="login-form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="signup-confirm-password" className="login-label">
-                    Confirmar Contraseña
+                    {language === 'en' ? 'Confirm Password' : 'Confirmar Contraseña'}
                   </label>
                   <div className="login-input-wrapper">
                     <Lock className="login-input-icon" />
@@ -382,12 +384,12 @@ export function LoginForm({ onClose }) {
                 {loading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div className="login-loading-spinner"></div>
-                    <span>Creando...</span>
+                    <span>{t('creatingAccount', 'Creando...')}</span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Sparkles style={{ width: '1rem', height: '1rem' }} />
-                    <span>Crear Cuenta</span>
+                    <span>{t('signUpTitle', 'Crear Cuenta')}</span>
                   </div>
                 )}
               </button>
@@ -398,7 +400,7 @@ export function LoginForm({ onClose }) {
 
       {/* Footer */}
       <div className="login-footer">
-        <p>Al crear una cuenta, aceptas nuestros términos y condiciones</p>
+        <p>{language === 'en' ? 'By creating an account, you accept our terms and conditions' : 'Al crear una cuenta, aceptas nuestros términos y condiciones'}</p>
       </div>
     </div>
   );

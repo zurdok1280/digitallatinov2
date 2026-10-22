@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 import { exportReachReport } from "../utils/exportReachReport";
 import {
   AreaChart,
@@ -331,10 +332,36 @@ const TAB_GROUPS = [
 ];
 
 const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, setUnavailableItem }) => {
+  const { language, t } = useLanguage();
   const { isClosing, handleClose } = useModalClose(onClose, 240);
   const { user } = useAuth();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [activeTab, setActiveTab] = useState(artist?.initialTab || "mapa");
+
+  const translateTabLabel = (label) => {
+    if (language !== 'en') return label;
+    const map = {
+      'Presencia': 'Presence',
+      'Oportunidades': 'Opportunities',
+      'Gráficas': 'Charts',
+      'Mapa': 'Map',
+      'Historial de Sucesos': 'Event History',
+      'Playlist con presencia': 'Featured Playlists',
+      'TikTokers habituales': 'Habitual TikTokers',
+      'Radio vs Digital': 'Radio vs Digital',
+      'Panorama': 'Overview',
+      'Playlists Recomendadas': 'Recommended Playlists',
+      'Recomendaciones TikTokers': 'TikToker Recommendations',
+      'Emisoras Gap': 'Radio Gap Stations',
+      'Ciudades': 'Cities',
+      'Grafo Neuronal': 'Neuronal Graph',
+      'Grafo v2 (Sunburst)': 'Sunburst Graph v2',
+    };
+    if (label.startsWith('Alcance de ')) {
+      return `Reach of ${label.replace('Alcance de ', '')}`;
+    }
+    return map[label] || label;
+  };
   
   // Initialize openGroup based on the initial tab — runs only once on mount
   const [openGroup, setOpenGroup] = useState(() => {
@@ -953,7 +980,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                   } : {}}
                 >
                   <group.icon size={16} />
-                  <span>{group.label}</span>
+                  <span>{translateTabLabel(group.label)}</span>
                   <span className="htab-chevron-wrapper">
                     <ChevronDown size={14} />
                   </span>
@@ -973,7 +1000,7 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
                           style={isActive ? { color: groupColor, borderBottomColor: groupColor } : {}}
                         >
                           <tab.icon size={16} />
-                          <span>{tab.label}</span>
+                          <span>{translateTabLabel(tab.label)}</span>
                         </button>
                       );
                     })}
@@ -997,10 +1024,10 @@ const ArtistDetailsModal = ({ artist, countries = [], onClose, isModal = true, s
             style={{ width: "100%", padding: "10px", fontSize: "1rem" }}
           >
             {TAB_GROUPS.map((group) => (
-              <optgroup key={group.id} label={group.label}>
+              <optgroup key={group.id} label={translateTabLabel(group.label)}>
                 {group.tabs(artist).map((tab) => (
                   <option key={tab.id} value={tab.id}>
-                    {tab.label}
+                    {translateTabLabel(tab.label)}
                   </option>
                 ))}
               </optgroup>

@@ -4,16 +4,17 @@ import SearchableSelect from './SearchableSelect';
 import { useLocation } from 'react-router-dom';
 import AccountModal from './AccountModal';
 import AiChatPanel from './AiChatPanel';
+import { useLanguage } from '../context/LanguageContext';
 
 /* View accent colors map */
 const VIEW_CONFIG = {
-  Artists:            { color: '#8a88ff', label: 'Artist Analytics' },
-  Platforms:          { color: '#1DB954', label: 'Platforms' },
-  HeavyHitters:       { color: '#aa63ff', label: 'Heavy Hitters' },
-  CuratorPicks:       { color: '#ff3366', label: 'Curator Picks' },
-  TiktokerPicks:      { color: '#ff0050', label: 'Tiktoker Picks' },
-  DigitalHitsForRadio:{ color: '#00e5ff', label: 'Digital Hits for Radio' },
-  Charts:             { color: '#ffd166', label: 'Charts' },
+  Artists:            { color: '#8a88ff', labelKey: 'artistsAnalytics', label: 'Artist Analytics' },
+  Platforms:          { color: '#1DB954', labelKey: 'platforms', label: 'Platforms' },
+  HeavyHitters:       { color: '#aa63ff', labelKey: 'heavyHitters', label: 'Heavy Hitters' },
+  CuratorPicks:       { color: '#ff3366', labelKey: 'curatorPicks', label: 'Curator Picks' },
+  TiktokerPicks:      { color: '#ff0050', labelKey: 'tiktokerPicks', label: 'Tiktoker Picks' },
+  DigitalHitsForRadio:{ color: '#00e5ff', labelKey: 'digitalHitsForRadio', label: 'Digital Hits for Radio' },
+  Charts:             { color: '#ffd166', labelKey: 'charts', label: 'Charts' },
 };
 
 const Header = ({
@@ -29,11 +30,12 @@ const Header = ({
   user, onLoginClick, onLogoutClick,
   isLoading = false
 }) => {
+  const { language, setLanguage, t } = useLanguage();
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef(null);
   const location = useLocation();
-  const showFilters = !['/my-artist', '/admin', '/tiktokers', '/playlists', '/generos', '/Chart', '/chart', '/contactos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].some(
+  const showFilters = !['/my-artist', '/admin', '/tiktokers', '/playlists', '/generos', '/servicios', '/Chart', '/chart', '/contactos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].some(
     path => location.pathname === path || location.pathname.startsWith(path + '/') || location.pathname.toLowerCase().startsWith('/chart/')
   );
 
@@ -96,7 +98,7 @@ const Header = ({
           <button
             className="header-menu-btn btn-touch-safe"
             onClick={onToggleSidebar}
-            title="Menú"
+            title={t('menu', 'Menú')}
             style={{
               color: 'var(--text-muted)',
               display: 'flex',
@@ -122,7 +124,7 @@ const Header = ({
           {location.pathname !== '/my-artist' && (
             <button
               onClick={onOpenSearch}
-              title="Buscar"
+              title={t('search', 'Buscar')}
               style={{
                 color: 'var(--text-muted)',
                 display: 'flex',
@@ -188,7 +190,55 @@ const Header = ({
                 display: 'block',
               }}
             />
-            {viewCfg.label}
+            {t(viewCfg.labelKey, viewCfg.label)}
+          </div>
+
+          {/* ─── LANGUAGE TOGGLE SWITCHER (ES / EN) ─── */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: '9999px',
+              padding: '2px',
+              gap: '2px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setLanguage('es')}
+              style={{
+                padding: '3px 8px',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: language === 'es' ? 700 : 500,
+                background: language === 'es' ? 'rgba(0, 229, 255, 0.25)' : 'transparent',
+                color: language === 'es' ? '#00e5ff' : 'var(--text-muted)',
+                border: language === 'es' ? '1px solid rgba(0, 229, 255, 0.4)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              ES
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              style={{
+                padding: '3px 8px',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: language === 'en' ? 700 : 500,
+                background: language === 'en' ? 'rgba(138, 136, 255, 0.25)' : 'transparent',
+                color: language === 'en' ? '#8a88ff' : 'var(--text-muted)',
+                border: language === 'en' ? '1px solid rgba(138, 136, 255, 0.4)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              EN
+            </button>
           </div>
 
           {/* Auth */}
@@ -222,7 +272,7 @@ const Header = ({
                 <button
                   onClick={onLogoutClick}
                   className="btn-touch-safe"
-                  title="Cerrar sesión"
+                  title={t('logout', 'Cerrar sesión')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -249,7 +299,7 @@ const Header = ({
                   }}
                 >
                   <LogOut size={15} strokeWidth={1.75} />
-                  <span className="header-auth-text">Salir</span>
+                  <span className="header-auth-text">{t('logout', 'Salir')}</span>
                 </button>
               </>
             ) : (
@@ -284,7 +334,7 @@ const Header = ({
                 onMouseUp={e => e.currentTarget.style.transform = 'translateY(-1px)'}
               >
                 <User size={15} strokeWidth={2} />
-                <span className="header-auth-text">Ingresar</span>
+                <span className="header-auth-text">{t('login', 'Ingresar')}</span>
               </button>
             )}
           </div>
@@ -312,7 +362,7 @@ const Header = ({
           >
             {/* ── Country ── */}
             {activeView !== 'CuratorPicks' && activeView !== 'TiktokerPicks' && (
-              <FilterGroup icon={<Globe size={13} strokeWidth={2} />} label="País" color="#e62479">
+              <FilterGroup icon={<Globe size={13} strokeWidth={2} />} label={t('country', 'País')} color="#e62479">
                 <select
                   value={selectedCountry}
                   onChange={e => {
@@ -321,14 +371,14 @@ const Header = ({
                   disabled={isLoading}
                   style={selectStyle(isLoading)}
                 >
-                  <option value="All">País...</option>
+                  <option value="All">{t('country', 'País')}...</option>
                   {countries.map(c => <option key={c.id} value={c.id}>{c.country_name}</option>)}
                 </select>
               </FilterGroup>
             )}
 
             {/* ── Genre ── */}
-            <FilterGroup icon={<ListMusic size={13} strokeWidth={2} />} label="Género" color="var(--text-dim)">
+            <FilterGroup icon={<ListMusic size={13} strokeWidth={2} />} label={t('genre', 'Género')} color="var(--text-dim)">
               <select
                 value={selectedGenre}
                 onChange={e => {
@@ -344,7 +394,7 @@ const Header = ({
 
             {/* ── Dynamic 3rd filter ── */}
             {activeView === 'Platforms' ? (
-              <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label="Plataforma" color="#1DB954">
+              <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label={t('platform', 'Plataforma')} color="#1DB954">
                 <SearchableSelect
                   options={[
                     { value: 'spotify', label: 'Spotify' },
@@ -360,49 +410,49 @@ const Header = ({
               </FilterGroup>
             ) : activeView === 'HeavyHitters' || activeView === 'TiktokerPicks' ? null
               : activeView === 'CuratorPicks' ? (
-              <FilterGroup icon={<AudioWaveform size={13} strokeWidth={2} />} label="Tipo de Playlist" color="#ff3366">
+              <FilterGroup icon={<AudioWaveform size={13} strokeWidth={2} />} label={t('playlistType', 'Tipo de Playlist')} color="#ff3366">
                 <SearchableSelect
                   options={[
-                    { value: '0', label: 'Todos los Tipos' },
-                    ...playlistTypes.map(t => ({ value: String(t.id), label: t.name }))
+                    { value: '0', label: t('allPlaylists', 'Todos los Tipos') },
+                    ...playlistTypes.map(tItem => ({ value: String(tItem.id), label: tItem.name }))
                   ]}
                   value={String(selectedPlaylistType)}
                   onChange={val => { setSelectedPlaylistType(val); }}
                   searchable={false}
-                  placeholder="Todos los Tipos"
+                  placeholder={t('allPlaylists', 'Todos los Tipos')}
                   disabled={isLoading}
                 />
               </FilterGroup>
             ) : activeView === 'Charts' ? (
               <>
-                <FilterGroup icon={<MapPin size={13} strokeWidth={2} />} label="Ciudad" color="#f15b29">
+                <FilterGroup icon={<MapPin size={13} strokeWidth={2} />} label={t('city', 'Ciudad')} color="#f15b29">
                   <SearchableSelect
                     options={cityOptions}
                     value={String(selectedCity)}
                     onChange={val => { setSelectedCity(val); }}
-                    placeholder="Todas las ciudades"
+                    placeholder={t('allCities', 'Todas las ciudades')}
                     disabled={cities.length === 0 || isLoading}
                   />
                 </FilterGroup>
-                <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label="Vigencia" color="#ffd166">
+                <FilterGroup icon={<AudioLines size={13} strokeWidth={2} />} label={t('validity', 'Vigencia')} color="#ffd166">
                   <select
                     value={selectedCRG}
                     onChange={e => { setSelectedCRG(e.target.value); }}
                     disabled={isLoading}
                     style={selectStyle(isLoading)}
                   >
-                    <option value="C">Current</option>
-                    <option value="N">Todos</option>
+                    <option value="C">{t('current', 'Current')}</option>
+                    <option value="N">{t('all', 'Todos')}</option>
                   </select>
                 </FilterGroup>
               </>
             ) : (
-              <FilterGroup icon={<MapPin size={13} strokeWidth={2} />} label="Ciudad Target" color="#f15b29">
+              <FilterGroup icon={<MapPin size={13} strokeWidth={2} />} label={language === 'en' ? 'Target City' : 'Ciudad Target'} color="#f15b29">
                 <SearchableSelect
                   options={cityOptions}
                   value={String(selectedCity)}
                   onChange={val => { setSelectedCity(val); }}
-                  placeholder="Todas las ciudades"
+                  placeholder={t('allCities', 'Todas las ciudades')}
                   disabled={cities.length === 0 || isLoading}
                 />
               </FilterGroup>

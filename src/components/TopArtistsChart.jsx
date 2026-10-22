@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { User, ArrowUp, ArrowDown, Minus, Loader2, Info, Users, Activity, Headphones, ListMusic, Search, X } from 'lucide-react';
 import { getTrendingTopArtists } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -109,6 +110,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
+  const { language, t } = useLanguage();
   const [artists, setArtists] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,7 +170,7 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
   if (!enrichedArtists || enrichedArtists.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron artistas en este género/país.</p>
+        <p style={{ color: 'var(--text-muted)' }}>{language === 'en' ? 'No artists found for this genre/country.' : 'No se encontraron artistas en este género/país.'}</p>
       </div>
     );
   }
@@ -176,10 +178,10 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
   const renderMovement = (mo) => {
     if (!mo) return null;
     const mov = String(mo).toUpperCase();
-    if (mov.includes('UP')) return <ArrowUp size={16} color="#00e676" title="Subió" />;
-    if (mov.includes('DOWN')) return <ArrowDown size={16} color="#ff3366" title="Bajó" />;
+    if (mov.includes('UP')) return <ArrowUp size={16} color="#00e676" title={t('rankUp', 'Subió')} />;
+    if (mov.includes('DOWN')) return <ArrowDown size={16} color="#ff3366" title={t('rankDown', 'Bajó')} />;
     if (mov.includes('NEW')) return <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-primary)', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px' }}>NEW</span>;
-    return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+    return <Minus size={16} color="var(--text-muted)" title={t('noChange', 'Sin cambio')} />;
   };
 
   return (
@@ -204,7 +206,7 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
         <input
           id="artist-analytics-search"
           type="text"
-          placeholder="Buscar artista..."
+          placeholder={language === 'en' ? 'Search artist...' : 'Buscar artista...'}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           style={{
@@ -234,7 +236,7 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            title="Limpiar búsqueda"
+            title={t('clearSearch', 'Limpiar búsqueda')}
             style={{
               position: 'absolute',
               right: '0.75rem',
@@ -378,10 +380,14 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
                     {formatNumber(artist.monthly_listeners)}
                   </div>
                   <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px', fontSize: '0.7rem' }}>
-                    <Headphones size={10} /> Oyentes <Info size={10} style={{ opacity: 0.5 }} />
+                    <Headphones size={10} /> {language === 'en' ? 'Listeners' : 'Oyentes'} <Info size={10} style={{ opacity: 0.5 }} />
                   </span>
                   <div className="artist-score-tooltip">
-                    Cantidad de <strong style={{ color: '#fff' }}>Oyentes mensuales</strong> únicos que escuchan al artista en la plataforma.
+                    {language === 'en' ? (
+                      <>Number of unique <strong style={{ color: '#fff' }}>monthly listeners</strong> streaming the artist on the platform.</>
+                    ) : (
+                      <>Cantidad de <strong style={{ color: '#fff' }}>Oyentes mensuales</strong> únicos que escuchan al artista en la plataforma.</>
+                    )}
                   </div>
                 </div>
 
@@ -394,7 +400,11 @@ const TopArtistsChart = ({ selectedCountry, selectedGenre, onArtistClick }) => {
                     <ListMusic size={10} /> Playlists <Info size={10} style={{ opacity: 0.5 }} />
                   </span>
                   <div className="artist-score-tooltip">
-                    Cantidad de veces que el artista ha sido <strong style={{ color: '#fff' }}>añadido a playlists</strong>.
+                    {language === 'en' ? (
+                      <>Number of times the artist has been <strong style={{ color: '#fff' }}>added to playlists</strong>.</>
+                    ) : (
+                      <>Cantidad de veces que el artista ha sido <strong style={{ color: '#fff' }}>añadido a playlists</strong>.</>
+                    )}
                   </div>
                 </div>
               </div>

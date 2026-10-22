@@ -66,6 +66,7 @@ const TikTokersPage = lazy(() => import("./pages/tiktokers/TikTokersPage"));
 const PlaylistsPage = lazy(() => import("./pages/playlists/PlaylistsPage"));
 const GenerosPage = lazy(() => import("./pages/generos/GenerosPage"));
 const FormatDigitalChartPage = lazy(() => import("./pages/FormatDigitalChartPage"));
+const ServiciosPage = lazy(() => import("./pages/servicios/ServiciosPage"));
 
 const RequireAdmin = ({ children }) => {
   const { user } = useAuth();
@@ -90,6 +91,7 @@ const TikTokersPageLazy = withLazy(TikTokersPage);
 const PlaylistsPageLazy = withLazy(PlaylistsPage);
 const GenerosPageLazy = withLazy(GenerosPage);
 const FormatDigitalChartPageLazy = withLazy(FormatDigitalChartPage);
+const ServiciosPageLazy = withLazy(ServiciosPage);
 
 
 function Dashboard() {
@@ -100,7 +102,7 @@ function Dashboard() {
   // when called in a parent component rendered outside the nested <Routes> block.
   const pathParts = location.pathname.split('/').filter(Boolean);
   const isFormatDigitalChartRoute = pathParts[0]?.toLowerCase() === 'chart';
-  const isDashboardRoute = (pathParts.length === 0 || !['my-artist', 'admin', 'tiktokers', 'playlists', 'generos', 'chart', 'auth', 'campaign', 'payment', 'forgot-password', 'reset-password'].includes(pathParts[0].toLowerCase())) && !isFormatDigitalChartRoute;
+  const isDashboardRoute = (pathParts.length === 0 || !['my-artist', 'admin', 'tiktokers', 'playlists', 'generos', 'servicios', 'chart', 'auth', 'campaign', 'payment', 'forgot-password', 'reset-password'].includes(pathParts[0].toLowerCase())) && !isFormatDigitalChartRoute;
 
   const viewSlug = isDashboardRoute ? pathParts[0] : undefined;
   const countrySlug = isDashboardRoute ? pathParts[1] : undefined;
@@ -292,7 +294,7 @@ function Dashboard() {
       if (currentPath !== path) shouldNavigate = true;
     }
 
-    if (shouldNavigate && !['/my-artist', '/admin', '/tiktokers', '/playlists', '/generos', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].includes(currentPath) && !isFormatDigitalChartRoute) {
+    if (shouldNavigate && !['/my-artist', '/admin', '/tiktokers', '/playlists', '/generos', '/servicios', '/auth/callback', '/campaign', '/payment', '/forgot-password', '/reset-password'].includes(currentPath) && !isFormatDigitalChartRoute) {
       navigate(`${path}${location.search}`, { replace: true });
     }
   }, [activeView, selectedCountry, selectedGenre, selectedCity, countriesList, genresList, citiesList, hasInitializedFromUrl, location.search, location.pathname, navigate]);
@@ -787,6 +789,7 @@ function Dashboard() {
             <Route path="/tiktokers" element={<RequireAdmin><TikTokersPageLazy /></RequireAdmin>} />
             <Route path="/playlists" element={<RequireAdmin><PlaylistsPageLazy /></RequireAdmin>} />
             <Route path="/generos" element={<RequireAdmin><GenerosPageLazy /></RequireAdmin>} />
+            <Route path="/servicios" element={<ServiciosPageLazy />} />
             <Route path="/Chart/:formatName" element={<FormatDigitalChartPageLazy onSongClick={setSelectedSong} />} />
             <Route path="/chart/:formatName" element={<FormatDigitalChartPageLazy onSongClick={setSelectedSong} />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />

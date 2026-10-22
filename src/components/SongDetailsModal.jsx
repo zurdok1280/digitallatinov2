@@ -6,8 +6,10 @@ import { useAuth } from '../hooks/useAuth';
 import RecommendationsModal, { RecommendationsBanner } from './RecommendationsModal';
 import SongPlatformsMetrics from './SongPlatformsMetrics';
 import { useModalClose } from '../hooks/useModalClose';
+import { useLanguage } from '../context/LanguageContext';
 
 const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
+  const { language, t } = useLanguage();
   const { isClosing, handleClose } = useModalClose(onClose, 240);
   const { user } = useAuth();
   const [songData, setSongData] = useState(null);
@@ -174,7 +176,7 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
           {isLoading ? (
             <div className="flex-center" style={{ padding: '4rem', flexDirection: 'column', color: 'var(--text-muted)' }}>
               <Loader2 className="loading-spinner" size={40} color="#8c52ff" />
-              <p style={{ marginTop: '1.5rem', fontWeight: 500 }}>Analizando métricas específicas...</p>
+              <p style={{ marginTop: '1.5rem', fontWeight: 500 }}>{language === 'en' ? 'Analyzing specific metrics...' : 'Analizando métricas específicas...'}</p>
             </div>
           ) : (
             <>
@@ -191,14 +193,14 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
                 
                 <div className="glass-panel" style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                    <span style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                     <Heart size={14} color="#ff3366" /> Popularidad
+                     <Heart size={14} color="#ff3366" /> {language === 'en' ? 'Popularity' : 'Popularidad'}
                    </span>
                    <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>{popularity}<span style={{ fontSize: '0.9rem', color: '#555', marginLeft: '4px' }}>/100</span></span>
                  </div>
  
                  <div className="glass-panel" style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                    <span style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                     <TrendingUp size={14} color="#00f0ff" /> Tendencia
+                     <TrendingUp size={14} color="#00f0ff" /> {language === 'en' ? 'Trend' : 'Tendencia'}
                    </span>
                    <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>#{currentRank}</span>
                  </div>
@@ -206,7 +208,7 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
                  {currentScore > 0 && (
                    <div className="glass-panel" style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                      <span style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <Activity size={14} color="#c193ff" /> Score Digital
+                       <Activity size={14} color="#c193ff" /> {language === 'en' ? 'Digital Score' : 'Score Digital'}
                      </span>
                      <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>{Number(currentScore).toFixed(1)}</span>
                    </div>
@@ -223,10 +225,10 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
               <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.1rem', margin: 0 }}>
-                    <BarChart2 size={18} color="#8c52ff" /> Rendimiento en Spotify
+                    <BarChart2 size={18} color="#8c52ff" /> {language === 'en' ? 'Performance on Spotify' : 'Rendimiento en Spotify'}
                   </h3>
                   <div style={{ fontSize: '0.8rem', color: '#1DB954', background: '#1DB95415', padding: '0.2rem 0.6rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <TrendingUp size={12} /> +12% esta semana
+                    <TrendingUp size={12} /> {language === 'en' ? '+12% this week' : '+12% esta semana'}
                   </div>
                 </div>
                 
@@ -260,8 +262,8 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <Calendar size={18} color="#aaa" />
                             <div>
-                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Fecha de Lanzamiento</p>
-                                <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{songData?.release_date || song.release_date || "Fecha Desconocida"}</p>
+                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>{language === 'en' ? 'Release Date' : 'Fecha de Lanzamiento'}</p>
+                                <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{songData?.release_date || song.release_date || (language === 'en' ? 'Unknown Date' : 'Fecha Desconocida')}</p>
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -276,7 +278,7 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <Globe size={18} color="#aaa" />
                             <div>
-                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Género / Formato</p>
+                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>{language === 'en' ? 'Genre / Format' : 'Género / Formato'}</p>
                                 <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{songData?.format_name || "Urbano / Latino"}</p>
                             </div>
                         </div>
@@ -290,7 +292,7 @@ const SongDetailsModal = ({ song, onClose, setUnavailableItem }) => {
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(29,185,84,0.1)'}
                             >
                                 <ExternalLink size={18} />
-                                <span style={{ fontWeight: 600 }}>Cargar en Spotify</span>
+                                <span style={{ fontWeight: 600 }}>{language === 'en' ? 'Open in Spotify' : 'Cargar en Spotify'}</span>
                             </a>
                         )}
                     </div>

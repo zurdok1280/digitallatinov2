@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TrendingUp, Trophy, Loader2, Radio } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const SONG_PLATFORMS = [
   {
@@ -120,13 +121,44 @@ const fmtPlatVal = (val, isRate) => {
 };
 
 const SongPlatformsMetrics = ({ songPlatformData, isSongPlatformLoading }) => {
+  const { language } = useLanguage();
   const [selectedPlatformKey, setSelectedPlatformKey] = useState('spotify');
+
+  const getTranslatedLabel = (label) => {
+    if (language !== 'en') return label;
+    const map = {
+      'Popularidad': 'Popularity',
+      'Playlists Actuales': 'Current Playlists',
+      'Reach Actual': 'Current Reach',
+      'Reach Total': 'Total Reach',
+      'Historical Reach': 'Historical Reach',
+      'Charts Total': 'Total Charts',
+      'Views Totales': 'Total Views',
+      'Likes Totales': 'Total Likes',
+      'Shorts Total': 'Total Shorts',
+      'Short Views': 'Short Views',
+      'Videos Total': 'Total Videos',
+      'Views Total': 'Total Views',
+      'Likes Total': 'Total Likes',
+      'Shares Total': 'Total Shares',
+      'No. de emisoras': 'No. of Stations',
+      'Reach TW': 'Reach TW',
+      'Spins TW': 'Spins TW',
+      'Shazams Total': 'Total Shazams',
+      'Charts Actuales': 'Current Charts',
+      'Playlists Total': 'Total Playlists',
+      'Streams Total': 'Total Streams',
+      'Favoritos Total': 'Total Favorites',
+      'Reposts Total': 'Total Reposts',
+    };
+    return map[label] || label;
+  };
 
   return (
     <div>
       {/* Section Title */}
       <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem' }}>
-        <TrendingUp size={18} color="var(--accent-primary)" /> Estadísticas por Plataformas
+        <TrendingUp size={18} color="var(--accent-primary)" /> {language === 'en' ? 'Platform Statistics' : 'Estadísticas por Plataformas'}
       </h3>
 
       {/* Platform Pills */}
@@ -188,7 +220,7 @@ const SongPlatformsMetrics = ({ songPlatformData, isSongPlatformLoading }) => {
                 </div>
                 <div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>{activePlat.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Métricas de la canción</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{language === 'en' ? 'Song Metrics' : 'Métricas de la canción'}</div>
                 </div>
               </div>
 
@@ -227,7 +259,7 @@ const SongPlatformsMetrics = ({ songPlatformData, isSongPlatformLoading }) => {
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{field.label}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{getTranslatedLabel(field.label)}</div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 900, color: hasData ? 'var(--text-main)' : 'rgba(255,255,255,0.2)', lineHeight: 1.1 }}>{formatted}</div>
                     </div>
                   );

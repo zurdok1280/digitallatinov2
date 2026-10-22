@@ -1,13 +1,13 @@
-import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music, FileText } from 'lucide-react';
+import { X, Search, Loader2, Play, User, BarChart2, ExternalLink, BarChart, Music } from 'lucide-react';
 import { searchSpotify, setLogSong, getArtistData, getArtistContext } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useModalClose } from '../hooks/useModalClose';
+import { useLanguage } from '../context/LanguageContext';
 
 // Helper to safely extract a user identifier for logging
 const getUserId = (user) => {
   if (!user) return null;
-  // Usamos el campo 'userId' proporcionado por el backend, con fallbacks por seguridad.
   return user.userId ?? user.id ?? user.sub ?? user.email ?? null;
 };
 
@@ -21,8 +21,13 @@ const formatFollowers = (n) => {
 
 // ─── Song Result Row ─────────────────────────────────────────────────────────
 const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
-  const hasMetrics = !!track.my_song_id;
-  const isChecking = checkingId === track.spotify_id;
+  const { language } = useLanguage();
+  const spotifyId = track.spotify_id || track.id || track.spotifyid;
+  const songName = track.song_name || track.song || track.name || '';
+  const artistName = track.artist_name || track.artists || track.artist || '';
+  const imageUrl = track.image_url || track.img || track.imageUrl || track.album?.images?.[0]?.url || '';
+  const hasMetrics = !!(track.my_song_id || track.cs_song || track.id_song);
+  const isChecking = checkingId === spotifyId;
 
   return (
     <div
@@ -37,8 +42,8 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
     >
       {/* Artwork */}
       <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.07)' }}>
-        {track.image_url
-          ? <img src={track.image_url} alt={track.song_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        {imageUrl
+          ? <img src={imageUrl} alt={songName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <Play size={20} color="var(--text-dim)" style={{ margin: '14px' }} />
         }
       </div>
@@ -46,10 +51,10 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-main)' }}>
-          {track.song_name}
+          {songName}
         </div>
         <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {track.artist_name}
+          {artistName}
         </div>
       </div>
 
@@ -69,7 +74,7 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
         {/* Métricas */}
         <button
           onClick={(e) => { e.stopPropagation(); onMetricsClick(track); }}
-          title={hasMetrics ? 'Ver métricas de la canción' : 'Información no disponible aún'}
+          title={hasMetrics ? (language === 'en' ? 'View song metrics' : 'Ver métricas de la canción') : (language === 'en' ? 'Information not available yet' : 'Información no disponible aún')}
           style={{
             display: 'flex', alignItems: 'center', gap: '5px',
             padding: '5px 11px', borderRadius: '6px', border: 'none',
@@ -91,28 +96,25 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
           }}
         >
           {isChecking ? <Loader2 size={12} className="animate-spin" /> : <BarChart2 size={12} />}
-          Métricas
+          {language === 'en' ? 'Metrics' : 'Métricas'}
         </button>
 
         {/* Campaña */}
-        {track.spotify_id && (
+        {spotifyId && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               if (!user) {
-                // Same pattern as legacy: require login before accessing campaign
                 onLoginClick ? onLoginClick() : null;
                 return;
               }
-              // Build URL matching legacy handleSearchResultSelect structure
-              const params = new URLSearchParams({ spotifyId: track.spotify_id });
-              // Pass extra track metadata as fallback for the widget
-              if (track.artist_name) params.set('artist', track.artist_name);
-              if (track.song_name)   params.set('track',  track.song_name);
-              if (track.image_url)   params.set('coverUrl', track.image_url);
+              const params = new URLSearchParams({ spotifyId });
+              if (artistName) params.set('artist', artistName);
+              if (songName)   params.set('track',  songName);
+              if (imageUrl)   params.set('coverUrl', imageUrl);
               window.open(`/campaign?${params.toString()}`, '_blank');
             }}
-            title={user ? 'Ver Campaña' : 'Inicia sesión para ver campaña'}
+            title={user ? (language === 'en' ? 'View Campaign' : 'Ver Campaña') : (language === 'en' ? 'Sign in to view campaign' : 'Inicia sesión para ver campaña')}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '5px 11px', borderRadius: '6px', border: 'none',
@@ -128,7 +130,7 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             <ExternalLink size={12} />
-            Campaña
+            {language === 'en' ? 'Campaign' : 'Campaña'}
           </button>
         )}
       </div>
@@ -138,8 +140,13 @@ const SongRow = ({ track, onMetricsClick, onLoginClick, user, checkingId }) => {
 
 // ─── Artist Result Card (Horizontal Carousel) ────────────────────────────────
 const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
-  const followers = formatFollowers(artist.followers);
-  const isChecking = checkingId === artist.spotify_id;
+  const { language } = useLanguage();
+  const spotifyId = artist.spotify_id || artist.id || artist.spotifyid;
+  const artistName = artist.artist_name || artist.name || '';
+  const imageUrl = artist.image_url || artist.img || artist.imageUrl || artist.images?.[0]?.url || '';
+  const followersCount = typeof artist.followers === 'object' ? artist.followers?.total : artist.followers;
+  const followers = formatFollowers(followersCount);
+  const isChecking = checkingId === spotifyId;
 
   return (
     <div
@@ -154,8 +161,8 @@ const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
     >
       {/* Avatar */}
       <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.07)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-        {artist.image_url
-          ? <img src={artist.image_url} alt={artist.artist_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        {imageUrl
+          ? <img src={imageUrl} alt={artistName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <User size={30} color="var(--text-dim)" style={{ margin: '25px' }} />
         }
         {/* Hover Overlay */}
@@ -170,7 +177,7 @@ const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
         >
           <button
             onClick={(e) => { e.stopPropagation(); onMetricsClick(artist); }}
-            title="Ver métricas"
+            title={language === 'en' ? 'View metrics' : 'Ver métricas'}
             style={{
               width: '32px', height: '32px', borderRadius: '50%', border: 'none',
               background: 'var(--accent-primary)', color: 'white',
@@ -186,11 +193,11 @@ const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
       {/* Info */}
       <div style={{ width: '100%' }}>
         <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-main)' }}>
-          {artist.artist_name}
+          {artistName}
         </div>
         {followers && (
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {followers} Seg.
+            {followers} {language === 'en' ? 'Foll.' : 'Seg.'}
           </div>
         )}
       </div>
@@ -200,6 +207,7 @@ const ArtistCard = ({ artist, onMetricsClick, onContextClick, checkingId }) => {
 
 // ─── Main SearchModal ─────────────────────────────────────────────────────────
 const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextClick, onLoginClick, setUnavailableItem }) => {
+  const { language, t } = useLanguage();
   const { isClosing, handleClose } = useModalClose(onClose, 240);
   const [query, setQuery]         = useState('');
   const [results, setResults]     = useState(null);
@@ -207,14 +215,49 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
   const [checkingId, setCheckingId] = useState(null);
   const { user } = useAuth();
 
+  // Safely extract normalized artists list
+  const artistsList = useMemo(() => {
+    if (!results) return [];
+    const raw = results.artists || results.data?.artists || (Array.isArray(results.data) ? results.data : (Array.isArray(results) ? results : null));
+    const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.items) ? raw.items : []);
+    return arr.map(a => ({
+      ...a,
+      spotify_id: a.spotify_id || a.id || a.spotifyid,
+      artist_name: a.artist_name || a.name || '',
+      image_url: a.image_url || a.img || a.imageUrl || a.images?.[0]?.url || '',
+      followers: typeof a.followers === 'object' ? a.followers?.total : a.followers,
+    }));
+  }, [results]);
+
+  // Safely extract normalized tracks list
+  const tracksList = useMemo(() => {
+    if (!results) return [];
+    const raw = results.tracks || results.data?.tracks;
+    const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.items) ? raw.items : []);
+    return arr.map(t => ({
+      ...t,
+      spotify_id: t.spotify_id || t.id || t.spotifyid,
+      song_name: t.song_name || t.song || t.name || '',
+      artist_name: t.artist_name || t.artists || t.artist || (Array.isArray(t.artists) ? t.artists.map(a => a.name).join(', ') : ''),
+      image_url: t.image_url || t.img || t.imageUrl || t.album?.images?.[0]?.url || '',
+      my_song_id: t.my_song_id || t.cs_song || t.id_song,
+    }));
+  }, [results]);
+
   // Debounced search
   useEffect(() => {
     const t = setTimeout(async () => {
       if (query.trim().length > 1) {
         setIsLoading(true);
-        const data = await searchSpotify(query);
-        setResults(data);
-        setIsLoading(false);
+        try {
+          const data = await searchSpotify(query);
+          setResults(data);
+        } catch (err) {
+          console.error("Error performing search:", err);
+          setResults(null);
+        } finally {
+          setIsLoading(false);
+        }
       } else {
         setResults(null);
       }
@@ -252,23 +295,40 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
   if (!isOpen && !isClosing) return null;
 
   // ---- handlers ----
-  const handleArtistMetrics = async (artist) => {
+  const handleArtistMetrics = async (rawArtist) => {
     if (!user) {
       onLoginClick();
       return;
     }
     
-    const spotifyId = artist.spotify_id;
+    const spotifyId = rawArtist.spotify_id || rawArtist.id || rawArtist.spotifyid;
+    if (!spotifyId) return;
+
+    const artistName = rawArtist.artist_name || rawArtist.name || 'Artista';
+    const imageUrl = rawArtist.image_url || rawArtist.img || rawArtist.imageUrl || rawArtist.images?.[0]?.url || '';
+
     const isCached = sessionStorage.getItem(`logged_missing_${spotifyId}`);
     
     if (isCached) {
-      setUnavailableItem(artist);
+      setUnavailableItem({
+        ...rawArtist,
+        spotify_id: spotifyId,
+        id: spotifyId,
+        artist_name: artistName,
+        name: artistName,
+        image_url: imageUrl,
+      });
       onClose();
       return;
     }
 
     setCheckingId(spotifyId);
-    const data = await getArtistData(spotifyId);
+    let data = null;
+    try {
+      data = await getArtistData(spotifyId);
+    } catch (err) {
+      console.error("Error fetching artist data:", err);
+    }
     setCheckingId(null);
 
     const artistObject = Array.isArray(data) ? data[0] : data?.data?.[0] || data;
@@ -276,21 +336,31 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
 
     if (isEmpty) {
       setLogSong({ userid: getUserId(user), spotifyid: spotifyId, isartist: true });
-      setUnavailableItem(artist);
+      setUnavailableItem({
+        ...rawArtist,
+        spotify_id: spotifyId,
+        id: spotifyId,
+        artist_name: artistName,
+        name: artistName,
+        image_url: imageUrl,
+      });
       onClose();
       return;
     }
 
     if (onArtistClick) {
-      onClose(); // Dismiss search so ArtistDetailsModal isn't behind the overlay
+      onClose();
       setTimeout(() => {
         onArtistClick({
-          id:              artist.spotify_id,
-          spotifyid:       artist.spotify_id,
-          name:            artist.artist_name,
-          imageUrl:        artist.image_url,
-          img:             artist.image_url,
-          followers:       artist.followers,
+          id:              spotifyId,
+          spotifyid:       spotifyId,
+          spotify_id:      spotifyId,
+          name:            artistName,
+          artist_name:     artistName,
+          imageUrl:        imageUrl,
+          image_url:       imageUrl,
+          img:             imageUrl,
+          followers:       rawArtist.followers,
           monthlyListeners: 0,
           countryId:       0,
         });
@@ -298,23 +368,40 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     }
   };
 
-  const handleContextClick = async (artist) => {
+  const handleContextClick = async (rawArtist) => {
     if (!user) {
       onLoginClick();
       return;
     }
 
-    const spotifyId = artist.spotify_id;
+    const spotifyId = rawArtist.spotify_id || rawArtist.id || rawArtist.spotifyid;
+    if (!spotifyId) return;
+
+    const artistName = rawArtist.artist_name || rawArtist.name || 'Artista';
+    const imageUrl = rawArtist.image_url || rawArtist.img || rawArtist.imageUrl || rawArtist.images?.[0]?.url || '';
+
     const isCached = sessionStorage.getItem(`logged_missing_${spotifyId}`);
     
     if (isCached) {
-      setUnavailableItem(artist);
+      setUnavailableItem({
+        ...rawArtist,
+        spotify_id: spotifyId,
+        id: spotifyId,
+        artist_name: artistName,
+        name: artistName,
+        image_url: imageUrl,
+      });
       onClose();
       return;
     }
 
     setCheckingId(spotifyId);
-    const result = await getArtistContext(spotifyId);
+    let result = null;
+    try {
+      result = await getArtistContext(spotifyId);
+    } catch (err) {
+      console.error("Error fetching artist context:", err);
+    }
     setCheckingId(null);
 
     const isEmptyContext = !result || result.error || Object.keys(result).length === 0 || (result.artist_name === '' && result.opportunity_score === 0 && !result.main_opportunity);
@@ -322,7 +409,14 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     if (isEmptyContext) {
       const userid = getUserId(user);
       setLogSong({ userid, spotifyid: spotifyId, isartist: true });
-      setUnavailableItem(artist);
+      setUnavailableItem({
+        ...rawArtist,
+        spotify_id: spotifyId,
+        id: spotifyId,
+        artist_name: artistName,
+        name: artistName,
+        image_url: imageUrl,
+      });
       onClose();
       return;
     }
@@ -331,47 +425,61 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
       onClose();
       setTimeout(() => {
         onContextClick({
-          id:              artist.spotify_id,
-          spotify_id:      artist.spotify_id,
-          name:            artist.artist_name,
-          artist_name:     artist.artist_name,
-          imageUrl:        artist.image_url,
-          image_url:       artist.image_url,
-          img:             artist.image_url,
-          followers:       artist.followers,
+          id:              spotifyId,
+          spotify_id:      spotifyId,
+          name:            artistName,
+          artist_name:     artistName,
+          imageUrl:        imageUrl,
+          image_url:       imageUrl,
+          img:             imageUrl,
+          followers:       rawArtist.followers,
         });
       }, 10);
     }
   };
 
-  const handleSongMetrics = async (track) => {
+  const handleSongMetrics = async (rawTrack) => {
     if (!user) {
       onLoginClick();
       return;
     }
+
+    const spotifyId = rawTrack.spotify_id || rawTrack.id || rawTrack.spotifyid;
+    const songName = rawTrack.song_name || rawTrack.song || rawTrack.name || '';
+    const artistName = rawTrack.artist_name || rawTrack.artists || rawTrack.artist || '';
+    const imageUrl = rawTrack.image_url || rawTrack.img || rawTrack.imageUrl || rawTrack.album?.images?.[0]?.url || '';
+    const mySongId = rawTrack.my_song_id || rawTrack.cs_song || rawTrack.id_song;
     
-    if (!track.my_song_id) {
-      const isCached = sessionStorage.getItem(`logged_missing_${track.spotify_id}`);
-      if (!isCached) {
-        setCheckingId(track.spotify_id);
-        await new Promise(resolve => setTimeout(resolve, 800)); // Delay artificial de loading
+    if (!mySongId) {
+      const isCached = spotifyId ? sessionStorage.getItem(`logged_missing_${spotifyId}`) : null;
+      if (!isCached && spotifyId) {
+        setCheckingId(spotifyId);
+        await new Promise(resolve => setTimeout(resolve, 800));
         setCheckingId(null);
       }
       const userid = getUserId(user);
-      setLogSong({ userid, spotifyid: track.spotify_id, isartist: false });
-      setUnavailableItem(track);
+      if (spotifyId) {
+        setLogSong({ userid, spotifyid: spotifyId, isartist: false });
+      }
+      setUnavailableItem({
+        ...rawTrack,
+        spotify_id: spotifyId,
+        song_name: songName,
+        artist_name: artistName,
+        image_url: imageUrl,
+      });
       onClose();
       return;
     }
 
-    // Attempt to find the artist's Spotify ID to enable full ArtistDetailsModal tabs
-    setCheckingId(track.spotify_id);
-    let artistId = results?.artists?.find(a => a.artist_name === track.artist_name)?.spotify_id;
+    setCheckingId(spotifyId);
+    let artistId = artistsList.find(a => (a.artist_name || a.name) === artistName)?.spotify_id;
     
-    if (!artistId) {
+    if (!artistId && artistName) {
       try {
-        const artistSearch = await searchSpotify(track.artist_name);
-        artistId = artistSearch?.artists?.[0]?.spotify_id;
+        const artistSearch = await searchSpotify(artistName);
+        const searchArtists = artistSearch?.artists?.items || artistSearch?.artists || (Array.isArray(artistSearch) ? artistSearch : []);
+        artistId = searchArtists[0]?.spotify_id || searchArtists[0]?.id;
       } catch (err) {
         console.error("Error fetching artist ID for song metrics:", err);
       }
@@ -382,22 +490,22 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
     if (onSongClick) {
       setTimeout(() => {
         onSongClick({
-          cs_song:   track.my_song_id,
-          id:        track.my_song_id,
-          song:      track.song_name,
-          artists:   track.artist_name,
-          spotifyid: track.spotify_id,
-          artist_id: artistId, // Pass found artist ID
-          image_url: track.image_url,
-          avatar:    track.image_url,
-          img:       track.image_url,
+          cs_song:   mySongId,
+          id:        mySongId,
+          song:      songName,
+          artists:   artistName,
+          spotifyid: spotifyId,
+          artist_id: artistId,
+          image_url: imageUrl,
+          avatar:    imageUrl,
+          img:       imageUrl,
         });
       }, 10);
     }
   };
 
-  const hasTracks  = (results?.tracks?.length  ?? 0) > 0;
-  const hasArtists = (results?.artists?.length ?? 0) > 0;
+  const hasTracks  = tracksList.length > 0;
+  const hasArtists = artistsList.length > 0;
 
   return (
     <>
@@ -436,7 +544,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
               <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
               <input
                 type="text"
-                placeholder="Buscar artistas o canciones en Spotify..."
+                placeholder={language === 'en' ? 'Search artists or songs on Spotify...' : 'Buscar artistas o canciones en Spotify...'}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 autoFocus
@@ -477,7 +585,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
             {!query && (
               <div className="flex-center" style={{ height: '180px', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)' }}>
                 <Search size={30} style={{ opacity: 0.25 }} />
-                <span style={{ fontSize: '0.88rem' }}>Escribe para buscar artistas y canciones</span>
+                <span style={{ fontSize: '0.88rem' }}>{language === 'en' ? 'Type to search artists and songs' : 'Escribe para buscar artistas y canciones'}</span>
               </div>
             )}
 
@@ -489,7 +597,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
             )}
 
             {/* Results */}
-            {!isLoading && results && (
+            {!isLoading && query.trim().length > 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1rem' }}>
                 
                 {/* ── Artists (Top Match or Horizontal Scroll) ── */}
@@ -497,7 +605,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
                   <div style={{ width: '100%' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.8rem', paddingLeft: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <User size={16} color="var(--accent-primary)" />
-                      Artistas
+                      {language === 'en' ? 'Artists' : 'Artistas'}
                     </h3>
                     
                     <div 
@@ -507,9 +615,9 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
                         paddingLeft: '0.5rem', paddingRight: '0.5rem'
                       }}
                     >
-                      {results.artists.map(artist => (
+                      {artistsList.map((artist, idx) => (
                         <ArtistCard
-                          key={artist.spotify_id}
+                          key={artist.spotify_id || `artist-${idx}`}
                           artist={artist}
                           onMetricsClick={handleArtistMetrics}
                           onContextClick={handleContextClick}
@@ -525,12 +633,12 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
                   <div style={{ width: '100%' }}>
                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.8rem', paddingLeft: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <Music size={16} color="var(--accent-tertiary)" />
-                      Canciones
+                      {language === 'en' ? 'Songs' : 'Canciones'}
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0 0.5rem' }}>
-                      {results.tracks.map((track, i) => (
+                      {tracksList.map((track, i) => (
                         <SongRow
-                          key={`${track.spotify_id}-${i}`}
+                          key={`${track.spotify_id || 'track'}-${i}`}
                           track={track}
                           onMetricsClick={handleSongMetrics}
                           onLoginClick={onLoginClick}
@@ -546,7 +654,7 @@ const SearchModal = ({ isOpen, onClose, onArtistClick, onSongClick, onContextCli
                 {!hasTracks && !hasArtists && (
                   <div className="flex-center" style={{ height: '160px', color: 'var(--text-muted)', flexDirection: 'column', gap: '0.5rem' }}>
                     <Search size={26} style={{ opacity: 0.25 }} />
-                    <span style={{ fontSize: '0.87rem' }}>Sin resultados para "{query}"</span>
+                    <span style={{ fontSize: '0.87rem' }}>{language === 'en' ? `No results for "${query}"` : `Sin resultados para "${query}"`}</span>
                   </div>
                 )}
               </div>

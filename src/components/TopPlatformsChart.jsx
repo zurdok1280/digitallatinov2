@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Search, X } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
 import { getTrendingTopPlatforms } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const rankColors = [
   '#8a88ff', '#ff9eee', '#00f0ff', '#c193ff', '#ffb700',
@@ -110,6 +111,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, onSongClick }) => {
+  const { language, t } = useLanguage();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -167,7 +169,7 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
     return (
       <div className="glass-panel flex-center" style={{ padding: '5rem', flexDirection: 'column', minHeight: '300px' }}>
         <Loader2 className="loading-spinner" size={48} color="var(--accent-primary)" />
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem' }}>Cargando analítica digital de plataformas...</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem' }}>{language === 'en' ? 'Loading digital platform analytics...' : 'Cargando analítica digital de plataformas...'}</p>
       </div>
     );
   }
@@ -175,7 +177,7 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
   if (!enrichedSongs || enrichedSongs.length === 0) {
     return (
       <div className="glass-panel flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ color: 'var(--text-muted)' }}>No se encontraron canciones en esta plataforma.</p>
+        <p style={{ color: 'var(--text-muted)' }}>{language === 'en' ? 'No songs found for this platform.' : 'No se encontraron canciones en esta plataforma.'}</p>
       </div>
     );
   }
@@ -183,9 +185,9 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
   const renderMovement = (mo) => {
     if (!mo) return null;
     const mov = String(mo).toLowerCase();
-    if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title="Subió" />;
-    if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title="Bajó" />;
-    return <Minus size={16} color="var(--text-muted)" title="Sin cambio" />;
+    if (mov.includes('up')) return <ArrowUp size={16} color="var(--accent-primary)" title={t('rankUp', 'Subió')} />;
+    if (mov.includes('down')) return <ArrowDown size={16} color="var(--accent-secondary)" title={t('rankDown', 'Bajó')} />;
+    return <Minus size={16} color="var(--text-muted)" title={t('noChange', 'Sin cambio')} />;
   };
 
   return (
@@ -350,7 +352,7 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
           <input
             type="text"
             className="song-search-input"
-            placeholder="Buscar por canción, artista o disquera..."
+            placeholder={t('searchPlaceholder', 'Buscar por canción, artista o disquera...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -358,7 +360,7 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
             <button
               className="song-search-clear"
               onClick={() => setSearchQuery('')}
-              title="Limpiar búsqueda"
+              title={t('clearSearch', 'Limpiar búsqueda')}
             >
               <X size={16} />
             </button>
@@ -366,7 +368,7 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
         </div>
         {searchQuery.trim() && (
           <div className="search-results-badge">
-            {filteredSongs.length} {filteredSongs.length === 1 ? 'resultado' : 'resultados'}
+            {filteredSongs.length} {filteredSongs.length === 1 ? (language === 'en' ? 'result' : 'resultado') : (language === 'en' ? 'results' : 'resultados')}
           </div>
         )}
       </div>
@@ -501,12 +503,16 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
                   {song.data_res ? (song.data_res >= 1000000 ? (song.data_res / 1000000).toFixed(1) + 'M' : song.data_res.toLocaleString()) : (song.score != null ? Number(song.score).toFixed(1) : '0')}
                 </div>
                 <span className="chart-score-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                  Reproducciones <Info size={11} style={{ opacity: 0.7 }} />
+                  {language === 'en' ? 'Streams / Plays' : 'Reproducciones'} <Info size={11} style={{ opacity: 0.7 }} />
                 </span>
 
                 {/* Score Disclaimer Tooltip */}
                 <div className="score-tooltip">
-                  El número de <strong style={{ color: '#fff' }}>Reproducciones</strong> indica el rendimiento principal o acumulado de la canción en la plataforma seleccionada.
+                  {language === 'en' ? (
+                    <>The number of <strong style={{ color: '#fff' }}>Streams / Plays</strong> indicates the main or accumulated performance of the song on the selected platform.</>
+                  ) : (
+                    <>El número de <strong style={{ color: '#fff' }}>Reproducciones</strong> indica el rendimiento principal o acumulado de la canción en la plataforma seleccionada.</>
+                  )}
                 </div>
               </div>
             </div>
@@ -530,7 +536,11 @@ const TopPlatformsChart = ({ selectedCountry, selectedGenre, selectedPlatform, o
       }}>
         <Info size={15} color="#c193ff" style={{ flexShrink: 0 }} />
         <span>
-          <strong style={{ color: '#e5e7eb' }}>Nota:</strong> Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.
+          {language === 'en' ? (
+            <><strong style={{ color: '#e5e7eb' }}>Note:</strong> Charts only consider Spanish-language songs released within the last year.</>
+          ) : (
+            <><strong style={{ color: '#e5e7eb' }}>Nota:</strong> Los charts consideran únicamente canciones en español con una fecha de lanzamiento menor a un año.</>
+          )}
         </span>
       </div>
     </div>

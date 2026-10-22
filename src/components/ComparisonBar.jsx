@@ -1,7 +1,9 @@
 import React from 'react';
 import { BarChart3, X, Zap } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const ComparisonBar = ({ selectedSongs, onCompare, onClear, onRemoveSong, isActive }) => {
+  const { t, language } = useLanguage();
   if (selectedSongs.length === 0 && !isActive) return null;
 
   return (
@@ -30,7 +32,7 @@ const ComparisonBar = ({ selectedSongs, onCompare, onClear, onRemoveSong, isActi
             {selectedSongs.length < 2 && (
               <div className="mini-song-placeholder">
                 <div className="placeholder-pulse" />
-                <span>Selecciona otra...</span>
+                <span>{language === 'en' ? 'Select another...' : 'Selecciona otra...'}</span>
               </div>
             )}
           </div>
@@ -38,7 +40,7 @@ const ComparisonBar = ({ selectedSongs, onCompare, onClear, onRemoveSong, isActi
 
         <div className="comparison-actions">
           <button className="btn-secondary-glass" onClick={onClear}>
-            Limpiar
+            {language === 'en' ? 'Clear' : 'Limpiar'}
           </button>
           <button 
             className={`btn-primary-glass ${selectedSongs.length === 2 ? 'pulse-border' : 'disabled'}`}
@@ -46,7 +48,7 @@ const ComparisonBar = ({ selectedSongs, onCompare, onClear, onRemoveSong, isActi
             onClick={onCompare}
           >
             <Zap size={16} />
-            <span>Comparar</span>
+            <span>{t('compare', 'Comparar')}</span>
           </button>
         </div>
       </div>

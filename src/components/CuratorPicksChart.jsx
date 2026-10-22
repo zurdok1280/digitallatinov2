@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Play, Pause, ArrowUp, ArrowDown, Minus, Loader2, Info, Zap } from 'lucide-react';
 import { useAudioPreview } from '../hooks/useAudioPreview.jsx';
+import { useLanguage } from '../context/LanguageContext';
 
 const rankColors = [
   '#ff3366', '#ff7eb3', '#ff758c', '#ff7eb3', '#ffb700',
@@ -110,6 +111,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 const CuratorPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSongSelect, selectedSongs = [] }) => {
+  const { language } = useLanguage();
   const { currentlyPlaying, handlePlayPreview } = useAudioPreview();
   const enrichedSongs = useMemo(() => {
     if (!songs) return [];
@@ -371,7 +373,11 @@ const CuratorPicksChart = ({ songs, isLoading, onSongClick, comparisonMode, onSo
                 </span>
 
                 <div className="score-tooltip">
-                  Este número representa <strong style={{ color: '#fff' }}>Sum Followers</strong>. Un consolidado de la audiencia o alcance total de esta canción en sus playlists actuales.
+                  {language === 'en' ? (
+                    <>This number represents <strong style={{ color: '#fff' }}>Sum Followers</strong>. A consolidated total of the audience or reach of this song across its current playlists.</>
+                  ) : (
+                    <>Este número representa <strong style={{ color: '#fff' }}>Sum Followers</strong>. Un consolidado de la audiencia o alcance total de esta canción en sus playlists actuales.</>
+                  )}
                 </div>
               </div>
             </div>

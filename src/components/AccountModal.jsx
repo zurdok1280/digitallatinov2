@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { X, User, AlertCircle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useLanguage } from "../context/LanguageContext";
 import './LoginForm.css';
 
 export default function AccountModal({ onClose }) {
+  const { language, t } = useLanguage();
   const { token } = useAuth();
   
   const [userData, setUserData] = useState(null);
@@ -140,13 +142,13 @@ export default function AccountModal({ onClose }) {
           <div className="login-music-icon-wrapper" style={{ width: '3.5rem', height: '3.5rem', marginBottom: '0.5rem' }}>
             <User style={{ width: '1.8rem', height: '1.8rem', color: '#ffffff' }} />
           </div>
-          <h2 style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: 'bold' }}>Mi Cuenta</h2>
+          <h2 style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: 'bold' }}>{t('myAccount', 'Mi Cuenta')}</h2>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
           {/* USER INFO CARD */}
           <div className="login-form-container" style={{ flex: '1 1 300px', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ color: '#c084fc', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Perfil</h3>
+            <h3 style={{ color: '#c084fc', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t('profile', 'Perfil')}</h3>
             
             {loading ? (
               <div className="flex-center" style={{ height: '150px' }}><div className="login-loading-spinner"></div></div>
@@ -167,22 +169,22 @@ export default function AccountModal({ onClose }) {
                 <div style={{ marginTop: 'auto' }}>
                   {!showPasswordForm ? (
                     <button onClick={() => setShowPasswordForm(true)} className="login-secondary-btn">
-                      Cambiar Contraseña
+                      {t('changePassword', 'Cambiar Contraseña')}
                     </button>
                   ) : (
                     <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <h4 style={{ color: '#ffffff', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Cambiar Contraseña</h4>
-                      <input type="password" placeholder="Contraseña Actual" className="login-input" required value={passwordData.oldPassword} onChange={e => setPasswordData({...passwordData, oldPassword: e.target.value})} style={{ height: '2.5rem' }} />
-                      <input type="password" placeholder="Nueva Contraseña" className="login-input" required minLength={6} value={passwordData.newPassword} onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})} style={{ height: '2.5rem' }} />
-                      <input type="password" placeholder="Confirmar Nueva Contraseña" className="login-input" required minLength={6} value={passwordData.confirmPassword} onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})} style={{ height: '2.5rem' }} />
+                      <h4 style={{ color: '#ffffff', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>{t('changePassword', 'Cambiar Contraseña')}</h4>
+                      <input type="password" placeholder={t('currentPassword', 'Contraseña Actual')} className="login-input" required value={passwordData.oldPassword} onChange={e => setPasswordData({...passwordData, oldPassword: e.target.value})} style={{ height: '2.5rem' }} />
+                      <input type="password" placeholder={t('newPassword', 'Nueva Contraseña')} className="login-input" required minLength={6} value={passwordData.newPassword} onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})} style={{ height: '2.5rem' }} />
+                      <input type="password" placeholder={t('confirmNewPassword', 'Confirmar Nueva Contraseña')} className="login-input" required minLength={6} value={passwordData.confirmPassword} onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})} style={{ height: '2.5rem' }} />
                       
                       {passwordError && <p style={{ color: '#f87171', fontSize: '0.8rem' }}>{passwordError}</p>}
                       {passwordSuccess && <p style={{ color: '#34d399', fontSize: '0.8rem' }}>{passwordSuccess}</p>}
                       
                       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        <button type="button" onClick={() => setShowPasswordForm(false)} className="login-secondary-btn" style={{ flex: 1 }}>Cancelar</button>
+                        <button type="button" onClick={() => setShowPasswordForm(false)} className="login-secondary-btn" style={{ flex: 1 }}>{t('cancel', 'Cancelar')}</button>
                         <button type="submit" disabled={isChangingPassword} className="login-submit-btn" style={{ flex: 1, height: '2.5rem' }}>
-                          {isChangingPassword ? "Guardando..." : "Guardar"}
+                          {isChangingPassword ? t('saving', 'Guardando...') : t('save', 'Guardar')}
                         </button>
                       </div>
                     </form>
@@ -194,7 +196,7 @@ export default function AccountModal({ onClose }) {
 
           {/* SUBSCRIPTION CARD */}
           <div className="login-form-container" style={{ flex: '1 1 300px', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ color: '#c084fc', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Suscripción</h3>
+            <h3 style={{ color: '#c084fc', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t('subscription', 'Suscripción')}</h3>
             
             {loadingSub ? (
               <div className="flex-center" style={{ height: '150px' }}><div className="login-loading-spinner"></div></div>
@@ -204,11 +206,11 @@ export default function AccountModal({ onClose }) {
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
-                    <p style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase' }}>Plan Actual</p>
+                    <p style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase' }}>{t('currentPlan', 'Plan Actual')}</p>
                     <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '1.3rem', textTransform: 'capitalize' }}>{subscriptionData.plan}</p>
                   </div>
                   <div>
-                    <p style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase' }}>Estado</p>
+                    <p style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase' }}>{t('status', 'Estado')}</p>
                     <span style={{ 
                       display: 'inline-block', padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.85rem', fontWeight: 'bold', marginTop: '0.25rem', textTransform: 'capitalize',
                       background: isCancelled ? 'rgba(245, 158, 11, 0.2)' : isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)',
@@ -218,7 +220,7 @@ export default function AccountModal({ onClose }) {
                     </span>
                   </div>
                   <div>
-                    <p style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase' }}>Acceso hasta</p>
+                    <p style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase' }}>{t('accessUntil', 'Acceso hasta')}</p>
                     <p style={{ color: '#ffffff', fontWeight: '500', fontSize: '1.1rem' }}>{subscriptionData.expiresAt}</p>
                   </div>
                 </div>
@@ -226,16 +228,16 @@ export default function AccountModal({ onClose }) {
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {!showConfirmCancel ? (
                     <button onClick={() => setShowConfirmCancel(true)} disabled={isCancelled} className="login-danger-btn">
-                      {isCancelled ? "Cancelación Programada" : "Cancelar Suscripción"}
+                      {isCancelled ? t('scheduledCancellation', 'Cancelación Programada') : t('cancelSubscription', 'Cancelar Suscripción')}
                     </button>
                   ) : (
                     <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                       <AlertCircle size={24} color="#ef4444" style={{ margin: '0 auto 0.5rem' }} />
-                      <p style={{ color: '#ffffff', fontSize: '0.9rem', marginBottom: '1rem' }}>¿Seguro que deseas cancelar? Tu acceso continuará hasta la fecha de expiración.</p>
+                      <p style={{ color: '#ffffff', fontSize: '0.9rem', marginBottom: '1rem' }}>{t('confirmCancelText', '¿Seguro que deseas cancelar? Tu acceso continuará hasta la fecha de expiración.')}</p>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => setShowConfirmCancel(false)} className="login-secondary-btn" style={{ flex: 1, fontSize: '0.85rem' }}>Atrás</button>
+                        <button onClick={() => setShowConfirmCancel(false)} className="login-secondary-btn" style={{ flex: 1, fontSize: '0.85rem' }}>{t('back', 'Atrás')}</button>
                         <button onClick={handleCancelSubscription} disabled={isCancelling} className="login-danger-btn" style={{ flex: 1, fontSize: '0.85rem' }}>
-                          {isCancelling ? "..." : "Sí, Cancelar"}
+                          {isCancelling ? "..." : t('yesCancel', 'Sí, Cancelar')}
                         </button>
                       </div>
                     </div>
@@ -243,7 +245,7 @@ export default function AccountModal({ onClose }) {
                 </div>
               </div>
             ) : (
-               <p style={{ color: '#9ca3af' }}>No hay información de suscripción.</p>
+               <p style={{ color: '#9ca3af' }}>{t('noData', 'No hay información de suscripción.')}</p>
             )}
           </div>
         </div>
